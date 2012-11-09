@@ -3,7 +3,7 @@
 # Loprop model implementation (J. Chem. Phys. 121, 4494 (2004))
 #
 import sys,math,numpy
-from daltools import one, mol, dens
+from daltools import one, mol, dens, prop
 from util import full,blocked,subblocked,timing
 full.matrix.fmt="%14.6f"
 xtang = 0.5291772108
@@ -259,7 +259,6 @@ def dipole(lab,D,T,cpa,Z,Rab,Qab,debug=False,tmpdir='/tmp'):
    import os
    #
    prp=os.path.join(tmpdir,"AOPROPER")
-   import prop
    nbf=D.shape[0]
    x=[]
    xlop=[]
@@ -292,7 +291,6 @@ def quadrupole(lab,D,T,cpa,Z,R,Qab,Dab,debug=0,tmpdir='/tmp'):
    #
    prp=os.path.join(tmpdir,"AOPROPER")
    C="XYZ"
-   import prop
    nbf=D.shape[0]
    x=[]
    xlop=[]
@@ -539,7 +537,6 @@ def main(debug=False, tmpdir='/tmp', potfile="LOPROP.POT", bond_centers=False, p
 # 
 # Density from SIRIFC
 #
-    import dens
     Di, Dv = dens.ifc(filename=sirifc)
     D = Di + Dv
     if debug:
