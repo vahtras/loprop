@@ -3,7 +3,7 @@
 # Loprop model implementation (J. Chem. Phys. 121, 4494 (2004))
 #
 import sys,math,numpy
-from daltools import one,mol
+from daltools import one, mol, dens
 from util import full,blocked,subblocked,timing
 full.matrix.fmt="%14.6f"
 xtang = 0.5291772108
