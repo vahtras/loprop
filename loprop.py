@@ -504,7 +504,6 @@ def main(debug=False, tmpdir='/tmp', potfile="LOPROP.POT", bond_centers=False, p
 # Obtain basis set info
 #
     S = one.read("OVERLAP", aooneint).unpack().unblock()
-    import mol
     molecule = mol.readin(dalton_bas)
     cpa = mol.contracted_per_atom(molecule)
     cpa_l = mol.contracted_per_atom_l(molecule)
