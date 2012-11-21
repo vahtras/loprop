@@ -1,0 +1,228 @@
+import os 
+import numpy as np
+import loprop
+from util import full
+
+tmpdir=os.path.join('h2o', 'tmp')
+origin=[0., 0., 0.]
+
+def test_total_charge():
+    m = loprop.MolFrag(tmpdir, maxl=0)
+    print m.Qab
+    assert np.allclose(m.Qab.sum(), -10.0)
+
+def test_charge():
+    M = loprop.MolFrag(tmpdir, maxl=0)
+    Qref = [-8.70343886, -0.64828057, -0.64828057] 
+    Qaa = M.Qab.diagonal()
+    print Qref, Qaa
+    assert np.allclose(Qref, Qaa)
+
+def test_total_dipole():
+    m = loprop.MolFrag(tmpdir, maxl = 1, gc=origin)
+    Dref = [0, 0, 5.65148934]
+    # molecular dipole moment wrt gauge center gc
+    Dtot = m.Dab.sum(axis=2).sum(axis=1).view(full.matrix)
+    Qa = m.Qab.diagonal()
+    Q = Qa.sum()
+    Dtot += Qa*m.R - Q*m.Rc
+    print Dref, Dtot
+    assert np.allclose(-Dtot, Dref)
+
+def test_dipole_allbonds():
+    m = loprop.MolFrag(tmpdir, maxl = 1)
+    O    = [ 0.00000000, 0.00000000, -0.39827574]
+    H1   = [ 0.10330994, 0.00000000,  0.07188960]
+    H2   = [-0.10330994, 0.00000000,  0.07188960]
+    OH1  = [ 0.10023328/2, 0.00000000,   0.11470275/2] 
+    OH2  = [-0.10023328/2, 0.00000000,   0.11470275/2]
+    H1H2 = [ 0.00000000/2,  0.00000000, -0.00378789/2]
+
+    Dref = full.init([[O, OH1, OH2], [OH1, H1, H1H2], [OH2, H1H2, H2]])
+    D = m.Dab
+    print Dref, D
+    assert np.allclose(Dref, D)
+
+def test_dipole_nobonds():
+    m = loprop.MolFrag(tmpdir, maxl = 1) 
+    O  = [ 0.00000000, 0.00000000, -0.28357300]
+    H1 = [ 0.15342658, 0.00000000,  0.12734703]
+    H2 = [-0.15342658, 0.00000000,  0.12734703]
+
+    Dref = full.init([O, H1, H2])
+    Daa = m.Dab.sum(axis=2).view(full.matrix)
+    print Dref, Daa
+    assert np.allclose(Dref, Daa)
+
+def test_quadrupole_total():
+    QUref = [ 7.31176355, 0., 0., 5.43243241, 0., 9.49794117 ]
+    m = loprop.MolFrag(tmpdir, maxl=2, gc=origin)
+    print m.gc
+    rrab=full.matrix((6, m.noa, m.noa))
+    rRab=full.matrix((6, m.noa, m.noa))
+    RRab=full.matrix((6, m.noa, m.noa))
+    Rabc = 1.0*m.Rab
+    for a in range(m.noa):
+        for b in range(m.noa):
+            Rabc[a,b,:] -= m.Rc
+    for a in range(m.noa):
+        for b in range(m.noa):
+            ij = 0
+            for i in range(3):
+                for j in range(i,3):
+                    rRab[ij, a, b] = m.Dab[i, a, b]*Rabc[a, b, j]\
+                                   + m.Dab[j, a, b]*Rabc[a, b, i]
+                    RRab[ij, a, b] = m.Qab[a, b]*m.R[a, i]*m.R[b, j]
+                    ij += 1
+    QUcab = m.QUab + rRab + RRab
+    QUc = QUcab.sum(axis=2).sum(axis=1)
+    print "QUcab", QUcab
+    print "QUc", QUc, QUref
+    assert np.allclose(QUref, -QUc)
+    
+
+def test_quadrupole_allbonds():
+    M = loprop.MolFrag(tmpdir, maxl = 2)
+    O    = [-3.68114747, 0.00000000,  0.00000000, -4.58632761, 0.00000000, -4.24741556]
+    H1   = [-0.47568174, 0.00000000, -0.03144252, -0.46920879, 0.00000000, -0.50818752]
+    H2   = [-0.47568174, 0.00000000,  0.03144252, -0.46920879, 0.00000000, -0.50818752]
+    OH1  = [0.53710687/2, 0.00000000/2,  0.43066796/2, 0.04316104/2, 0.00000000/2, 0.36285790/2]
+    OH2  = [0.53710687/2, 0.00000000/2, -0.43066796/2, 0.04316104/2, 0.00000000/2, 0.36285790/2]
+    H1H2 = [0.00148694/2, 0.00000000/2,  0.00000000/2, 0.00599079/2, 0.00000000/2, 0.01223822/2]
+
+    QUref = full.init([[O, OH1, OH2], [OH1, H1, H1H2], [OH2, H1H2, H2]])
+    QU = M.QUab
+    print QUref-QU
+    assert np.allclose(QUref, QU, atol=1e-5)
+
+def test_quadrupole_nobonds():
+    M = loprop.MolFrag(tmpdir, maxl = 2)
+    O =  [-3.29253618, 0.00000000, 0.00000000, -4.54316657, 0.00000000, -4.00465380]
+    H1 = [-0.13213704, 0.00000000, 0.24980518, -0.44463288, 0.00000000, -0.26059139]
+    H2 = [-0.13213704, 0.00000000,-0.24980518, -0.44463288, 0.00000000, -0.26059139]
+
+
+    QUref = full.init([O, H1, H2])
+    QUaa = (M.QUab + M.dQUab).sum(axis=2).view(full.matrix)
+    print QUref, QUaa, QUref-QUaa
+    assert np.allclose(QUref, QUaa, atol=1e-5)
+
+def test_polarizability_total():
+    m = loprop.MolFrag(tmpdir, maxl=0, pol=True)
+    Aref = [8.186766009140, 0., 5.102747935447, 0., 0., 6.565131856389]
+    # symmetrize over components
+    A = full.matrix((6, m.noa, m.noa))
+    for a in range(m.noa):
+        for b in range(m.noa):
+            ij = 0
+            for i in range(3):
+                for j in range(i):
+                    A[ij, a, b] = .5*(m.Aab[i, j, a, b] + m.Aab[j, i, a, b])
+                    A[ij, a, b] += .5*(m.dQab[i, a, b]*m.Rab[a, b, j]
+                                     + m.dQab[j, a, b]*m.Rab[a, b, i])
+                    ij += 1
+                A[ij, a, b] = m.Aab[i, i, a, b] 
+                A[ij, a, b] += m.dQab[ i, a, b] *m.Rab[a, b, i]
+                ij += 1
+    Am = A.sum(axis=2).sum(axis=1).view(full.matrix)
+    print Am, Aref
+    assert np.allclose(Am, Aref)
+        
+
+def xest_polarizability_allbonds():
+    M = loprop.MolFrag(tmpdir, pol=True)
+
+    O = [
+    0.76145382,
+   -0.00001648, 1.75278523,
+   -0.00007538, 0.00035773, 1.39756345
+    ]
+    H1O = [
+    3.11619527,
+    0.00019911, 1.25132346,
+    2.11363325, 0.00111442, 2.12790474
+    ]
+
+    H1 = [
+    0.57935224,
+    0.00018083, 0.43312326,
+    0.11495546, 0.00004222, 0.45770123
+    ]
+
+    H2O = [
+    3.11568759,
+    0.00019821,  1.25132443,
+   -2.11327482, -0.00142746, 2.12790473
+    ]
+    H2H1 = [
+    0.04078206,
+   -0.00008380, -0.01712262,
+   -0.00000098,  0.00000084, -0.00200285
+    ]
+    H2 = [
+    0.57930522,
+    0.00018221,  0.43312149,
+   -0.11493635, -0.00016407,  0.45770123
+    ]
+
+
+
+    Aref = full.init([O, H1O, H1, H2O, H2H1, H2])
+    #double symmetrize to match
+    Asym=full.matrix(Aref.shape)
+    #a > b, i>j
+    ab = 0
+    for a in range(3):
+        for b in range(a):
+            Asym[:, ab] = (M.Aab[:, :, a, b] + M.Aab[:, :, b, a]).pack()
+            ab += 1
+        Asym[:, ab] = M.Aab[:, :, a, a].pack()
+        ab += 1
+    print Aref, Asym, Aref - Asym
+    assert np.allclose(Aref, Asym, atol=1e-5)
+    
+
+def zest_polarizability_nobonds():
+    M = loprop.MolFrag(tmpdir, pol=True)
+    O = [
+    3.87739525,
+    0.00018217, 3.00410918,
+    0.00010384, 0.00020122, 3.52546819
+    ]
+
+    H1 = [
+    2.15784091,
+    0.00023848, 1.05022368,
+    1.17177159, 0.00059985, 1.52065218
+    ]
+
+    H2 = [
+    2.15754005,
+    0.00023941,  1.05022240,
+   -1.17157425, -0.00087738,  1.52065217
+    ]
+
+    Aref = full.init([O, H1, H2])
+
+    Asym = full.matrix(Aref.shape)
+    #a > b, i>j
+    Aa = M.Aab.sum(axis=2).view(full.matrix)
+    for a in range(3):
+        Asym[:, a] = Aa[:,:,a].pack()
+    print Aref, Asym, Aref - Asym
+    assert np.allclose(Aref, Asym, atol=1e-5)
+
+    print M.Aab
+    Aaa = M.Aab.sum(axis=2).view(full.matrix)
+    #symmetry packed
+    Asp = full.matrix((6, 3))
+    for a in range(3):
+        Asp[:, a] = Aaa[a].pack()
+
+    print Aref, Asp, Aref-Asp
+    #assert np.allclose(Aref, Asp, atol=1e-5)
+    assert True
+
+
+if __name__ == "__main__":
+    test_polarizability_total()
