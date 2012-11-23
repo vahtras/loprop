@@ -107,6 +107,65 @@ def test_quadrupole_nobonds():
     print QUref, QUaa, QUref-QUaa
     assert np.allclose(QUref, QUaa, atol=1e-5)
 
+# Test of polarizability
+
+def test_pf():
+    m = loprop.MolFrag(tmpdir)
+    m.penalty_function(alpha=2/loprop.xtang**2)
+    Fabref = full.init([
+        [-0.11E-03,  0.55E-04,  0.55E-04],
+        [ 0.55E-04, -0.55E-04,  0.16E-30],
+        [ 0.55E-04,  0.16E-30, -0.55E-04]
+        ])
+    #print m.dRab
+    print Fabref, m.Fab
+    assert np.allclose(Fabref, m.Fab, atol=1e-6)
+
+def test_total_charge_shift():
+    m = loprop.MolFrag(tmpdir, maxl=0, pol=False)
+    m.pol()
+    dQ = m.dQab.sum(axis=2).sum(axis=1).view(full.matrix)
+    dQref = [0., 0., 0.]
+    print dQref, dQ
+    assert np.allclose(dQref, dQ)
+
+def test_atomic_charge_shift():
+    ff = 0.001
+    m = loprop.MolFrag(tmpdir, maxl=0, pol=False)
+    m.pol()
+# dQ
+# -0.00000650  0.00150789 -0.00150139
+# -0.00000595 -0.00150230  0.00150826
+# -0.00000201  0.00000331 -0.00000130
+# -0.00000201  0.00000100  0.00000101
+# -0.00177384  0.00088692  0.00088692
+#  0.00176668 -0.00088334 -0.00088334
+    dQa = m.dQab.sum(axis=2).view(full.matrix).T
+    dQaorig = full.init([
+        [-0.00000650,  0.00150789, -0.00150139],
+        [-0.00000595, -0.00150230,  0.00150826],
+        [-0.00000201,  0.00000331, -0.00000130],
+        [-0.00000201,  0.00000100,  0.00000101],
+        [-0.00177384,  0.00088692,  0.00088692],
+        [ 0.00176668, -0.00088334, -0.00088334],
+        ])
+    print dQaorig
+    dQaref = dQaorig[:,0:6:2]
+    print "1", dQaref
+    dQaref -= dQaorig[:,1:6:2]
+    print "2", dQaref
+    dQaref /= 2*ff
+    print "3"
+    rtol=1e-3
+    atol=2e-3
+    print dQaref, dQa, 
+    print "abs(dQaref - dQa)",abs(dQaref - dQa) 
+    print "test 1", atol + rtol*abs(dQa)
+    print "test 2", atol + rtol*abs(dQaref)
+    print "abs(dQaref - dQa)<test",abs(dQaref - dQa) < atol + rtol*abs(dQa)
+
+    assert np.allclose(dQaref, dQa, rtol=rtol, atol=atol)
+
 def test_polarizability_total():
     m = loprop.MolFrag(tmpdir, maxl=0, pol=True)
     Aref = [8.186766009140, 0., 5.102747935447, 0., 0., 6.565131856389]
@@ -129,7 +188,7 @@ def test_polarizability_total():
     assert np.allclose(Am, Aref)
         
 
-def xest_polarizability_allbonds():
+def test_polarizability_allbonds():
     M = loprop.MolFrag(tmpdir, pol=True)
 
     O = [
