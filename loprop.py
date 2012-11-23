@@ -510,24 +510,21 @@ class MolFrag:
 #                ij+=1
 #       self.QUN = qn
 
-    def Fab(a,b,n=0):
-        """Bond penalty function
-        n = 0: exponential
-        n > 0: power
-        """
-        rab=self.dR[a,b,:].norm2()*2 #dR is half bond vector
-        if n == 0: #default BS radius
-            #alpha = 7.1421297
-            alpha = 2
-            ra=rbs[int(self.Z[a])]
-            rb=rbs[int(self.Z[b])]
-            #print "rab2", rab**2
-            #print "(ra+rb)2", (ra+rb)**2
-            #return math.exp(alpha*(rab/(ra+rb))**2)
-            #reproduce molcas bug
-            return math.exp(alpha*(rab/(ra+rb)/xtang)**2)
-        else:
-            return rab**n
+    def penalty_function(self, alpha=2):
+        """Penalty function"""
+        Fab = full.matrix((self.noa, self.noa))
+        for a in range(self.noa):
+            ra = rbs[int(self.Z[a])]
+            for b in range(a):
+                rb = rbs[int(self.Z[b])]
+                rab = 2*self.dRab[a, b].norm2()
+                Fab[a, b] = 0.5*math.exp(
+                    -alpha*(rab/(ra+rb))**2
+                    )
+                Fab[b, a] = Fab[a, b]
+        for a in range(self.noa):
+            Fab[a, a] += - Fab[a, :].sum()
+        self.Fab = Fab
 
     def pol(self, debug=False):
         D = self.D
@@ -544,7 +541,7 @@ class MolFrag:
         Dk = []
         for l in lab:
             x.append(prop.read(self.nbf, l, prp).unpack())
-            Dk.append(lr.Dk(l, tmpdir=self.tmpdir))
+            Dk.append(-lr.Dk(l, tmpdir=self.tmpdir))
        
         #Transform property/density to loprop basis
         xlop=[]
@@ -571,6 +568,7 @@ class MolFrag:
                 for i in range(3):
                     dQab[i, a, b] = \
                   - Slopsb.subblock[a][b]&Dklopsb[i].subblock[a][b]
+        self.dQab = self.Qab
         dQa = dQab.sum(axis=2).view(full.matrix)
         dQ = dQa.sum(axis=1).view(full.matrix)
         if debug:
