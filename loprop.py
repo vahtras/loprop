@@ -36,8 +36,10 @@ class MolFrag:
         self.dalton_bas = os.path.join(tmpdir,'DALTON.BAS')
         self.sirifc = os.path.join(tmpdir,'SIRIFC')
 
+        self._S = None
         self.get_basis_info()
-        self.get_overlap()
+        #self.get_overlap()
+        self.get_isordk()
         self.get_density()
         self.transformation()
 
@@ -74,8 +76,16 @@ class MolFrag:
         """
         Get overlap, nuclear charges and coordinates from AOONEINT
         """
+        if self._S is None:
+            self._S = one.read("OVERLAP", self.aooneint).unpack().unblock()
+        return self._S
+    S = property(fget=get_overlap)
+        
 
-        self.S = one.read("OVERLAP", self.aooneint).unpack().unblock()
+    def get_isordk(self):
+        """
+        Get overlap, nuclear charges and coordinates from AOONEINT
+        """
         #
         # Data from the ISORDK section in AOONEINT
         #
