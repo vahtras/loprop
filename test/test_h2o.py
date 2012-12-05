@@ -109,17 +109,43 @@ def test_quadrupole_nobonds():
 
 # Test of polarizability
 
-def test_pf():
-    m = loprop.MolFrag(tmpdir)
-    m.penalty_function(alpha=2/loprop.xtang**2)
+def test_Fab():
     Fabref = full.init([
         [-0.11E-03,  0.55E-04,  0.55E-04],
         [ 0.55E-04, -0.55E-04,  0.16E-30],
         [ 0.55E-04,  0.16E-30, -0.55E-04]
         ])
-    #print m.dRab
+
+    m = loprop.MolFrag(tmpdir)
+    m.set_Fab(alpha=2/loprop.xtang**2)
+    
     print Fabref, m.Fab
     assert np.allclose(Fabref, m.Fab, atol=1e-6)
+
+    #
+    # shift
+    #
+def molcas_shift(M):
+    maxM = np.max(np.abs(M))
+    return 2*maxM
+
+def test_molcas_shift():
+    Fabref = full.init([
+        [0.11E-03, 0.28E-03, 0.28E-03],
+        [0.28E-03, 0.17E-03, 0.22E-03],
+        [0.28E-03, 0.22E-03, 0.17E-03]
+        ])
+
+    m = loprop.MolFrag(tmpdir)
+    m.set_Fab(alpha=2/loprop.xtang**2, shift=molcas_shift)
+
+    print Fabref, m.Fab 
+    assert np.allclose(Fabref, m.Fab, atol=1e-5, rtol=1e-2)
+
+    #
+    # shift
+    #
+
 
 def test_total_charge_shift():
     m = loprop.MolFrag(tmpdir, maxl=0, pol=False)
@@ -165,6 +191,48 @@ def test_atomic_charge_shift():
     print "abs(dQaref - dQa)<test",abs(dQaref - dQa) < atol + rtol*abs(dQa)
 
     assert np.allclose(dQaref, dQa, rtol=rtol, atol=atol)
+    #assert np.allclose(dQaref, dQa)
+
+def test_lagrangian():
+# values per "perturbation" as in atomic_charge_shift below
+    ff = 0.001
+    laorig = full.init([
+      [  0.0392366, -27.2474016,  27.2081650  ],
+      [  0.0358964,  27.2214515, -27.2573479  ],
+      [  0.01211180, -0.04775576,  0.03564396 ],
+      [  0.01210615, -0.00594030, -0.00616584 ],
+      [ 10.69975088, -5.34987556, -5.34987532 ],
+      [-10.6565582,   5.3282791,   5.3282791  ],
+      ])
+    laref = laorig[:,0:6:2]
+    laref -= laorig[:,1:6:2]
+    laref /= 2*ff
+#...>
+    m = loprop.MolFrag(tmpdir, pol=True)
+    m.set_Fab(alpha=2/loprop.xtang**2, shift=molcas_shift)
+    m.set_la()
+
+    #dQa = m.dQab.sum(axis=2).view(full.matrix).T
+    #la = dQa/m.Fab
+    #print dQa, m.Fab
+    print laref, m.la
+    #assert np.allclose(laref, la, rtol=1e-3, atol=1e-3)
+
+def test_DQ():
+    DQref = full.init([
+        [ 0.18E-02, 0.28E-03, 0.28E-03],
+        [-0.88E-03, 0.17E-03, 0.22E-03],
+        [-0.88E-03, 0.22E-03, 0.17E-03]
+        ])
+
+    m = loprop.MolFrag(tmpdir, maxl=0, pol=False)
+    m.pol()
+    dQa = m.dQab.sum(axis=2).view(full.matrix).T
+    print dQa
+
+    print "DQref", DQref, DQref.sum(axis=0), DQref.sum(axis=1)
+    assert False
+
 
 def test_polarizability_total():
     m = loprop.MolFrag(tmpdir, maxl=0, pol=True)
