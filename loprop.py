@@ -510,7 +510,8 @@ class MolFrag:
 #                ij+=1
 #       self.QUN = qn
 
-    def penalty_function(self, alpha=2):
+
+    def set_Fab(self, alpha=2, shift=None):
         """Penalty function"""
         Fab = full.matrix((self.noa, self.noa))
         for a in range(self.noa):
@@ -524,7 +525,13 @@ class MolFrag:
                 Fab[b, a] = Fab[a, b]
         for a in range(self.noa):
             Fab[a, a] += - Fab[a, :].sum()
+        if shift:
+            Fab += shift(Fab)
         self.Fab = Fab
+
+    def set_la(self):
+        dQa = self.dQab.sum(axis=2).view(full.matrix).T
+        self.la = dQa/self.Fab
 
     def pol(self, debug=False):
         D = self.D
@@ -579,7 +586,7 @@ class MolFrag:
             for j in range(3):
                for a in range(noa):
                   for b in range(noa):
-                     Aab[i,j,a,b]=-(
+                     Aab[i,j,a,b]= (
                         xlopsb[i].subblock[a][b]&
                         Dklopsb[j].subblock[a][b]
                         ) - dQab[j, a, b]*Rab[a,b,i]
