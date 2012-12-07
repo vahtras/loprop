@@ -15,19 +15,38 @@ rbs=numpy.array([0,
       1.45, 1.05, 0.85, 0.70, 0.65, 0.60, 0.50, 0.45
       ])*angtx
 
+def penalty_function(*args, **kwargs):
+    """Inverse half of penalty function defined in Gagliardi"""
+    Za, Ra, Zb, Rb = args
+    alpha = kwargs['alpha']
+
+    from math import exp
+    ra = rbs[int(round(Za))]
+    rb = rbs[int(round(Zb))]
+
+    xa, ya, za = Ra
+    xb, yb, zb = Rb
+    rab2 = (xa - xb)**2 + (ya - yb)**2 + (za - zb)**2
+
+    f = 0.5*exp(-alpha*(rab2/(ra+rb)**2))
+    return f
+
+
 def header(str):
     border='-'*len(str)
     print "\n%s\n%s\n%s"%(border,str,border)
+
 
 class MolFrag:
     """An instance of the MolFrag class is created and populated with
     data from a Dalton runtime scratch directory"""
 
-    def __init__(self, tmpdir, gc=None, maxl=2, pol=False, debug=False):
+    def __init__(self, tmpdir, pf=penalty_function, gc=None, maxl=2, pol=False, debug=False):
         """Constructur of MolFrac class objects
         input: tmpdir, scratch directory of Dalton calculation
         """
         self.tmpdir = tmpdir
+        self.pf = pf
         self.gc = full.init(gc)
         #
         # Dalton files
@@ -37,21 +56,28 @@ class MolFrag:
         self.sirifc = os.path.join(tmpdir,'SIRIFC')
 
         self._S = None
+        self._T = None
+        self._D = None
+        self._Dk = None
         self.get_basis_info()
         #self.get_overlap()
         self.get_isordk()
-        self.get_density()
-        self.transformation()
+        #self.get_density()
+        #self.transformation()
+        self._x = None
 
-        self.Qab = None
-        self.Dab = None
-        self.QUab = None
-        self.QUN = None
-        self.Aab = None
-        if maxl >= 0: self.charge()
-        if maxl >= 1: self.dipole()
-        if maxl >= 2: self.quadrupole()
-        if pol: self.pol()
+        self._Qab = None
+        self._Dab = None
+        self._QUab = None
+        self._QUN = None
+        self._dQa = None
+        self._dQab = None
+        self._Fab = None
+        self._Aab = None
+        #if maxl >= 0: self.charge()
+        #if maxl >= 1: self.dipole()
+        #if maxl >= 2: self.quadrupole()
+        #if pol: self.pol()
 
     def get_basis_info(self, debug=False):
         """ Obtain basis set info from DALTON.BAS """
@@ -131,12 +157,15 @@ class MolFrag:
         """ 
         Density from SIRIFC 
         """
-        Di, Dv = dens.ifc(filename=self.sirifc)
-        self.D = Di + Dv
-        if debug:
-            print "main:Di",Di
-            print "main:Dv",Dv
-            print "main:D&S",D&S
+        if self._D is None:
+            Di, Dv = dens.ifc(filename=self.sirifc)
+            self._D = Di + Dv
+            if debug:
+                print "main:Di",Di
+                print "main:Dv",Dv
+                print "main:D&S",D&S
+        return self._D
+    D = property(fget=get_density)
 
 
     def transformation(self, debug=False):
@@ -154,6 +183,8 @@ class MolFrag:
                occupied per atom (nested list)
         Returns: transformation matrix T
                  such that T+ST = 1 (unit) """
+
+        if self._T is not None: return self._T
 
         S = self.S
         cpa = self.cpa
@@ -338,58 +369,69 @@ class MolFrag:
            print t2
            print t3
            print t4
-        self.T = T
+        self._T = T
+        return self._T
+
+    T = property(fget=transformation)
 
     def charge(self,debug=False):
-       S = self.S
-       D = self.D
-       T = self.T
-       cpa = self.cpa
        
-       """Input: 
-             overlap S, 
-             density D, 
-             transformation T,
-             contracted per atom cpa (list)
-          Returns:
-             matrix with atomic and bond charges
-             for an loprop transformation T this is diagonal
-       """
-       #
-       Ti=T.I
-       if debug:
-          print "charge:Inverse transformation",Ti
-       if 1:
-          Slop=T.T*S*T
-          Dlop=Ti*D*Ti.T
-       elif 0: #dumb tests
-          Slop=T.T*S*T
-          Dlop=Ti*D*T
-       else: #in loprop article
-          Slop=Ti*S*T
-          Dlop=Ti*D*T
-       if debug:
-          print "charge:Slop",Slop
-          print "charge:Dlop",Dlop
-          print "charge:Dlop&Slop",Dlop&Slop
-          #print "charge:Dlop",Dlop
-       Slopsb=Slop.subblocked(cpa,cpa)
-       Dlopsb=Dlop.subblocked(cpa,cpa)
-       if debug:
-          print "charge:Slopsb",Slopsb
-          print "charge:Dlopsb",Dlopsb
-       noa=len(cpa)
-       qa=full.matrix((noa,noa))
-       for a in range(noa):
-          qa[a,a]=Slopsb.subblock[a][a]&Dlopsb.subblock[a][a]
-          if debug:
-              for b in range(a):
-                  qa[a,b]=Slopsb.subblock[a][b]&Dlopsb.subblock[a][b]
-                  qa[b,a]=Slopsb.subblock[b][a]&Dlopsb.subblock[b][a]
-       self.Qab = -qa
+        if self._Qab is not None: return self._Qab
 
+        S = self.S
+        D = self.D
+        T = self.T
+        cpa = self.cpa
+        
+        """Input: 
+              overlap S, 
+              density D, 
+              transformation T,
+              contracted per atom cpa (list)
+           Returns:
+              matrix with atomic and bond charges
+              for an loprop transformation T this is diagonal
+        """
+        #
+        Ti=T.I
+        if debug:
+           print "charge:Inverse transformation",Ti
+        if 1:
+           Slop=T.T*S*T
+           Dlop=Ti*D*Ti.T
+        elif 0: #dumb tests
+           Slop=T.T*S*T
+           Dlop=Ti*D*T
+        else: #in loprop article
+           Slop=Ti*S*T
+           Dlop=Ti*D*T
+        if debug:
+           print "charge:Slop",Slop
+           print "charge:Dlop",Dlop
+           print "charge:Dlop&Slop",Dlop&Slop
+           #print "charge:Dlop",Dlop
+        Slopsb=Slop.subblocked(cpa,cpa)
+        Dlopsb=Dlop.subblocked(cpa,cpa)
+        if debug:
+           print "charge:Slopsb",Slopsb
+           print "charge:Dlopsb",Dlopsb
+        noa=len(cpa)
+        qa=full.matrix((noa,noa))
+        for a in range(noa):
+           qa[a,a]=Slopsb.subblock[a][a]&Dlopsb.subblock[a][a]
+           if debug:
+               for b in range(a):
+                   qa[a,b]=Slopsb.subblock[a][b]&Dlopsb.subblock[a][b]
+                   qa[b,a]=Slopsb.subblock[b][a]&Dlopsb.subblock[b][a]
+        self._Qab = -qa
+        return self._Qab
+
+    Qab = property(fget=charge)
 
     def dipole(self, debug=False):
+
+        if self._Dab is not None: return self._Dab
+
         D = self.D
         T = self.T
         cpa = self.cpa
@@ -427,9 +469,14 @@ class MolFrag:
         if debug:
            print "dipole:dab",dab
         
-        self.Dab = dab
+        self._Dab = dab
+        return self._Dab
+
+    Dab = property(fget=dipole)
 
     def quadrupole(self, debug=False):
+
+        if self._QUab is not None: return self._QUab
 
         D = self.D
         T = self.T
@@ -484,7 +531,7 @@ class MolFrag:
                     ij+=1
         QUab=rrab-rRab-RRab
         #print "rrab", rrab
-        self.QUab = QUab
+        self._QUab = QUab
         #
         # Addition term - gauge correction summing up bonds
         #
@@ -508,58 +555,156 @@ class MolFrag:
             print "dQUsum",dQUsum
             print "Electronic quadrupole moment by atomic domain, summed(B): Q(A,B)",QUaa+dQUaa
         self.dQUab = - dQUab
-#
-# Nuclear contribution to quadrupole
-#
-#       qn=full.matrix(6)
-#       for a in range(len(Z)):
-#          ij=0
-#          for i in range(3):
-#             for j in range(i,3):
-#                qn[ij]+=Z[a]*(R[a,i]-Rc[i])*(R[a,j]-Rc[j])
-#                ij+=1
-#       self.QUN = qn
+
+        return self._QUab
+
+    QUab = property(fget=quadrupole)
+
+    def nuclear_quadrupole(self):
+        """Nuclear contribution to quadrupole"""
+        qn=full.matrix(6)
+        Z = self.Z
+        R = self.R
+        Rc = self.Rc
+        for a in range(len(Z)):
+           ij=0
+           for i in range(3):
+              for j in range(i,3):
+                 qn[ij]+=Z[a]*(R[a,i]-Rc[i])*(R[a,j]-Rc[j])
+                 ij+=1
+        self._QUN = qn
+
+    QUN = property(fget=nuclear_quadrupole)
 
 
-    def set_Fab(self, alpha=2, shift=None):
+    def get_Fab(self):
         """Penalty function"""
+        if self._Fab is not None: return self._Fab
+
         Fab = full.matrix((self.noa, self.noa))
         for a in range(self.noa):
-            ra = rbs[int(self.Z[a])]
+            Za = self.Z[a]
+            Ra = self.R[a]
             for b in range(a):
-                rb = rbs[int(self.Z[b])]
-                rab = 2*self.dRab[a, b].norm2()
-                Fab[a, b] = 0.5*math.exp(
-                    -alpha*(rab/(ra+rb))**2
-                    )
+                Zb = self.Z[b]
+                Rb = self.R[b]
+                Fab[a, b] = self.pf(Za, Ra, Zb, Rb)
                 Fab[b, a] = Fab[a, b]
         for a in range(self.noa):
             Fab[a, a] += - Fab[a, :].sum()
-        if shift:
-            Fab += shift(Fab)
-        self.Fab = Fab
+        self._Fab = Fab
+        return self._Fab
+    Fab = property(fget=get_Fab)
 
-    def set_la(self):
-        dQa = self.dQab.sum(axis=2).view(full.matrix).T
+    def set_la(self, mc=False):
+        #
+        # The shift should satisfy
+        #   sum(a) sum(b) (F(a,b) + C)l(b) = sum(a) dq(a) = 0
+        #
+        if mc:
+            C = 2*np.max(np.abs(self.Fab))
+        else:
+            C = 0 # for now
+        dQa = m.dQa
         self.la = dQa/self.Fab
 
-    def pol(self, debug=False):
+    def get_linear_response_density(self):
+        """Read perturbed densities"""
+
+        if self._Dk is None:
+            lab = ['XDIPLEN', "YDIPLEN", "ZDIPLEN"]
+            prp=os.path.join(self.tmpdir,"AOPROPER")
+            Dk = []
+            for l in lab:
+                Dk.append(-lr.Dk(l, tmpdir=self.tmpdir))
+            self._Dk = Dk
+
+        return self._Dk
+
+    Dk = property(fget=get_linear_response_density)
+
+    def get_dipole_property(self):
+        """Read dipole matrices """
+
+        if self._x is None:
+            lab = ['XDIPLEN', "YDIPLEN", "ZDIPLEN"]
+            prp=os.path.join(self.tmpdir,"AOPROPER")
+            x = []
+            for l in lab:
+                x.append(prop.read(self.nbf, l, prp).unpack())
+            self._x = x
+
+        return self._x
+
+    x = property(fget=get_linear_response_density)
+        
+    def get_dQa(self):
+
+        if self._dQa is not None: return self._dQa
+
+        S = self.S
+        T = self.T
+        cpa = self.cpa
+        noa = self.noa
+
+        Dk = self.Dk
+        Dklop = []
+        for d in Dk:
+           Dklop.append(T.I*d*T.I.T)
+
+        Dklopsb=[]
+        for d in Dklop:
+            Dklopsb.append(d.subblocked(cpa, cpa))
+
+        Slop = T.T*S*T
+        Slopsb = Slop.subblocked(cpa, cpa)
+
+        dQa = full.matrix((noa, 3))
+        for a in range(noa):
+            for i in range(3):
+                dQa[a, i] = \
+              - Slopsb.subblock[a][a]&Dklopsb[i].subblock[a][a]
+        self._dQa = dQa
+        return self._dQa
+
+    dQa = property(fget = get_dQa)
+
+    def get_dQab(self):
+        if self._dQab is not None: return self._dQab
+
+        dQa = self.dQa
+        la = self.dQa/self.Fab
+
+        dQab = full.matrix(noa, noa, 3)
+        for field in range(3):
+            for a in range(noa):
+                ra = rbs[int(self.Z[a])]
+                for b in range(a):
+                    rb = rbs[int(self.Z[b])]
+                    dQab[a, b, field] = - 0.5 * \
+                        (la[a, field]-la[b, field]) * \
+                        math.exp(-alpha*(rab/(ra+rb))**2)
+                    dQab[b, a, field] = -dQab[a, b, field]
+
+        self._dQab = dQab
+        return self._dQab
+
+
+    dQab = property(fget = get_dQab)
+
+    def get_Aab(self, debug=False):
+
+        if self._Aab is not None: return self._Aab
+
         D = self.D
+        Dk = self.Dk
         T = self.T
         cpa = self.cpa
         Z = self.Z
         Rab = self.Rab
         Qab = self.Qab
+        x = self.x
 
-        #Read dipole matrices and perturbed densities
-        lab = ['XDIPLEN', "YDIPLEN", "ZDIPLEN"]
-        prp=os.path.join(self.tmpdir,"AOPROPER")
-        x=[]
-        Dk = []
-        for l in lab:
-            x.append(prop.read(self.nbf, l, prp).unpack())
-            Dk.append(-lr.Dk(l, tmpdir=self.tmpdir))
-       
         #Transform property/density to loprop basis
         xlop=[]
         Dklop = []
@@ -579,19 +724,12 @@ class MolFrag:
            
         noa=len(cpa)
         Aab=full.matrix((3, 3, noa,noa))
-        dQab = full.matrix((3, noa, noa))
-        for a in range(noa):
-            for b in range(noa):
-                for i in range(3):
-                    dQab[i, a, b] = \
-                  - Slopsb.subblock[a][b]&Dklopsb[i].subblock[a][b]
-        self.dQab = self.Qab
-        dQa = dQab.sum(axis=2).view(full.matrix)
-        dQ = dQa.sum(axis=1).view(full.matrix)
+
         if debug:
             print "full charge shift ", dQab
             print "atomic charge shift", dQa
             print "verify dQ=0", dQ
+
         for i in range(3):
             for j in range(3):
                for a in range(noa):
@@ -599,11 +737,12 @@ class MolFrag:
                      Aab[i,j,a,b]= (
                         xlopsb[i].subblock[a][b]&
                         Dklopsb[j].subblock[a][b]
-                        ) - dQab[j, a, b]*Rab[a,b,i]
-        if debug:
-           print "dipole:dab",dab
-        self.Aab = Aab
-        self.dQab = dQab
+                        ) 
+
+        self._Aab = Aab
+        return self._Aab
+
+    Aab = property(fget=get_Aab)
 
 
     def output_by_atom(self, fmt="%9.5f", bond_centers=False):
