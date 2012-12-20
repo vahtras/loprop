@@ -6,6 +6,11 @@ from util import full
 tmpdir=os.path.join('h2o', 'tmp')
 origin=[0., 0., 0.]
 
+# modify Gagliardi penalty function to include unit conversion bug
+from loprop import penalty_function, xtang
+mcpf = lambda *args : penalty_function(*args, alpha=2/xtang**2)
+mcsf = lambda Fab : 2*np.max(np.abs(Fab))
+
 def test_total_charge():
     m = loprop.MolFrag(tmpdir, maxl=0)
     print m.Qab
@@ -107,9 +112,6 @@ def test_quadrupole_nobonds():
     print QUref, QUaa, QUref-QUaa
     assert np.allclose(QUref, QUaa, atol=1e-5)
 
-# modify Gagliardi penalty function to include unit conversion bug
-from loprop import penalty_function, xtang
-mcpf = lambda *args : penalty_function(*args, alpha=2/xtang**2)
 
 def test_Fab():
     Fabref = full.init([
@@ -134,7 +136,8 @@ def test_molcas_shift():
 
     m = loprop.MolFrag(tmpdir, pf=mcpf)
     Fab = m.Fab
-    Lab = Fab + 2*np.max(np.abs(Fab))
+    #Lab = Fab + 2*np.max(np.abs(Fab))
+    Lab = Fab + mcsf(Fab)
 
     print Labref, Lab
     assert np.allclose(Labref, Lab, atol=1e-5, rtol=1e-2)
@@ -168,19 +171,40 @@ def test_atomic_charge_shift():
         [-8.70334858, -0.64832571, -0.64832571],
         [-8.70352581, -0.64823709, -0.64823709]
         ])
-    print dQaorig
     dQaref = dQaorig[:,1:7:2]
     dQaref -= dQaorig[:,2:7:2]
     dQaref /= 2*ff
 
     print dQaref, dQa 
-    assert True# np.allclose(dQaref, dQa)
+    assert np.allclose(dQaref, dQa, atol=0.003)
+
+def test_lagrangian():
+# values per "perturbation" as in atomic_charge_shift below
+    ff = 0.00005
+    laorig = full.init([
+    [0.00522380, -1.36429263,  1.35906884],
+    [0.00522422,  1.35991888,-1.36514311],
+    [0.00516952, -0.00761407, 0.00244456],
+    [0.00517199, -0.00252856,-0.00264343],
+    [0.53992933, -0.26996495,-0.26996438],
+    [-0.52910812,  0.26455406, 0.26455406]
+      ])
+    laref = laorig[:,0:6:2]
+    laref -= laorig[:,1:6:2]
+    laref /= 2*ff
+#...>
+    m = loprop.MolFrag(tmpdir, pf=mcpf, sf=mcsf)
+    la = m.la
+
+    print laref, la
+    assert np.allclose(laref, la, atol=100)
 
 def test_bond_charge_shift():
-    m = loprop.MolFrag(tmpdir)
+    m = loprop.MolFrag(tmpdir, pf=mcpf, sf=mcsf)
 
     ff = 0.00005
     dQab = m.dQab
+    #print dQab
     dQaborig = full.init([
         [ 0.00000000,  0.00000000,  0.00000000],
         [ 0.00007568, -0.00007482,  0.00000000],
@@ -195,67 +219,35 @@ def test_bond_charge_shift():
     dQabref -= dQaborig[:, 2:7:2]
     dQabref /= (2*ff)
     
-    print dQabref, dQab
-    np.allclose(dQabref, dQab)
+    dQabcmp = full.matrix((3, 3))
+    #from pdb import set_trace; set_trace()
+    #print dQabcmp
+    ij = 0
+    for i in range(3):
+        for j in range(i):
+            dQabcmp[ij, :] = dQab[i, j, :]
+            ij += 1
 
-def test_lagrangian():
-# values per "perturbation" as in atomic_charge_shift below
-    ff = 0.001
-    laorig = full.init([
-      [  0.0392366, -27.2474016,  27.2081650  ],
-      [  0.0358964,  27.2214515, -27.2573479  ],
-      [  0.01211180, -0.04775576,  0.03564396 ],
-      [  0.01210615, -0.00594030, -0.00616584 ],
-      [ 10.69975088, -5.34987556, -5.34987532 ],
-      [-10.6565582,   5.3282791,   5.3282791  ],
-      ])
-    laref = laorig[:,0:6:2]
-    laref -= laorig[:,1:6:2]
-    laref /= 2*ff
-#...>
-    m = loprop.MolFrag(tmpdir, pol=True)
-    m.set_Fab(alpha=2/loprop.xtang**2, shift=molcas_shift)
-    m.set_la()
+    print dQabref, dQabcmp
+    assert np.allclose(dQabref, dQabcmp, atol=0.005)
 
-    #dQa = m.dQab.sum(axis=2).view(full.matrix).T
-    #la = dQa/m.Fab
-    #print dQa, m.Fab
-    print laref, m.la
-    #assert np.allclose(laref, la, rtol=1e-3, atol=1e-3)
-
-def test_DQ():
-    DQref = full.init([
-        [ 0.18E-02, 0.28E-03, 0.28E-03],
-        [-0.88E-03, 0.17E-03, 0.22E-03],
-        [-0.88E-03, 0.22E-03, 0.17E-03]
-        ])
-
-    m = loprop.MolFrag(tmpdir, maxl=0, pol=False)
-    dQab = m.dQab
-    dQa = dQab.sum(axis=2).view(full.matrix).T
-    print "dQa", dQa
-    print "DQref", DQref
-    assert False
-
+def test_bond_charge_shift_sum():
+    m = loprop.MolFrag(tmpdir, pf=mcpf, sf=mcsf)
+    dQaref = m.dQa
+    dQa  = m.dQab.sum(axis=1).view(full.matrix)
+    print dQaref, dQa
+    assert np.allclose(dQaref, dQa)
 
 def test_polarizability_total():
-    m = loprop.MolFrag(tmpdir, maxl=0, pol=True)
-    Aref = [8.186766009140, 0., 5.102747935447, 0., 0., 6.565131856389]
-    # symmetrize over components
-    A = full.matrix((6, m.noa, m.noa))
-    for a in range(m.noa):
-        for b in range(m.noa):
-            ij = 0
-            for i in range(3):
-                for j in range(i):
-                    A[ij, a, b] = .5*(m.Aab[i, j, a, b] + m.Aab[j, i, a, b])
-                    A[ij, a, b] += .5*(m.dQab[i, a, b]*m.Rab[a, b, j]
-                                     + m.dQab[j, a, b]*m.Rab[a, b, i])
-                    ij += 1
-                A[ij, a, b] = m.Aab[i, i, a, b] 
-                A[ij, a, b] += m.dQab[ i, a, b] *m.Rab[a, b, i]
-                ij += 1
-    Am = A.sum(axis=2).sum(axis=1).view(full.matrix)
+    Aref = [[8.186766009140, 0., 0.], 
+            [0., 5.102747935447, 0.], 
+            [0., 0., 6.565131856389]]
+
+    m = loprop.MolFrag(tmpdir, pf=mcpf, sf=mcsf)
+    Aab = m.Aab
+    noa = m.noa
+    
+    Am = Aab.sum(axis=3).sum(axis=2).view(full.matrix)
     print Am, Aref
     assert np.allclose(Am, Aref)
         
@@ -356,4 +348,5 @@ def zest_polarizability_nobonds():
 
 
 if __name__ == "__main__":
-    test_polarizability_total()
+    from pdb import set_trace; set_trace()
+    test_bond_charge_shift_sum()

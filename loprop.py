@@ -15,10 +15,8 @@ rbs=numpy.array([0,
       1.45, 1.05, 0.85, 0.70, 0.65, 0.60, 0.50, 0.45
       ])*angtx
 
-def penalty_function(*args, **kwargs):
+def penalty_function(Za, Ra, Zb, Rb, alpha=2):
     """Inverse half of penalty function defined in Gagliardi"""
-    Za, Ra, Zb, Rb = args
-    alpha = kwargs['alpha']
 
     from math import exp
     ra = rbs[int(round(Za))]
@@ -31,6 +29,8 @@ def penalty_function(*args, **kwargs):
     f = 0.5*exp(-alpha*(rab2/(ra+rb)**2))
     return f
 
+def shift_function(*args):
+    return 0
 
 def header(str):
     border='-'*len(str)
@@ -41,12 +41,13 @@ class MolFrag:
     """An instance of the MolFrag class is created and populated with
     data from a Dalton runtime scratch directory"""
 
-    def __init__(self, tmpdir, pf=penalty_function, gc=None, maxl=2, pol=False, debug=False):
+    def __init__(self, tmpdir, pf=penalty_function, sf=shift_function, gc=None, maxl=2, pol=False, debug=False):
         """Constructur of MolFrac class objects
         input: tmpdir, scratch directory of Dalton calculation
         """
         self.tmpdir = tmpdir
         self.pf = pf
+        self.sf = sf
         self.gc = full.init(gc)
         #
         # Dalton files
@@ -73,6 +74,7 @@ class MolFrag:
         self._dQa = None
         self._dQab = None
         self._Fab = None
+        self._la = None
         self._Aab = None
         #if maxl >= 0: self.charge()
         #if maxl >= 1: self.dipole()
@@ -577,7 +579,7 @@ class MolFrag:
     QUN = property(fget=nuclear_quadrupole)
 
 
-    def get_Fab(self):
+    def get_Fab(self, **kwargs):
         """Penalty function"""
         if self._Fab is not None: return self._Fab
 
@@ -588,7 +590,7 @@ class MolFrag:
             for b in range(a):
                 Zb = self.Z[b]
                 Rb = self.R[b]
-                Fab[a, b] = self.pf(Za, Ra, Zb, Rb)
+                Fab[a, b] = self.pf(Za, Ra, Zb, Rb, **kwargs)
                 Fab[b, a] = Fab[a, b]
         for a in range(self.noa):
             Fab[a, a] += - Fab[a, :].sum()
@@ -596,17 +598,22 @@ class MolFrag:
         return self._Fab
     Fab = property(fget=get_Fab)
 
-    def set_la(self, mc=False):
+    def get_la(self):
         #
         # The shift should satisfy
         #   sum(a) sum(b) (F(a,b) + C)l(b) = sum(a) dq(a) = 0
+        # =>sum(a, b) F(a, b) + N*C*sum(b) l(b) = 0
+        # => C = -sum(a, b)F(a,b) / sum(b)l(b)
         #
-        if mc:
-            C = 2*np.max(np.abs(self.Fab))
-        else:
-            C = 0 # for now
-        dQa = m.dQa
-        self.la = dQa/self.Fab
+
+        if self._la is not None: return self._la
+        #
+        dQa = self.dQa
+        Fab = self.Fab
+        Lab = Fab + self.sf(Fab)
+        self._la = dQa/Lab
+        return self._la
+    la = property(fget=get_la)
 
     def get_linear_response_density(self):
         """Read perturbed densities"""
@@ -673,17 +680,22 @@ class MolFrag:
         if self._dQab is not None: return self._dQab
 
         dQa = self.dQa
-        la = self.dQa/self.Fab
+        #la = self.dQa/self.Fab
+        la = self.la
+        noa = self.noa
 
-        dQab = full.matrix(noa, noa, 3)
+        dQab = full.matrix((noa, noa, 3))
+        #from pdb import set_trace; set_trace()
         for field in range(3):
             for a in range(noa):
-                ra = rbs[int(self.Z[a])]
+                Za = self.Z[a]
+                Ra = self.R[a]
                 for b in range(a):
-                    rb = rbs[int(self.Z[b])]
-                    dQab[a, b, field] = - 0.5 * \
-                        (la[a, field]-la[b, field]) * \
-                        math.exp(-alpha*(rab/(ra+rb))**2)
+                    Zb = self.Z[b]
+                    Rb = self.R[b]
+                    dQab[a, b, field] =  \
+                        - (la[a, field]-la[b, field]) * \
+                        self.pf(Za, Ra, Zb, Rb)
                     dQab[b, a, field] = -dQab[a, b, field]
 
         self._dQab = dQab
