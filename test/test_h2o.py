@@ -239,9 +239,11 @@ def test_bond_charge_shift_sum():
     assert np.allclose(dQaref, dQa)
 
 def test_polarizability_total():
-    Aref = [[8.186766009140, 0., 0.], 
+    Aref = full.init(
+            [[8.186766009140, 0., 0.], 
             [0., 5.102747935447, 0.], 
-            [0., 0., 6.565131856389]]
+            [0., 0., 6.565131856389]
+            ])
 
     m = loprop.MolFrag(tmpdir, pf=mcpf, sf=mcsf)
     Aab = m.Aab
@@ -253,7 +255,7 @@ def test_polarizability_total():
         
 
 def test_polarizability_allbonds():
-    M = loprop.MolFrag(tmpdir, pol=True)
+    m = loprop.MolFrag(tmpdir, pf=mcpf, sf=mcsf)
 
     O = [
     0.76145382,
@@ -291,18 +293,27 @@ def test_polarizability_allbonds():
 
 
     Aref = full.init([O, H1O, H1, H2O, H2H1, H2])
-    #double symmetrize to match
-    Asym=full.matrix(Aref.shape)
-    #a > b, i>j
+    Aab = m.Aab 
+    noa = m.noa
+    dRab = 2*m.dRab
+    dQab = m.dQab
+
+    #Bond shift contribution
+    for a in range(noa):
+        for b in range(noa):
+            Aab[:, :, a, b] += dRab[a, b].x(dQab[a, b, :])
+    
+    Acmp=full.matrix(Aref.shape)
+    
     ab = 0
     for a in range(3):
         for b in range(a):
-            Asym[:, ab] = (M.Aab[:, :, a, b] + M.Aab[:, :, b, a]).pack()
+            Acmp[:, ab] = (Aab[:, :, a, b] + Aab[:, :, b, a]).pack()
             ab += 1
-        Asym[:, ab] = M.Aab[:, :, a, a].pack()
+        Acmp[:, ab] = Aab[:, :, a, a].pack()
         ab += 1
-    print Aref, Asym, Aref - Asym
-    assert np.allclose(Aref, Asym, atol=1e-5)
+    print Aref, Acmp
+    assert np.allclose(Aref, Acmp, atol=1e-5)
     
 
 def zest_polarizability_nobonds():
@@ -349,4 +360,5 @@ def zest_polarizability_nobonds():
 
 if __name__ == "__main__":
     from pdb import set_trace; set_trace()
-    test_bond_charge_shift_sum()
+    test_total_dipole()
+    test_polarizability_total()

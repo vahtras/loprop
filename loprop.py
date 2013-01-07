@@ -454,6 +454,7 @@ class MolFrag:
            xlopsb.append(xlop[i].subblocked(cpa,cpa))
            if debug:
               print "dipole:",lab[i],xlopsb[i]
+        #from pdb import set_trace; set_trace()
         Ti=T.I
         Dlop=Ti*D*Ti.T
         Dlopsb=Dlop.subblocked(cpa,cpa)
@@ -643,7 +644,7 @@ class MolFrag:
 
         return self._x
 
-    x = property(fget=get_linear_response_density)
+    x = property(fget=get_dipole_property)
         
     def get_dQa(self):
 
@@ -708,6 +709,7 @@ class MolFrag:
 
         if self._Aab is not None: return self._Aab
 
+        #from pdb import set_trace; set_trace()
         D = self.D
         Dk = self.Dk
         T = self.T
@@ -715,6 +717,7 @@ class MolFrag:
         Z = self.Z
         Rab = self.Rab
         Qab = self.Qab
+        dQa = self.dQa
         x = self.x
 
         #Transform property/density to loprop basis
@@ -747,9 +750,9 @@ class MolFrag:
                for a in range(noa):
                   for b in range(noa):
                      Aab[i,j,a,b]= (
-                        xlopsb[i].subblock[a][b]&
-                        Dklopsb[j].subblock[a][b]
-                        ) 
+                        xlopsb[i].subblock[a][b]&Dklopsb[j].subblock[a][b]
+                        )
+                  Aab[i,j,a,a] += dQa[a, j]*Rab[a, a, i]
 
         self._Aab = Aab
         return self._Aab
