@@ -2,7 +2,7 @@
 #
 # Loprop model implementation (J. Chem. Phys. 121, 4494 (2004))
 #
-import os, sys, math, numpy
+import os, sys, math, numpy, pdb
 from daltools import one, mol, dens, prop, lr
 from util import full, blocked, subblocked, timing
 
@@ -48,7 +48,7 @@ class MolFrag:
         self.tmpdir = tmpdir
         self.pf = pf
         self.sf = sf
-        self.gc = full.init(gc)
+        self.gc = gc
         #
         # Dalton files
         #
@@ -76,6 +76,7 @@ class MolFrag:
         self._Fab = None
         self._la = None
         self._Aab = None
+        self._dAab = None
         #if maxl >= 0: self.charge()
         #if maxl >= 1: self.dipole()
         #if maxl >= 2: self.quadrupole()
@@ -752,13 +753,32 @@ class MolFrag:
                      Aab[i,j,a,b]= (
                         xlopsb[i].subblock[a][b]&Dklopsb[j].subblock[a][b]
                         )
-                  Aab[i,j,a,a] += dQa[a, j]*Rab[a, a, i]
+                  #Aab[i,j,a,a] += dQa[a, j]*Rab[a, a, i]
 
         self._Aab = Aab
         return self._Aab
 
     Aab = property(fget=get_Aab)
 
+    def get_dAab(self):
+        
+        if self._dAab is not None: return self._dAab
+
+        dQa = self.dQa
+        dQab = self.dQab
+        dRab = self.dRab
+        noa = self.noa
+        dAab = full.matrix((3, 3, noa, noa))
+        for a in range(noa):
+            for b in range(noa):
+                for i in range(3):
+                    for j in range(3):
+                        dAab[i, j, a, b] = 2*dRab[a, b, i]*dQab[a, b, j]
+                        #dAab[i, j, a, b] = dRab[a, b, i]*(dQa[a,  j] - dQa[b, j])
+        self._dAab = dAab
+        return self._dAab
+
+    dAab = property(fget=get_dAab)
 
     def output_by_atom(self, fmt="%9.5f", bond_centers=False):
         Qab = self.Qab
