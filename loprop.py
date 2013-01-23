@@ -746,6 +746,7 @@ class MolFrag:
             print "atomic charge shift", dQa
             print "verify dQ=0", dQ
 
+        # correction term for shifting origin from O to Rab
         for i in range(3):
             for j in range(3):
                for a in range(noa):
@@ -753,7 +754,7 @@ class MolFrag:
                      Aab[i,j,a,b]= (
                         xlopsb[i].subblock[a][b]&Dklopsb[j].subblock[a][b]
                         )
-                  #Aab[i,j,a,a] += dQa[a, j]*Rab[a, a, i]
+                  Aab[i,j,a,a] += dQa[a, j]*Rab[a, a, i]
 
         self._Aab = Aab
         return self._Aab
