@@ -117,14 +117,11 @@ rMP = full.init([
 def test_default_gauge():
     m = loprop.MolFrag(tmpdir)
     Rcref = full.init([0.00000000,  0.00000000,  0.48860959])
-    print Rcref
-    print m.Rc
-    assert np.allclose(Rcref, m.Rc)
+    assert_(Rcref, m.Rc)
 
 def test_total_charge():
     m = loprop.MolFrag(tmpdir, maxl=0)
-    print m.Qab
-    assert np.allclose(m.Qab.sum(), -10.0)
+    assert_(m.Qab.sum(), -10.0)
 
 def test_charge():
     M = loprop.MolFrag(tmpdir, maxl=0)
@@ -279,8 +276,13 @@ def test_atomic_charge_shift():
         [-8.70334858, -0.64832571, -0.64832571],
         [-8.70352581, -0.64823709, -0.64823709]
         ])
-    dQaref = dQaorig[:,1:7:2]
-    dQaref -= dQaorig[:,2:7:2]
+    dQaorig = rMP[0, :, (0,2,5)]; ff=0.001
+# sign headaches:
+# normally ff calc complements h1 with f*op (field times operator)
+# if integrals are <z> the interaction hamiltonian is really -f*<z>
+# so dQ/df = (Q[-f<z>] - Q[f<z>])/(2f)
+    dQaref = dQaorig[:,2:7:2]
+    dQaref -= dQaorig[:,1:7:2]
     dQaref /= 2*ff
 
     print dQaref, dQa 
@@ -310,6 +312,7 @@ def test_lagrangian():
 def test_bond_charge_shift():
     m = loprop.MolFrag(tmpdir, pf=mcpf, sf=mcsf)
     dQab = m.dQab
+    noa = m.noa
 
     ff = 0.001
     dQaborig = full.init([
@@ -321,6 +324,7 @@ def test_bond_charge_shift():
         [ 0.00088692,  0.00088692,  0.00000000],
         [-0.00088334, -0.00088334,  0.00000000]
         ])            
+    dQaborig = rMP[0, :, (1, 3, 4)]
 #   ff = 0.00005
 #   dQaborig = full.init([
 #       [ 0.00000000,  0.00000000,  0.00000000],
@@ -339,11 +343,11 @@ def test_bond_charge_shift():
     dQabcmp = full.matrix((3, 3))
     #from pdb import set_trace; set_trace()
     #print dQabcmp
-    ij = 0
-    for i in range(3):
-        for j in range(i):
-            dQabcmp[ij, :] = dQab[i, j, :]
-            ij += 1
+    ab = 0
+    for a in range(noa):
+        for b in range(a):
+            dQabcmp[ab, :] = dQab[a, b, :]
+            ab += 1
 
     print dQabref, dQabcmp
     assert np.allclose(dQabref, dQabcmp, atol=0.005)
@@ -501,7 +505,7 @@ def test_polarizability_allbonds_atoms():
 def test_polarizability_allbonds_bonds():
     m = loprop.MolFrag(tmpdir, pf=mcpf, sf=mcsf)
 
-    Aab = m.Aab + m.dAab
+    Aab = m.Aab - m.dAab/2
     noa = m.noa
 
     Acmp=full.matrix(Aref.shape)
@@ -514,8 +518,8 @@ def test_polarizability_allbonds_bonds():
         Acmp[:, ab] = Aab[:, :, a, a].pack()
         ab += 1
     # atoms
-    assert_(Aref[:, 1], Acmp[:, 1], .005, 'H1O')
-    assert_(Aref[:, 3], Acmp[:, 3], .005, 'H2O')
+    assert_(Aref[:, 1], Acmp[:, 1], .150, 'H1O')
+    assert_(Aref[:, 3], Acmp[:, 3], .150, 'H2O')
     assert_(Aref[:, 4], Acmp[:, 4], .005, 'H2H1')
     
 
