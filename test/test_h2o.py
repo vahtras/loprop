@@ -4,17 +4,17 @@ import loprop
 from util import full
 
 tmpdir=os.path.join('h2o', 'tmp')
-origin=[0., 0., 0.]
 
 # modify Gagliardi penalty function to include unit conversion bug
 from loprop import penalty_function, xtang
 mcpf = lambda *args : penalty_function(*args, alpha=2/xtang**2)
 mcsf = lambda Fab : 2*np.max(np.abs(Fab))
 
-def assert_(ref, here, atol=1e-5, text=None):
+def assert_(ref, this, atol=1e-5, text=None):
     if text: print text,
-    print ref, here
-    assert np.allclose(ref, here, atol=atol)
+    print ref, this
+    print "Max deviation", np.amax(ref - this)
+    assert np.allclose(ref, this, atol=atol)
 
 def pairs(n):
     li = []
@@ -224,15 +224,14 @@ def test_quadrupole_allbonds():
     assert_(QUref, QU)
 
 def test_quadrupole_nobonds():
-    M = loprop.MolFrag(tmpdir, maxl = 2)
+    M = loprop.MolFrag(tmpdir)
     O =  [-3.29253618, 0.00000000, 0.00000000, -4.54316657, 0.00000000, -4.00465380]
     H1 = [-0.13213704, 0.00000000, 0.24980518, -0.44463288, 0.00000000, -0.26059139]
     H2 = [-0.13213704, 0.00000000,-0.24980518, -0.44463288, 0.00000000, -0.26059139]
 
-
     QUref = full.init([O, H1, H2])
     QUaa = (M.QUab + M.dQUab).sum(axis=2).view(full.matrix)
-    assert_(QUref, QUaa, atol=1e-5)
+    assert_(QUref, QUaa)
 
 
 def test_Fab():
@@ -245,9 +244,7 @@ def test_Fab():
     m = loprop.MolFrag(tmpdir, pf=mcpf)
     Fab = m.Fab
 
-    
-    print Fabref, Fab
-    assert np.allclose(Fabref, Fab, atol=1e-6)
+    assert_(Fabref, Fab)
 
 def test_molcas_shift():
     Labref = full.init([
@@ -265,7 +262,6 @@ def test_molcas_shift():
 
 def test_total_charge_shift():
     m = loprop.MolFrag(tmpdir)
-    #m.pol()
     dQ = m.dQa.sum(axis=0).view(full.matrix)
     dQref = [0., 0., 0.]
     assert_(dQref, dQ)
@@ -278,19 +274,18 @@ def test_atomic_charge_shift():
     dQaref -= dQaorig[:, 2::2]
     dQaref /= 2*ff
 
-    assert_(dQaref, dQa, .005)
+    assert_(dQaref, dQa, 0.006)
 
 def test_lagrangian():
 # values per "perturbation" as in atomic_charge_shift below
-    ff = 0.00005
     laorig = full.init([
-    [0.00522380, -1.36429263,  1.35906884],
-    [0.00522422,  1.35991888,-1.36514311],
-    [0.00516952, -0.00761407, 0.00244456],
-    [0.00517199, -0.00252856,-0.00264343],
-    [0.53992933, -0.26996495,-0.26996438],
-    [-0.52910812,  0.26455406, 0.26455406]
-      ])
+    [0.0392366,-27.2474016 , 27.2081650],
+    [0.0358964, 27.2214515 ,-27.2573479],
+    [0.01211180, -0.04775576,  0.03564396],
+    [0.01210615, -0.00594030, -0.00616584],
+    [10.69975088, -5.34987556, -5.34987532],
+    [-10.6565582,  5.3282791 ,  5.3282791]
+    ])
     laref = laorig[:,0:6:2]
     laref -= laorig[:,1:6:2]
     laref /= 2*ff
@@ -299,6 +294,7 @@ def test_lagrangian():
     la = m.la
 
     print laref, la
+# The sign difference is because mocas sets up rhs with opposite sign
     assert np.allclose(-laref, la, atol=100)
 
 def test_bond_charge_shift():
@@ -306,42 +302,20 @@ def test_bond_charge_shift():
     dQab = m.dQab
     noa = m.noa
 
-    ff = 0.001
-    dQaborig = full.init([
-        [ 0.00000000,  0.00000000,  0.00000000],
-        [ 0.00150789, -0.00150139,  0.00000000],
-        [-0.00150230,  0.00150826,  0.00000000],
-        [ 0.00000331, -0.00000130,  0.00000000],
-        [ 0.00000100,  0.00000101,  0.00000000],
-        [ 0.00088692,  0.00088692,  0.00000000],
-        [-0.00088334, -0.00088334,  0.00000000]
-        ])            
     dQaborig = rMP[0, :, (1, 3, 4)]
-#   ff = 0.00005
-#   dQaborig = full.init([
-#       [ 0.00000000,  0.00000000,  0.00000000],
-#       [ 0.00007568, -0.00007482,  0.00000000],
-#       [-0.00007486,  0.00007573,  0.00000000],
-#       [ 0.00000071,  0.00000015,  0.00000000],
-#       [ 0.00000043,  0.00000043,  0.00000000],
-#       [ 0.00004476,  0.00004476,  0.00000000],
-#       [-0.00004386, -0.00004386,  0.00000000]
-#       ])            
 
     dQabref = dQaborig[:, 1:7:2]
     dQabref -= dQaborig[:, 2:7:2]
     dQabref /= (2*ff)
     
     dQabcmp = full.matrix((3, 3))
-    #print dQabcmp
     ab = 0
     for a in range(noa):
         for b in range(a):
             dQabcmp[ab, :] = dQab[a, b, :]
             ab += 1
 
-    print dQabref, dQabcmp
-    assert np.allclose(-dQabref, dQabcmp, atol=0.005)
+    assert_(-dQabref, dQabcmp, 0.006)
 
 def test_bond_charge_shift_sum():
     m = loprop.MolFrag(tmpdir, pf=mcpf, sf=mcsf)
@@ -368,10 +342,9 @@ def test_polarizability_total():
     for i in range(3):
         for j in range(3):
             for a in range(noa):
-                Am[i, j] -= Rab[a, a, i]*dQa[a, j]
+                Am[i, j] += Rab[a, a, i]*dQa[a, j]
 
-    print Am, Aref
-    assert np.allclose(-Am, Aref)
+    assert_(Am, Aref)
         
 def test_polarizability_allbonds_molcas_internal():
     m = loprop.MolFrag(tmpdir, pf=mcpf, sf=mcsf)
@@ -574,7 +547,6 @@ def test_altint():
                 pol[ab, ij] -= (R[a][i]-R[b][i])*(rMP[0, j1, ab] - rMP[0, j2, ab])/(2*ff)
             assert_(polref[ab][ij], pol[ab, ij], text="%s%s"%(ablab[ab], ijlab[ij]))
 
-
 def test_polarizability_allbonds_atoms():
     m = loprop.MolFrag(tmpdir, pf=mcpf, sf=mcsf)
 
@@ -591,14 +563,14 @@ def test_polarizability_allbonds_atoms():
         Acmp[:, ab] = Aab[:, :, a, a].pack()
         ab += 1
     # atoms
-    assert_(-Aref[:, 0], Acmp[:, 0], .005)
-    assert_(-Aref[:, 2], Acmp[:, 2], .005)
-    assert_(-Aref[:, 5], Acmp[:, 5], .005)
+    assert_(Aref[:, 0], Acmp[:, 0], .005)
+    assert_(Aref[:, 2], Acmp[:, 2], .005)
+    assert_(Aref[:, 5], Acmp[:, 5], .005)
 
 def test_polarizability_allbonds_bonds():
     m = loprop.MolFrag(tmpdir, pf=mcpf, sf=mcsf)
 
-    Aab = m.Aab - m.dAab/2
+    Aab = m.Aab + m.dAab/2
     noa = m.noa
 
     Acmp=full.matrix(Aref.shape)
@@ -611,9 +583,9 @@ def test_polarizability_allbonds_bonds():
         Acmp[:, ab] = Aab[:, :, a, a].pack()
         ab += 1
     # atoms
-    assert_(-Aref[:, 1], Acmp[:, 1], .150, 'H1O')
-    assert_(-Aref[:, 3], Acmp[:, 3], .150, 'H2O')
-    assert_(-Aref[:, 4], Acmp[:, 4], .005, 'H2H1')
+    assert_(Aref[:, 1], Acmp[:, 1], .150, 'H1O')
+    assert_(Aref[:, 3], Acmp[:, 3], .150, 'H2O')
+    assert_(Aref[:, 4], Acmp[:, 4], .005, 'H2H1')
     
 
 def nozest_polarizability_nobonds():

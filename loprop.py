@@ -752,9 +752,9 @@ class MolFrag:
                for a in range(noa):
                   for b in range(noa):
                      Aab[i,j,a,b]= (
-                        xlopsb[i].subblock[a][b]&Dklopsb[j].subblock[a][b]
+                        -xlopsb[i].subblock[a][b]&Dklopsb[j].subblock[a][b]
                         )
-                  Aab[i,j,a,a] += dQa[a, j]*Rab[a, a, i]
+                  Aab[i,j,a,a] -= dQa[a, j]*Rab[a, a, i]
 
         self._Aab = Aab
         return self._Aab
