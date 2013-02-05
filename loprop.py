@@ -462,8 +462,8 @@ class MolFrag:
         if debug:
            print "dipole:Dlopsb",Dlopsb
         noa=len(cpa)
-        dab=full.matrix((noa,noa,len(lab)))
-        for i in range(len(lab)):
+        dab=full.matrix((3, noa, noa))
+        for i in range(3):
            for a in range(noa):
               for b in range(noa):
                  dab[i,a,b]=-(
@@ -625,7 +625,7 @@ class MolFrag:
             prp=os.path.join(self.tmpdir,"AOPROPER")
             Dk = []
             for l in lab:
-                Dk.append(-lr.Dk(l, tmpdir=self.tmpdir))
+                Dk.append(lr.Dk(l, tmpdir=self.tmpdir))
             self._Dk = Dk
 
         return self._Dk
