@@ -1,0 +1,70 @@
+  ------------------------------------------------------------------------
+  01234567                                                                
+  890ABCDE                                                                
+  ------------------------------------------------------------------------
+Point group: C1 
+  Number of atom types :    2
+  Total number of atoms:    3
+
+  label    atoms   charge   prim   cont     basis
+  ----------------------------------------------------------------------
+  O           1    8.0000    26    14      [9s4p1d|3s2p1d]                                    
+  H2          2    1.0000     7     5      [4s1p|2s1p]                                        
+  total:      3   10.0000    40    24
+
+  Spherical harmonic basis used.
+
+ **********************************************************************
+ *SIRIUS* a direct, restricted step, second order MCSCF program       *
+ **********************************************************************
+
+ 
+     Date and time (Linux)  : Thu Jan 24 17:09:42 2013
+     Host name              : ubuntu                                  
+
+ Title lines from ".mol" input file:
+     01234567                                                                
+     890ABCDE                                                                
+
+ Print level on unit LUPRI =   2 is   0
+ Print level on unit LUW4  =   2 is   5
+
+     Restricted, closed shell Hartree-Fock calculation.
+
+     Time-dependent Hartree-Fock calculation (random phase approximation).
+
+
+ Initial molecular orbitals are obtained according to
+ ".MOSTART EWMO  " input option
+
+     Wave function specification
+     ============================
+     For the wave function of type :      >>> HF       <<<
+     Number of closed shell electrons          10
+     Number of electrons in active shells       0
+     Total charge of the molecule               0
+
+     Spin multiplicity and 2 M_S                1         0
+     Total number of symmetries                 1
+     Reference state symmetry                   1
+
+     Orbital specifications
+     ======================
+     Abelian symmetry species          All |    1
+                                       --- |  ---
+     Occupied SCF orbitals               5 |    5
+     Secondary orbitals                 19 |   19
+     Total number of orbitals           24 |   24
+     Number of basis functions          24 |   24
+
+     Optimization information
+     ========================
+     Number of configurations                 1
+     Number of orbital rotations             95
+     ------------------------------------------
+     Total number of variables               96
+
+     Maximum number of Fock   iterations      0
+     Maximum number of DIIS   iterations     60
+     Maximum number of QC-SCF iterations     60
+     Threshold for SCF convergence     1.00D-05
