@@ -3,7 +3,9 @@ import numpy as np
 import loprop
 from util import full
 
-tmpdir=os.path.join('h2o_rot', 'tmp')
+import re
+case = re.sub('test_', '', __name__)
+tmpdir=os.path.join(case, 'tmp')
 
 # modify Gagliardi penalty function to include unit conversion bug
 from loprop import penalty_function, xtang
@@ -25,7 +27,9 @@ def pairs(n):
             mn += 1
     return li
 
-from h2o_rot_data import Aref, ff, rMP
+from h2o_rot_data  \
+    import Aref, ff, rMP, Rref, Rcref, Dtotref, Daaref, QUcref, QUaaref, Fabref, Labref, \
+        laorig, Aaref, Amref
 
 def test_nuclear_charge():
     m = loprop.MolFrag(tmpdir)
@@ -36,16 +40,10 @@ def test_nuclear_charge():
 def test_coordinates_au():
     m = loprop.MolFrag(tmpdir)
     R = m.R
-    Rref = [
-        [-0.27439,  0.48018, -0.35773],
-        [-0.43275, -0.82090,  0.88874],
-        [ 0.98152, -0.13965, -1.50233]
-        ]
     assert_(Rref, R)
 
 def test_default_gauge():
     m = loprop.MolFrag(tmpdir)
-    Rcref = full.init([-0.16463294,   0.28808875,  -0.34753953])
     assert_(Rcref, m.Rc)
 
 def test_total_charge():
@@ -61,13 +59,12 @@ def test_charge():
 
 def test_total_dipole():
     m = loprop.MolFrag(tmpdir)
-    Dref = [0.40095611, -0.70174560, 0.03721264]
     # molecular dipole moment wrt gauge center gc
     Dtot = m.Dab.sum(axis=2).sum(axis=1).view(full.matrix)
     Qa = m.Qab.diagonal()
     Q = Qa.sum()
     Dtot += Qa*m.R - Q*m.Rc
-    assert_(Dtot, Dref)
+    assert_(Dtot, Dtotref)
 
 def test_dipole_allbonds():
     m = loprop.MolFrag(tmpdir)
@@ -82,16 +79,11 @@ def test_dipole_allbonds():
 
 def test_dipole_nobonds():
     m = loprop.MolFrag(tmpdir, maxl = 1) 
-    O =  [ 0.16803109,  -0.29408639,   0.01559623 ]
-    H1 = [ 0.01993698,   0.15310511,  -0.14837852 ]
-    H2 = [-0.14852716,   0.07195449,   0.13644124 ]
 
-    Dref = full.init([O, H1, H2])
     Daa = m.Dab.sum(axis=2).view(full.matrix)
-    assert_(Dref, Daa)
+    assert_(Daaref, Daa)
 
 def test_quadrupole_total():
-    QUref = full.init([-5.97224464, 0.24966841, 0.77110470, -6.17226877, 0.42783060,-6.57765870] )
     m = loprop.MolFrag(tmpdir)
     rrab=full.matrix((6, m.noa, m.noa))
     rRab=full.matrix((6, m.noa, m.noa))
@@ -111,8 +103,7 @@ def test_quadrupole_total():
                     ij += 1
     QUcab = m.QUab + rRab + RRab
     QUc = QUcab.sum(axis=2).sum(axis=1).view(full.matrix)
-    print "QUc", QUc, QUref
-    assert np.allclose(QUref, QUc)
+    assert_(QUcref, QUc)
     
 
 
@@ -128,21 +119,12 @@ def test_quadrupole_allbonds():
 
 def test_quadrupole_nobonds():
     M = loprop.MolFrag(tmpdir)
-    O =  [-3.94201869,  -0.09440612,  -0.46008896,  -3.88662892,  -0.24872405, -3.55263150 ]
-    H1 = [-0.44344604,   0.03059799,  -0.01783139,  -0.13501155,  -0.28237140, -0.18945131 ]
-    H2 = [-0.16524860,  -0.14585061,  -0.24009742,  -0.36955871,   0.13544768, -0.23311075 ]
 
-    QUref = full.init([O, H1, H2])
     QUaa = (M.QUab + M.dQUab).sum(axis=2).view(full.matrix)
-    assert_(QUref, QUaa)
+    assert_(QUaaref, QUaa)
 
 
 def test_Fab():
-    Fabref = full.init([
-        [-0.12E-03,  0.58E-04, 0.58E-04],
-        [ 0.58E-04, -0.58E-04, 0.19E-28],
-        [ 0.58E-04,  0.19E-28,-0.58E-04]
-        ])
 
     m = loprop.MolFrag(tmpdir, pf=mcpf)
     Fab = m.Fab
@@ -150,11 +132,6 @@ def test_Fab():
     assert_(Fabref, Fab)
 
 def test_molcas_shift():
-    Labref = full.init([
-        [0.12E-03, 0.29E-03, 0.29E-03],
-        [0.29E-03, 0.17E-03, 0.23E-03],
-        [0.29E-03, 0.23E-03, 0.17E-03]
-        ])
 
     m = loprop.MolFrag(tmpdir, pf=mcpf, sf=mcsf)
     Fab = m.Fab
@@ -181,14 +158,6 @@ def test_atomic_charge_shift():
 
 def test_lagrangian():
 # values per "perturbation" as in atomic_charge_shift below
-    laorig = full.init([
-    [-5.10951420, -10.14238550,  15.25189980],
-    [ 5.15832880,  10.18998130, -15.3483100],
-    [ 8.97693540, -10.67897570,   1.7020403],
-    [-8.92856407,  10.55769081,  -1.6291267],
-    [-0.42410210,  21.68234150, -21.2582394],
-    [ 0.54318080, -21.75839020,  21.2152094],
-    ])
 
     laref = laorig[:,0:6:2]
     laref -= laorig[:,1:6:2]
@@ -230,11 +199,6 @@ def test_bond_charge_shift_sum():
 
 
 def test_polarizability_total():
-    Aref = full.init([
-         [ 4.49289385,  -0.42772271, -1.56180915],
-         [-0.42772271,   4.80103940, -0.85729045],
-         [-1.56180915,  -0.85729045,  5.75132939]
-        ])
 
     m = loprop.MolFrag(tmpdir, pf=mcpf, sf=mcsf)
     dQa = m.dQa
@@ -248,13 +212,13 @@ def test_polarizability_total():
             for a in range(noa):
                 Am[i, j] += Rab[a, a, i]*dQa[a, j]
 
-    assert_(Am, Aref, 0.015)
+    assert_(Am, Amref, 0.15)
         
 def notest_polarizability_allbonds_molcas_internal():
     m = loprop.MolFrag(tmpdir, pf=mcpf, sf=mcsf)
     ff = .001
 
-# polarizabilities
+    from h2o_rot_data import O, H1O, H1, H2O, H2H1, H2
     RO, RH1, RH2 = m.R
 
     ihff = 1/(2*ff)
@@ -415,13 +379,13 @@ def test_altint():
 def test_polarizability_allbonds_atoms():
     m = loprop.MolFrag(tmpdir, pf=mcpf, sf=mcsf)
 
-    Aab = m.Aab + m.dAab
+    Aab = m.Aab #+ m.dAab
     noa = m.noa
 
     Acmp=full.matrix(Aref.shape)
     
     ab = 0
-    for a in range(3):
+    for a in range(noa):
         for b in range(a):
             Acmp[:, ab] = (Aab[:, :, a, b] + Aab[:, :, b, a]).pack()
             ab += 1
@@ -441,7 +405,7 @@ def test_polarizability_allbonds_bonds():
     Acmp=full.matrix(Aref.shape)
     
     ab = 0
-    for a in range(3):
+    for a in range(noa):
         for b in range(a):
             Acmp[:, ab] = (Aab[:, :, a, b] + Aab[:, :, b, a]).pack()
             ab += 1
@@ -453,46 +417,21 @@ def test_polarizability_allbonds_bonds():
     assert_(Aref[:, 4], Acmp[:, 4], .005, 'H2H1')
     
 
-def nozest_polarizability_nobonds():
-    M = loprop.MolFrag(tmpdir, pol=True)
-    O = [
-    3.87739525,
-    0.00018217, 3.00410918,
-    0.00010384, 0.00020122, 3.52546819
-    ]
+def test_polarizability_nobonds():
+    m = loprop.MolFrag(tmpdir, pf=mcpf, sf=mcsf)
 
-    H1 = [
-    2.15784091,
-    0.00023848, 1.05022368,
-    1.17177159, 0.00059985, 1.52065218
-    ]
+    Aab = m.Aab + m.dAab/2
+    noa = m.noa
 
-    H2 = [
-    2.15754005,
-    0.00023941,  1.05022240,
-   -1.17157425, -0.00087738,  1.52065217
-    ]
+    Acmp = full.matrix((6, noa ))
+    Aa = Aab.sum(axis=3).view(full.matrix)
+    
+    ab = 0
+    for a in range(noa):
+        Acmp[:, a,] = Aa[:, :, a].pack()
 
-    Aref = full.init([O, H1, H2])
-
-    Asym = full.matrix(Aref.shape)
-    #a > b, i>j
-    Aa = M.Aab.sum(axis=2).view(full.matrix)
-    for a in range(3):
-        Asym[:, a] = Aa[:,:,a].pack()
-    print Aref, Asym, Aref - Asym
-    assert np.allclose(Aref, Asym, atol=1e-5)
-
-    print M.Aab
-    Aaa = M.Aab.sum(axis=2).view(full.matrix)
-    #symmetry packed
-    Asp = full.matrix((6, 3))
-    for a in range(3):
-        Asp[:, a] = Aaa[a].pack()
-
-    print Aref, Asp, Aref-Asp
-    #assert np.allclose(Aref, Asp, atol=1e-5)
-    assert True
+    # atoms
+    assert_(Acmp, Aaref, 0.07)
 
 
 if __name__ == "__main__":
