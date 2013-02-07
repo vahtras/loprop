@@ -116,7 +116,6 @@ def test_quadrupole_nobonds():
 
 def test_Fab():
 
-    m = loprop.MolFrag(tmpdir, pf=mcpf)
     Fab = m.Fab
     assert_(Fab, ref.Fab)
 

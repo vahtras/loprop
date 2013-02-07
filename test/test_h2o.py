@@ -134,7 +134,7 @@ def test_atomic_charge_shift():
     dQa = m.dQa
     dQaref = (ref.dQa[:, 1::2] - ref.dQa[:, 2::2])/(2*ff)
 
-    assert_(dQa, dQaref, .0012)
+    assert_(dQa, dQaref, .006)
 
 def test_lagrangian():
 # values per "perturbation" as in atomic_charge_shift below
@@ -180,7 +180,7 @@ def test_polarizability_total():
             for a in range(noa):
                 Am[i, j] += Rab[a, a, i]*dQa[a, j]
 
-    assert_(Am, ref.Am)
+    assert_(Am, ref.Am, 0.015)
         
 def test_polarizability_allbonds_molcas_internal():
 
