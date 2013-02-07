@@ -219,100 +219,108 @@ def test_polarizability_allbonds_molcas_internal():
 
     from h2o_data import O, H1O, H1, H2O, H2H1, H2
     RO, RH1, RH2 = m.R
+    ROx, ROy, ROz = RO
+    RH1x, RH1y, RH1z = RH1
+    RH2x, RH2y, RH2z = RH2
+    
 
     ihff = 1/(2*ff)
 
-    Oxx = ihff*(rMP[1, 1, 0] - rMP[1, 2, 0])
-    Oyx = ihff*(rMP[2, 1, 0] - rMP[2, 2, 0]
-        +       rMP[1, 3, 0] - rMP[1, 4, 0])/2
-    Oyy = ihff*(rMP[2, 3, 0] - rMP[2, 4, 0])
-    Ozx = ihff*(rMP[3, 1, 0] - rMP[3, 2, 0]
-        +       rMP[1, 5, 0] - rMP[1, 6, 0])/2
-    Ozy = ihff*(rMP[3, 3, 0] - rMP[3, 4, 0]
-        +       rMP[2, 5, 0] - rMP[2, 6, 0])/2
-    Ozz = ihff*(rMP[3, 5, 0] - rMP[3, 6, 0])
-    H1Oxx = ihff*(rMP[1, 1, 1] - rMP[1, 2, 1] \
-          - (rMP[0, 1, 1] - rMP[0, 2, 1])*(RH1[0]-RO[0]))
+    q, x, y, z = range(4)
+    dx1, dx2, dy1, dy2, dz1, dz2 = 1, 2, 3, 4, 5, 6
+    o, h1o, h1, h2o, h2h1, h2 = range(6)
+
+    Oxx = ihff*(rMP[x, dx1, o] - rMP[x, dx2, o])
+    Oyx = ihff*(rMP[y, dx1, o] - rMP[y, dx2, o]
+        +       rMP[x, dy1, o] - rMP[x, dy2, o])/2
+    Oyy = ihff*(rMP[y, dy1, o] - rMP[y, dy2, o])
+    Ozx = ihff*(rMP[z, dx1, o] - rMP[z, dx2, o]
+        +       rMP[x, dz1, o] - rMP[x, dz2, o])/2
+    Ozy = ihff*(rMP[z, dy1, o] - rMP[z, dy2, o]
+        +       rMP[y, dz1, o] - rMP[y, dz2, o])/2
+    Ozz = ihff*(rMP[z, dz1, o] - rMP[z, dz2, o])
+    H1Oxx = ihff*(rMP[x, dx1, h1o] - rMP[x, dx2, h1o] \
+          - (rMP[q, dx1, h1o] - rMP[q, dx2, h1o])*(RH1x-ROx))
     H1Oyx = ihff*(
-        (rMP[2, 1, 1] - rMP[2, 2, 1] 
-       + rMP[1, 3, 1] - rMP[1, 4, 1])/2
-       - (rMP[0, 1, 1] - rMP[0, 2, 1])*(RH1[1]-RO[1])
-#      - (rMP[0, 3, 1] - rMP[0, 4, 1])*(RH1[0]-RO[0]) THIS IS REALLY... A BUG?
+         (rMP[y, dx1, h1o] - rMP[y, dx2, h1o] 
+        + rMP[x, dy1, h1o] - rMP[x, dy2, h1o])/2
+       - (rMP[q, dx1, h1o] - rMP[q, dx2, h1o])*(RH1y-ROy)
+#      - (rMP[0, dy1, h1o] - rMP[0, dy2, h1o])*(RH1x-ROx) THIS IS REALLY... A BUG?
        )
-    H1Oyy = ihff*(rMP[2, 3, 1] - rMP[2, 4, 1] - (rMP[0, 3, 1] - rMP[0, 4, 1])*(RH1[1]-RO[1]))
+    H1Oyy = ihff*(rMP[y, dy1, h1o] - rMP[y, dy2, h1o] - (rMP[q, dy1, h1o] - rMP[q, dy2, h1o])*(RH1y-ROy))
     H1Ozx = ihff*(
-        (rMP[3, 1, 1] - rMP[3, 2, 1]
-       + rMP[1, 5, 1] - rMP[1, 6, 1])/2
-      - (rMP[0, 1, 1] - rMP[0, 2, 1])*(RH1[2]-RO[2])
-#             - (rMP[0, 5, 1] - rMP[0, 6, 1])*(RH1[0]-RO[0]) #THIS IS REALLY... A BUG?
+        (rMP[z, dx1, h1o] - rMP[z, dx2, h1o]
+       + rMP[x, dz1, h1o] - rMP[x, dz2, h1o])/2
+      - (rMP[q, dx1, h1o] - rMP[q, dx2, h1o])*(RH1z-ROz)
+#             - (rMP[q, dz1, h1o] - rMP[q, dz2, h1o])*(RH1x-ROx) #THIS IS REALLY... A BUG?
             )
     H1Ozy = ihff*(
-        (rMP[3, 3, 1] - rMP[3, 4, 1]
-       + rMP[2, 5, 1] - rMP[2, 6, 1])/2
-      - (rMP[0, 3, 1] - rMP[0, 4, 1])*(RH1[2]-RO[2])
-#     - (rMP[0, 5, 1] - rMP[0, 6, 1])*(RH1[1]-RO[1]) THIS IS REALLY... A BUG?
+        (rMP[z, dy1, h1o] - rMP[z, dy2, h1o]
+       + rMP[y, dz1, h1o] - rMP[y, dz2, h1o])/2
+      - (rMP[q, dy1, h1o] - rMP[q, dy2, h1o])*(RH1z-ROz)
+#     - (rMP[q, dz1, h1o] - rMP[q, dz2, h1o])*(RH1y-ROy) THIS IS REALLY... A BUG?
         )
-    H1Ozz = ihff*(rMP[3, 5, 1] - rMP[3, 6, 1] - (rMP[0, 5, 1] - rMP[0, 6, 1])*(RH1[2]-RO[2]))
-    H1xx = ihff*(rMP[1, 1, 2] - rMP[1, 2, 2])
-    H1yx = (ihff*(rMP[2, 1, 2] - rMP[2, 2, 2])
-         +  ihff*(rMP[1, 3, 2] - rMP[1, 4, 2]))/2
-    H1yy = ihff*(rMP[2, 3, 2] - rMP[2, 4, 2])
-    H1zx = (ihff*(rMP[3, 1, 2] - rMP[3, 2, 2])
-         +  ihff*(rMP[1, 5, 2] - rMP[1, 6, 2]))/2
-    H1zy = (ihff*(rMP[3, 3, 2] - rMP[3, 4, 2])
-         +  ihff*(rMP[2, 5, 2] - rMP[2, 6, 2]))/2
-    H1zz = ihff*(rMP[3, 5, 2] - rMP[3, 6, 2])
-    H2Oxx = ihff*(rMP[1, 1, 3] - rMP[1, 2, 3] - (rMP[0, 1, 3] - rMP[0, 2, 3])*(RH2[0]-RO[0]))
+    H1Ozz = ihff*(rMP[z, dz1, h1o] - rMP[z, dz2, h1o] - (rMP[q, dz1, h1o] - rMP[q, dz2, h1o])*(RH1z-ROz))
+    H1xx = ihff*(rMP[x, dx1, h1] - rMP[x, dx2, h1])
+    H1yx = (ihff*(rMP[y, dx1, h1] - rMP[y, dx2, h1])
+         +  ihff*(rMP[x, dy1, h1] - rMP[x, dy2, h1]))/2
+    H1yy = ihff*(rMP[y, dy1, h1] - rMP[y, dy2, h1])
+    H1zx = (ihff*(rMP[z, dx1, h1] - rMP[z, dx2, h1])
+         +  ihff*(rMP[x, dz1, h1] - rMP[x, dz2, h1]))/2
+    H1zy = (ihff*(rMP[z, dy1, h1] - rMP[z, dy2, h1])
+         +  ihff*(rMP[y, dz1, h1] - rMP[y, dz2, h1]))/2
+    H1zz = ihff*(rMP[z, dz1, h1] - rMP[z, dz2, h1])
+    H2Oxx = ihff*(rMP[x, dx1, h2o] - rMP[x, dx2, h2o] - (rMP[q, dx1, h2o] - rMP[q, dx2, h2o])*(RH2x-ROx))
     H2Oyx = ihff*(
-        (rMP[2, 1, 3] - rMP[2, 2, 3] 
-       + rMP[1, 3, 3] - rMP[1, 4, 3])/2
-       - (rMP[0, 1, 3] - rMP[0, 2, 3])*(RH1[1]-RO[1])
-#      - (rMP[0, 3, 1] - rMP[0, 4, 1])*(RH1[0]-RO[0]) THIS IS REALLY... A BUG?
+        (rMP[y, dx1, h2o] - rMP[y, dx2, h2o] 
+       + rMP[x, dy1, h2o] - rMP[x, dy2, h2o])/2
+       - (rMP[q, dx1, h2o] - rMP[q, dx2, h2o])*(RH2y-ROy)
+#      - (rMP[q, dy1, h1o] - rMP[q, dy2, h1o])*(RH2x-ROx) THIS IS REALLY... A BUG?
        )
-    H2Oyy = ihff*(rMP[2, 3, 3] - rMP[2, 4, 3] - (rMP[0, 3, 3] - rMP[0, 4, 3])*(RH2[1]-RO[1]))
+    H2Oyy = ihff*(rMP[y, dy1, h2o] - rMP[y, dy2, h2o] - (rMP[q, dy1, h2o] - rMP[q, dy2, h2o])*(RH2y-ROy))
     H2Ozx = ihff*(
-        (rMP[3, 1, 3] - rMP[3, 2, 3]
-       + rMP[1, 5, 3] - rMP[1, 6, 3])/2
-      - (rMP[0, 1, 3] - rMP[0, 2, 3])*(RH1[2]-RO[2])
-#             - (rMP[0, 5, 1] - rMP[0, 6, 1])*(RH1[0]-RO[0]) #THIS IS REALLY... A BUG?
+        (rMP[z, dx1, h2o] - rMP[z, dx2, h2o]
+       + rMP[x, dz1, h2o] - rMP[x, dz2, h2o])/2
+      - (rMP[q, dx1, h2o] - rMP[q, dx2, h2o])*(RH2z-ROz)
+#             - (rMP[q, dz1, h1o] - rMP[q, dz2, h1o])*(RH2x-ROx) #THIS IS REALLY... A BUG?
             )
     H2Ozy = ihff*(
-        (rMP[3, 3, 3] - rMP[3, 4, 3]
-       + rMP[2, 5, 3] - rMP[2, 6, 3])/2
-      - (rMP[0, 3, 3] - rMP[0, 4, 3])*(RH1[2]-RO[2])
-#     - (rMP[0, 5, 3] - rMP[0, 6, 3])*(RH1[1]-RO[1]) THIS IS REALLY... A BUG?
+        (rMP[z, dy1, h2o] - rMP[z, dy2, h2o]
+       + rMP[y, dz1, h2o] - rMP[y, dz2, h2o])/2
+      - (rMP[q, dy1, h2o] - rMP[q, dy2, h2o])*(RH2z-ROz)
+#     - (rMP[q, dz1, h2o] - rMP[q, dz2, h2o])*(RH2y-ROy) THIS IS REALLY... A BUG?
         )
-    H2Ozz = ihff*(rMP[3, 5, 3] - rMP[3, 6, 3] - (rMP[0, 5, 3] - rMP[0, 6, 3])*(RH2[2]-RO[2]))
-    H2H1xx = ihff*(rMP[1, 1, 4] - rMP[1, 2, 4] - (rMP[0, 1, 4] - rMP[0, 2, 4])*(RH2[0]-RH1[0]))
+    H2Ozz = ihff*(rMP[z, dz1, h2o] - rMP[z, dz2, h2o] - (rMP[q, dz1, h2o] - rMP[q, dz2, h2o])*(RH2z-ROz))
+    H2H1xx = ihff*(rMP[x, dx1, h2h1] - rMP[x, dx2, h2h1] - (rMP[q, dx1, h2h1] - rMP[q, dx2, h2h1])*(RH2x-RH1x))
     H2H1yx = ihff*(
-        (rMP[2, 1, 4] - rMP[2, 2, 4] 
-       + rMP[1, 3, 4] - rMP[1, 4, 4])/2
-       - (rMP[0, 1, 4] - rMP[0, 2, 4])*(RH1[1]-RO[1])
-#      - (rMP[0, 3, 4] - rMP[0, 4, 4])*(RH1[0]-RO[0]) THIS IS REALLY... A BUG?
+        (rMP[y, dx1, h2h1] - rMP[y, dx2, h2h1] 
+       + rMP[x, dy1, h2h1] - rMP[x, dy2, h2h1])/2
+       - (rMP[q, dx1, h2h1] - rMP[q, dx2, h2h1])*(RH1y-ROy)
+#      - (rMP[q, dy1, h2h1] - rMP[q, dy2, h2h1])*(RH1x-ROx) THIS IS REALLY... A BUG?
        )
-    H2H1yy = ihff*(rMP[2, 3, 4] - rMP[2, 4, 4] - (rMP[0, 3, 4] - rMP[0, 4, 4])*(RH2[1]-RH1[1]))
+    H2H1yy = ihff*(rMP[y, dy1, h2h1] - rMP[y, dy2, h2h1] - (rMP[q, dy1, h2h1] - rMP[q, dy2, h2h1])*(RH2y-RH1y))
     H2H1zx = ihff*(
-        (rMP[3, 1, 4] - rMP[3, 2, 4]
-       + rMP[1, 5, 4] - rMP[1, 6, 4])/2
-      - (rMP[0, 1, 4] - rMP[0, 2, 4])*(RH1[2]-RO[2])
-#     - (rMP[0, 5, 4] - rMP[0, 6, 4])*(RH1[0]-RO[0]) #THIS IS REALLY... A BUG?
+        (rMP[z, dx1, h2h1] - rMP[z, dx2, h2h1]
+       + rMP[x, dz1, h2h1] - rMP[x, dz2, h2h1])/2
+      - (rMP[q, dx1, h2h1] - rMP[q, dx2, h2h1])*(RH1z-ROz)
+#     - (rMP[q, dz1, h2h1] - rMP[q, dz2, h2h1])*(RH1x-ROx) #THIS IS REALLY... A BUG?
             )
     H2H1zy = ihff*(
-        (rMP[3, 3, 4] - rMP[3, 4, 4]
-       + rMP[2, 5, 4] - rMP[2, 6, 4])/2
-      - (rMP[0, 3, 4] - rMP[0, 4, 4])*(RH1[2]-RO[2])
-#     - (rMP[0, 5, 4] - rMP[0, 6, 4])*(RH1[1]-RO[1]) THIS IS REALLY... A BUG?
+        (rMP[z, dy1, h2h1] - rMP[z, dy2, h2h1]
+       + rMP[y, dz1, h2h1] - rMP[y, dz2, h2h1])/2
+      - (rMP[q, dy1, h2h1] - rMP[q, dy2, h2h1])*(RH1z-ROz)
+#     - (rMP[q, dz1, h2h1] - rMP[q, dz2, h2h1])*(RH1y-RO[1]) THIS IS REALLY... A BUG?
         )
-    H2H1zz = ihff*(rMP[3, 5, 4] - rMP[3, 6, 4] - (rMP[0, 5, 4] - rMP[0, 6, 4])*(RH2[2]-RH1[2]))
-    H2xx = ihff*(rMP[1, 1, 5] - rMP[1, 2, 5])
-    H2yx = (ihff*(rMP[2, 1, 5] - rMP[2, 2, 5])
-         +  ihff*(rMP[1, 3, 5] - rMP[1, 4, 5]))/2
-    H2yy = ihff*(rMP[2, 3, 5] - rMP[2, 4, 5])
-    H2zx = (ihff*(rMP[3, 1, 5] - rMP[3, 2, 5])
-         +  ihff*(rMP[1, 5, 5] - rMP[1, 6, 5]))/2
-    H2zy = (ihff*(rMP[3, 3, 5] - rMP[3, 4, 5])
-         +  ihff*(rMP[2, 5, 5] - rMP[2, 6, 5]))/2
-    H2zz = ihff*(rMP[3, 5, 5] - rMP[3, 6, 5])
+    H2H1zz = ihff*(rMP[z, dz1, h2h1] - rMP[z, dz2, h2h1] - (rMP[q, dz1, h2h1] - rMP[q, dz2, h2h1])*(RH2z-RH1z))
+    H2xx = ihff*(rMP[x, dx1, h2] - rMP[x, dx2, h2])
+    H2yx = (ihff*(rMP[y, dx1, h2] - rMP[y, dx2, h2])
+         +  ihff*(rMP[x, dy1, h2] - rMP[x, dy2, h2]))/2
+    H2yy = ihff*(rMP[y, dy1, h2] - rMP[y, dy2, h2])
+    H2zx = (ihff*(rMP[z, dx1, h2] - rMP[z, dx2, h2])
+         +  ihff*(rMP[x, dz1, h2] - rMP[x, dz2, h2]))/2
+    H2zy = (ihff*(rMP[z, dy1, h2] - rMP[z, dy2, h2])
+         +  ihff*(rMP[y, dz1, h2] - rMP[y, dz2, h2]))/2
+    H2zz = ihff*(rMP[z, dz1, h2] - rMP[z, dz2, h2])
 
     comp = ("XX", "yx", "yy", "zx", "zy", "zz")
     bond = ("O", "H1O", "H1", "H2O", "H2H1", "H2")
