@@ -62,7 +62,6 @@ def test_total_dipole():
     assert_(Dtot, ref.Dtot)
 
 def test_dipole_allbonds():
-    m = loprop.MolFrag(tmpdir)
     D = full.matrix(ref.D.shape)
     Dab = m.Dab
     for ab, a, b in pairs(m.noa):
@@ -75,7 +74,6 @@ def test_dipole_nobonds():
     assert_(Daa, ref.Daa)
 
 def test_quadrupole_total():
-    m = loprop.MolFrag(tmpdir)
     rrab=full.matrix((6, m.noa, m.noa))
     rRab=full.matrix((6, m.noa, m.noa))
     RRab=full.matrix((6, m.noa, m.noa))
@@ -99,7 +97,6 @@ def test_quadrupole_total():
 
 
 def test_quadrupole_allbonds():
-    m = loprop.MolFrag(tmpdir)
     QU = full.matrix(ref.QU.shape)
     QUab = m.QUab
     for ab, a, b in pairs(m.noa):
@@ -108,9 +105,8 @@ def test_quadrupole_allbonds():
     assert_(QU, ref.QU)
 
 def test_quadrupole_nobonds():
-    M = loprop.MolFrag(tmpdir)
 
-    QUaa = (M.QUab + M.dQUab).sum(axis=2).view(full.matrix)
+    QUaa = (m.QUab + m.dQUab).sum(axis=2).view(full.matrix)
     assert_(QUaa, ref.QUaa)
 
 
@@ -159,7 +155,6 @@ def test_bond_charge_shift():
     assert_(-dQabref, dQabcmp, 0.006)
 
 def test_bond_charge_shift_sum():
-    m = loprop.MolFrag(tmpdir, pf=mcpf, sf=mcsf)
     dQaref = m.dQa
     dQa  = m.dQab.sum(axis=1).view(full.matrix)
     print dQaref, dQa
@@ -168,7 +163,6 @@ def test_bond_charge_shift_sum():
 
 def test_polarizability_total():
 
-    m = loprop.MolFrag(tmpdir, pf=mcpf, sf=mcsf)
     dQa = m.dQa
     Rab = m.Rab
     Aab = m.Aab
@@ -358,7 +352,6 @@ def test_altint():
             assert_(ref.Aab[ij, ab], pol[ij, ab], text="%s%s"%(ablab[ab], ijlab[ij]))
 
 def test_polarizability_allbonds_atoms():
-    m = loprop.MolFrag(tmpdir, pf=mcpf, sf=mcsf)
 
     Aab = m.Aab #+ m.dAab
     noa = m.noa
