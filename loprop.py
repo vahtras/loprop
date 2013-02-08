@@ -904,22 +904,68 @@ class MolFrag:
             print "Polarizability av    ",fmt%(Am.trace()/3)
             print "Polarizability       ",(9*fmt)%tuple(Am.flatten('F'))
 
-    def output_potential_file(self):
+    def output_potential_file(self, potfile, maxl, pol, bond_centers, angstrom):
         """Output potential file"""
-        potfile=open(potfile,'w')
-        potfile.write("AA\n")
+        fmt = "%6.2f"
+        lines = []
+        if angstrom: 
+            unit = "AA" 
+        else: 
+            unit = "AU"
+        lines.append(unit)
+
+        noa = self.noa
         if bond_centers:
-            potfile.write("%d "%(noa*(noa+1)/2)) # all bonds for now
+            noc = noa*(noa + 1)/2
         else:
-            potfile.write("%d "%noa)
-        maxl = 0
-        if Dab is not None: maxl = 1
-        if QUab is not None: maxl = 2
-        potfile.write("%d "%maxl)
-        if Aab is not None:
-            potfile.write("2 1") # get correct 
-        potfile.write("\n")
-        potfile.close()
+            noc = self.noa
+
+        lines.append("%d %d %d %d"%(noc, maxl, pol, 1))
+
+        if maxl >= 0: Qab = self.Qab
+        if maxl >= 1: Dab = self.Dab
+        if maxl >= 2: QUab = self.QUab
+        if pol > 0: Aab = self.Aab + 0.5*self.dAab
+
+        if bond_centers:
+            for a in range(noa):
+                for b in range(a):
+                    line  = ("1" + 3*fmt)%tuple(self.Rab[a, b,:])
+                    if maxl >= 0: line += fmt%Qab[a, b]
+                    if maxl >= 1: line += (3*fmt)%tuple(Dab[:, a, b] + Dab[:, b, a])
+                    if maxl >= 2: line += (6*fmt)%tuple(QUab[:, a, b] +QUab[:, b, a])
+                    if pol > 0:
+                        Asym = Aab[:, :, a, b] + Aab[:, :, b, a]
+                        if pol == 1: line += fmt%Asym.trace()
+                        if pol == 2: line += (6*fmt)%tuple(Asym.pack().view(full.matrix))
+                        
+                    lines.append(line)
+                pass
+                line  = ("1" + 3*fmt)%tuple(self.Rab[a, a,:])
+                if maxl >= 0: line += fmt%Qab[a, a]
+                if maxl >= 1: line += (3*fmt)%tuple(Dab[:, a, a])
+                if maxl >= 2: line += (6*fmt)%tuple(QUab[:, a, a])
+                if pol > 0:
+                    Asym = Aab[:, :, a, a]
+                    if pol == 1: line += fmt%Asym.trace()
+                    if pol == 2: line += (6*fmt)%tuple(Asym.pack().view(full.matrix))
+                    
+                lines.append(line)
+        else:
+            for a in range(noa):
+                line  = ("1" + 3*fmt)%tuple(self.Rab[a, a,:])
+                if maxl >= 0: line += fmt%Qab[a, a]
+                if maxl >= 1: line += (3*fmt)%tuple(Dab.sum(axis=2)[:, a])
+                if maxl >= 2: line += (6*fmt)%tuple(QUab.sum(axis=2)[:,  a])
+                if pol > 0:
+                    Asym = Aab.sum(axis=3)[:, :, a].view(full.matrix)
+                    if pol == 1: line += fmt%Asym.trace()
+                    if pol == 2: line += (6*fmt)%tuple(Asym.pack().view(full.matrix))
+                    
+                lines.append(line)
+            pass
+
+        print "\n".join(lines)
 
 def main(debug=False, tmpdir='/tmp', potfile="LOPROP.POT", bond_centers=False, pf=0,
          gc=None, maxl=2, pol=True):
@@ -1186,14 +1232,20 @@ if __name__ == "__main__":
 
     OP.add_option(
           '-l', '--angular-momentum',
-          dest='l', type='int', default=2,
+          dest='max_l', type='int', default=2,
           help='Max angular momentum [2]'
           )
 
     OP.add_option(
+          '-A', '--Anstrom',
+          dest='angstrom', action='store_true', default=False,
+          help="Output in Angstrom"
+          )
+
+    OP.add_option(
           '-a','--polarizabilities',
-          dest='alpha', action='store_true', default=False,
-          help='Localized polarizabilities [False]'
+          dest='pol', type='int', default=0,
+          help='Localized polarizabilities (1=isotropic, 2=full)'
           )
 
     o,a=OP.parse_args(sys.argv[1:])
@@ -1201,16 +1253,18 @@ if __name__ == "__main__":
     #
     # Check consistency: present Dalton files
     #
+    if not os.path.isdir(o.tmpdir):
+        print "%s: Directory not found: %s"%(sys.argv[0], o.tmpdir)
+        raise SystemExit
+        
     needed_files=["AOONEINT","DALTON.BAS","SIRIFC","AOPROPER","RSPVEC","LUINDF"]
-    try:
-       for file_ in needed_files:
-          f=open(os.path.join(o.tmpdir,file_),'r')
-          f.close()
-    except IOError:
-       print "%s does not exists"%os.path.join(o.tmpdir,file_)
-       print "Needed Dalton files to run loprop.py:"
-       print "\n".join(needed_files)
-       sys.exit(-1)
+    for file_ in needed_files:
+        df = os.path.join(o.tmpdir, file_)
+        if not os.path.isfile(df):
+           print "%s: %s does not exists"%(sys.argv[0], df)
+           print "Needed Dalton files to run loprop.py:"
+           print "\n".join(needed_files)
+           raise SystemExit
 
     if o.gc is not None: 
        #Gauge center
@@ -1226,6 +1280,9 @@ if __name__ == "__main__":
 
     t = timing.timing('Loprop')
     molfrag = MolFrag(o.tmpdir, gc=gc, debug=o.debug )
-    molfrag.output_by_atom(fmt="%9.5f", bond_centers=o.bc)
+    molfrag.output_potential_file(o.potfile, o.max_l, o.pol, o.bc, o.angstrom)
+        
+        
+    #molfrag.output_by_atom(fmt="%9.5f", bond_centers=o.bc)
     print t
      
