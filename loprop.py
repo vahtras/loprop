@@ -32,7 +32,8 @@ def penalty_function(alpha=2):
     return pf
 
 def shift_function(*args):
-    return 0
+    F, = args
+    return 2*numpy.max(numpy.abs(F))
 
 def header(str):
     border='-'*len(str)
@@ -998,11 +999,6 @@ if __name__ == "__main__":
           help='include bond centers [False]'
           )
     OP.add_option(
-          '-f','--penalty-function',
-          dest='pf', type='int', default=0,
-          help='penalty function'
-          )
-    OP.add_option(
           '-g','--gauge-center',
           dest='gc', default=None,
           help='gauge center'
@@ -1024,6 +1020,12 @@ if __name__ == "__main__":
           '-a','--polarizabilities',
           dest='pol', type='int', default=0,
           help='Localized polarizabilities (1=isotropic, 2=full)'
+          )
+
+    OP.add_option(
+          '-s','--screening (alpha)',
+          dest='alpha', type='float', default=2.0,
+          help='Screening parameter for penalty function'
           )
 
     o,a=OP.parse_args(sys.argv[1:])
@@ -1057,7 +1059,7 @@ if __name__ == "__main__":
     #main(debug=o.debug,tmpdir=o.tmpdir,potfile=o.potfile,bond_centers=o.bc,pf=o.pf, gc=gc, maxl=o.l, pol=o.alpha)
 
     t = timing.timing('Loprop')
-    molfrag = MolFrag(o.tmpdir, gc=gc, debug=o.debug )
+    molfrag = MolFrag(o.tmpdir, pf=penalty_function(o.alpha), gc=gc, debug=o.debug )
     molfrag.output_potential_file(o.potfile, o.max_l, o.pol, o.bc, o.angstrom)
         
         
