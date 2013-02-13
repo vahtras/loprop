@@ -10,7 +10,7 @@ exec('import %s_data as ref'%case)
 
 # modify Gagliardi penalty function to include unit conversion bug
 from loprop import penalty_function, xtang
-mcpf = lambda *args : penalty_function(*args, alpha=2/xtang**2)
+mcpf = penalty_function(alpha=2/xtang**2)
 mcsf = lambda Fab : 2*np.max(np.abs(Fab))
 
 def assert_(ref, this, atol=1e-5, text=None):
