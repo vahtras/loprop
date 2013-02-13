@@ -8,10 +8,7 @@ case = re.sub('test_', '', __name__)
 tmpdir=os.path.join(case, 'tmp')
 exec('import %s_data as ref'%case)
 
-# modify Gagliardi penalty function to include unit conversion bug
 from loprop import penalty_function, xtang
-mcpf = penalty_function(alpha=2.0/xtang**2)
-mcsf = lambda Fab : 2*np.max(np.abs(Fab))
 
 def assert_(ref, this, atol=1e-5, text=None):
     if text: print text,
@@ -31,7 +28,8 @@ def pairs(n):
 def setup():
     global m
     global ff
-    m = loprop.MolFrag(tmpdir, pf=mcpf, sf=mcsf)
+# modify Gagliardi penalty function to include unit conversion bug
+    m = loprop.MolFrag(tmpdir, pf=penalty_function(2.0/xtang**2))
     ff = ref.ff
 
 def test_nuclear_charge():
