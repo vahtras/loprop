@@ -15,19 +15,21 @@ rbs=numpy.array([0,
       1.45, 1.05, 0.85, 0.70, 0.65, 0.60, 0.50, 0.45
       ])*angtx
 
-def penalty_function(Za, Ra, Zb, Rb, alpha=2):
-    """Inverse half of penalty function defined in Gagliardi"""
+def penalty_function(alpha=2):
+    def pf(Za, Ra, Zb, Rb):
+        """Inverse half of penalty function defined in Gagliardi"""
 
-    from math import exp
-    ra = rbs[int(round(Za))]
-    rb = rbs[int(round(Zb))]
+        from math import exp
+        ra = rbs[int(round(Za))]
+        rb = rbs[int(round(Zb))]
 
-    xa, ya, za = Ra
-    xb, yb, zb = Rb
-    rab2 = (xa - xb)**2 + (ya - yb)**2 + (za - zb)**2
+        xa, ya, za = Ra
+        xb, yb, zb = Rb
+        rab2 = (xa - xb)**2 + (ya - yb)**2 + (za - zb)**2
 
-    f = 0.5*exp(-alpha*(rab2/(ra+rb)**2))
-    return f
+        f = 0.5*exp(-alpha*(rab2/(ra+rb)**2))
+        return f
+    return pf
 
 def shift_function(*args):
     return 0
