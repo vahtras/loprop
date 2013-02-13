@@ -947,7 +947,7 @@ class MolFrag:
                     lines.append(line)
                 pass
                 line  = ("1" + 3*fmt)%tuple(self.Rab[a, a,:])
-                if maxl >= 0: line += fmt%Qab[a, a]
+                if maxl >= 0: line += fmt%(self.Z[a]+Qab[a, a])
                 if maxl >= 1: line += (3*fmt)%tuple(Dab[:, a, a])
                 if maxl >= 2: line += (6*fmt)%tuple(QUab[:, a, a])
                 if pol > 0:
@@ -959,7 +959,7 @@ class MolFrag:
         else:
             for a in range(noa):
                 line  = ("1" + 3*fmt)%tuple(self.Rab[a, a,:])
-                if maxl >= 0: line += fmt%Qab[a, a]
+                if maxl >= 0: line += fmt%(self.Z[a] + Qab[a, a])
                 if maxl >= 1: line += (3*fmt)%tuple(Dab.sum(axis=2)[:, a])
                 if maxl >= 2: line += (6*fmt)%tuple(QUab.sum(axis=2)[:,  a])
                 if pol > 0:
