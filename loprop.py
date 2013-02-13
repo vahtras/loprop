@@ -9,6 +9,7 @@ from util import full, blocked, subblocked, timing
 full.matrix.fmt="%14.6f"
 xtang = 0.5291772108
 angtx = 1.0/xtang
+mc = False
 
 rbs=numpy.array([0, 
       0.25,                                     0.25, 
@@ -780,8 +781,13 @@ class MolFrag:
             for b in range(noa):
                 for i in range(3):
                     for j in range(3):
-                        dAab[i, j, a, b] = 2*dRab[a, b, i]*dQab[a, b, j]
-                        #dAab[i, j, a, b] = dRab[a, b, i]*(dQa[a,  j] - dQa[b, j])
+                        if  mc:
+                            dAab[i, j, a, b] = 2*dRab[a, b, i]*dQab[a, b, j]
+                        else:
+                            dAab[i, j, a, b] = (
+                                dRab[a, b, i]*dQab[a, b, j]+
+                                dRab[a, b, j]*dQab[a, b, i]
+                                )
         self._dAab = dAab
         return self._dAab
 
