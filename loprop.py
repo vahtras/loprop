@@ -568,6 +568,8 @@ class MolFrag:
 
     def nuclear_quadrupole(self):
         """Nuclear contribution to quadrupole"""
+        if self._QUN is not None: return self._QUN
+
         qn=full.matrix(6)
         Z = self.Z
         R = self.R
@@ -579,6 +581,7 @@ class MolFrag:
                  qn[ij]+=Z[a]*(R[a,i]-Rc[i])*(R[a,j]-Rc[j])
                  ij+=1
         self._QUN = qn
+        return self._QUN
 
     QUN = property(fget=nuclear_quadrupole)
 

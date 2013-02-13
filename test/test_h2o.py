@@ -94,7 +94,9 @@ def test_quadrupole_total():
     QUc = QUcab.sum(axis=2).sum(axis=1).view(full.matrix)
     assert_(QUc, ref.QUc)
     
-
+def test_nuclear_quadrupole():
+    QUN = m.QUN
+    assert_(QUN, ref.QUN)
 
 def test_quadrupole_allbonds():
     QU = full.matrix(ref.QU.shape)
