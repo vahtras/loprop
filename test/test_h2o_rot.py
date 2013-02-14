@@ -4,11 +4,11 @@ import loprop
 from util import full
 
 import re
-case = re.sub('test_', '', __name__)
+case = "h2o_rot"
 tmpdir=os.path.join(case, 'tmp')
 exec('import %s_data as ref'%case)
 
-from loprop import penalty_function, xtang
+from loprop import penalty_function, xtang, pairs
 
 def assert_(ref, this, atol=1e-5, text=None):
     if text: print text,
@@ -16,14 +16,6 @@ def assert_(ref, this, atol=1e-5, text=None):
     print "Max deviation", np.amax(ref - this)
     assert np.allclose(ref, this, atol=atol)
 
-def pairs(n):
-    li = []
-    mn = 0
-    for m in range(n):
-        for n in range(m+1):
-            li.append((mn, m, n))
-            mn += 1
-    return li
 
 def setup():
     global m
@@ -67,6 +59,10 @@ def test_dipole_allbonds():
         if a != b: D[:, ab] += Dab[:, b, a] 
     assert_(D, ref.D)
 
+def test_dipole_allbonds_sym():
+    Dsym = m.Dsym
+    assert_(Dsym, ref.D)
+
 def test_dipole_nobonds():
     Daa = m.Dab.sum(axis=2).view(full.matrix)
     assert_(Daa, ref.Daa)
@@ -103,6 +99,10 @@ def test_quadrupole_allbonds():
         QU[:, ab] += QUab[:, a, b ] 
         if a != b: QU[:, ab] += QUab[:, b, a] 
     assert_(QU, ref.QU)
+
+def test_quadrupole_allbonds_sym():
+    QUsym = m.QUsym
+    assert_(QUsym, ref.QU)
 
 def test_quadrupole_nobonds():
 
@@ -407,4 +407,5 @@ def test_polarizability_nobonds():
 
 
 if __name__ == "__main__":
-    test_default_gauge()
+    setup()
+    test_dipole_allbonds_sym()

@@ -32,6 +32,15 @@ def penalty_function(alpha=2):
         return f
     return pf
 
+def pairs(n):
+    li = []
+    mn = 0
+    for m in range(n):
+        for n in range(m+1):
+            li.append((mn, m, n))
+            mn += 1
+    return li
+
 def shift_function(*args):
     F, = args
     return 2*numpy.max(numpy.abs(F))
@@ -73,7 +82,9 @@ class MolFrag:
 
         self._Qab = None
         self._Dab = None
+        self._Dsym = None
         self._QUab = None
+        self._QUsym = None
         self._QUN = None
         self._dQa = None
         self._dQab = None
@@ -459,7 +470,6 @@ class MolFrag:
            xlopsb.append(xlop[i].subblocked(cpa,cpa))
            if debug:
               print "dipole:",lab[i],xlopsb[i]
-        #from pdb import set_trace; set_trace()
         Ti=T.I
         Dlop=Ti*D*Ti.T
         Dlopsb=Dlop.subblocked(cpa,cpa)
@@ -481,6 +491,25 @@ class MolFrag:
         return self._Dab
 
     Dab = property(fget=dipole)
+
+    def dipole_sym(self):
+        if self._Dsym is not None: return self._Dsym
+
+        Dab = self.Dab
+        noa = self.noa
+        dsym = full.matrix((3, noa*(noa+1)//2))
+        ab = 0
+        for a in range(noa):
+            for b in range(a):
+                dsym[:, ab] = Dab[:, a, b] + Dab[:, b, a]
+                ab += 1
+            dsym[:, ab] = Dab[:, a, a]
+            ab += 1
+
+        self._Dsym = dsym
+        return self._Dsym
+
+    Dsym = property(fget=dipole_sym)
 
     def quadrupole(self, debug=False):
 
@@ -567,6 +596,25 @@ class MolFrag:
         return self._QUab
 
     QUab = property(fget=quadrupole)
+
+    def quadrupole_sym(self):
+        if self._QUsym is not None: return self._QUsym
+
+        QUab = self.QUab
+        noa = self.noa
+        qusym = full.matrix((6, noa*(noa+1)//2))
+        ab = 0
+        for a in range(noa):
+            for b in range(a):
+                qusym[:, ab] = QUab[:, a, b] + QUab[:, b, a]
+                ab += 1
+            qusym[:, ab] = QUab[:, a, a]
+            ab += 1
+
+        self._QUsym = qusym
+        return self._QUsym
+
+    QUsym = property(fget=quadrupole_sym)
 
     def nuclear_quadrupole(self):
         """Nuclear contribution to quadrupole"""
@@ -694,7 +742,6 @@ class MolFrag:
         noa = self.noa
 
         dQab = full.matrix((noa, noa, 3))
-        #from pdb import set_trace; set_trace()
         for field in range(3):
             for a in range(noa):
                 Za = self.Z[a]
@@ -717,7 +764,6 @@ class MolFrag:
 
         if self._Aab is not None: return self._Aab
 
-        #from pdb import set_trace; set_trace()
         D = self.D
         Dk = self.Dk
         T = self.T
@@ -918,7 +964,7 @@ class MolFrag:
 
     def output_potential_file(self, potfile, maxl, pol, bond_centers, angstrom):
         """Output potential file"""
-        fmt = "%6.2f"
+        fmt = "%7.3f"
         lines = []
         if angstrom: 
             unit = "AA" 
@@ -935,32 +981,38 @@ class MolFrag:
         lines.append("%d %d %d %d"%(noc, maxl, pol, 1))
 
         if maxl >= 0: Qab = self.Qab
-        if maxl >= 1: Dab = self.Dab
+        if maxl >= 1: 
+            Dab = self.Dab
+            Dsym =self.Dsym
         if maxl >= 2: QUab = self.QUab
         if pol > 0: Aab = self.Aab + 0.5*self.dAab
 
         if bond_centers:
+            ab = 0
             for a in range(noa):
                 for b in range(a):
                     line  = ("1" + 3*fmt)%tuple(self.Rab[a, b,:])
                     if maxl >= 0: line += fmt%Qab[a, b]
-                    if maxl >= 1: line += (3*fmt)%tuple(Dab[:, a, b] + Dab[:, b, a])
+                    if maxl >= 1: line += (3*fmt)%tuple(Dsym[:, ab])
                     if maxl >= 2: line += (6*fmt)%tuple(QUab[:, a, b] +QUab[:, b, a])
                     if pol > 0:
                         Asym = Aab[:, :, a, b] + Aab[:, :, b, a]
                         if pol == 1: line += fmt%Asym.trace()
                         if pol == 2: line += (6*fmt)%tuple(Asym.pack().view(full.matrix))
+                    ab += 1
                         
+
                     lines.append(line)
                 pass
                 line  = ("1" + 3*fmt)%tuple(self.Rab[a, a,:])
                 if maxl >= 0: line += fmt%(self.Z[a]+Qab[a, a])
-                if maxl >= 1: line += (3*fmt)%tuple(Dab[:, a, a])
+                if maxl >= 1: line += (3*fmt)%tuple(Dsym[:, ab])
                 if maxl >= 2: line += (6*fmt)%tuple(QUab[:, a, a])
                 if pol > 0:
                     Asym = Aab[:, :, a, a]
                     if pol == 1: line += fmt%Asym.trace()
                     if pol == 2: line += (6*fmt)%tuple(Asym.pack().view(full.matrix))
+                ab += 1
                     
                 lines.append(line)
         else:
