@@ -10,11 +10,16 @@ exec('import %s_data as ref'%case)
 
 from loprop import penalty_function, xtang, pairs
 
-def assert_(ref, this, atol=1e-5, text=None):
+def assert_(this, ref, atol=1e-5, text=None):
     if text: print text,
-    print ref, this
-    print "Max deviation", np.amax(ref - this)
-    assert np.allclose(ref, this, atol=atol)
+    print this, ref
+    print "Max deviation", np.amax(this - ref)
+    assert np.allclose(this, ref, atol=atol)
+
+def assert_str(this, ref, text=None):
+    if text: print text,
+    print this, ref
+    assert this == ref
 
 
 def setup():
@@ -405,7 +410,31 @@ def test_polarizability_nobonds():
     # atoms
     assert_(Acmp, ref.Aa, 0.07)
 
+def test_potfile_PAn0():
+    PAn0 = m.output_potential_file(None, maxl=-1, pol=0)
+    assert_str(PAn0, ref.PAn0)
+
+def test_potfile_PA00():
+    PA00 = m.output_potential_file(None, maxl=0, pol=0)
+    assert_str(PA00, ref.PA00)
+
+def test_potfile_PA10():
+    PA10 = m.output_potential_file(None, maxl=1, pol=0)
+    assert_str(PA10, ref.PA10)
+
+def test_potfile_PA20():
+    PA20 = m.output_potential_file(None, maxl=2, pol=0)
+    assert_str(PA20, ref.PA20)
+
+def test_potfile_PA21():
+    PA21 = m.output_potential_file(None, maxl=2, pol=1)
+    assert_str(PA21, ref.PA21)
+
+def test_potfile_PA22():
+    PA22 = m.output_potential_file(None, maxl=2, pol=2)
+    assert_str(PA22, ref.PA22)
 
 if __name__ == "__main__":
+    import sys
     setup()
-    test_dipole_allbonds_sym()
+    exec("%s()"%sys.argv[1])

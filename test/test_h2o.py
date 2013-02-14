@@ -20,7 +20,6 @@ def assert_str(this, ref, text=None):
     if text: print text,
     print this, ref
     assert this == ref
-    
 
 
 def setup():
