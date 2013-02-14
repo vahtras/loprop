@@ -1025,7 +1025,7 @@ class MolFrag:
                 if maxl >= 2: line += (6*fmt)%tuple((QUab+dQUab).sum(axis=2)[:,  a])
                 if pol > 0:
                     Asym = Aab.sum(axis=3)[:, :, a].view(full.matrix)
-                    if pol == 1: line += fmt%Asym.trace()
+                    if pol == 1: line += fmt%(Asym.trace()/3)
                     if pol == 2: line += (6*fmt)%tuple(Asym.pack().view(full.matrix))
                     
                 lines.append(line)

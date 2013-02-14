@@ -427,6 +427,14 @@ def test_potfile_PA20():
     PA20 = m.output_potential_file(None, maxl=2, pol=0)
     assert_str(PA20, ref.PA20)
 
+def test_potfile_PA21():
+    PA21 = m.output_potential_file(None, maxl=2, pol=1)
+    assert_str(PA21, ref.PA21)
+
+def test_potfile_PA22():
+    PA22 = m.output_potential_file(None, maxl=2, pol=2)
+    assert_str(PA22, ref.PA22)
+
 if __name__ == "__main__":
     setup()
     test_dipole_allbonds_sym()
