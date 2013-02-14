@@ -962,7 +962,7 @@ class MolFrag:
             print "Polarizability av    ",fmt%(Am.trace()/3)
             print "Polarizability       ",(9*fmt)%tuple(Am.flatten('F'))
 
-    def output_potential_file(self, potfile, maxl, pol, bond_centers, angstrom):
+    def output_potential_file(self, potfile, maxl, pol, bond_centers=False, angstrom=False):
         """Output potential file"""
         fmt = "%7.3f"
         lines = []
@@ -1029,7 +1029,7 @@ class MolFrag:
                 lines.append(line)
             pass
 
-        print "\n".join(lines)
+        return "\n".join(lines) + "\n"
 
 
 if __name__ == "__main__":

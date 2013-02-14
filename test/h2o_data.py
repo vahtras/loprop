@@ -156,3 +156,12 @@ D = rMP[1:4, 0, :]
 QU = rMP[4:, 0, :]
 dQa = rMP[0, :, (0,2,5)]
 dQab = rMP[0, :, (1, 3, 4)]
+
+#These are string data for testing potential file
+PAn0 = """AU
+3 -1 0 1
+1  0.000  0.000  0.698
+1 -1.481  0.000 -0.349
+1  1.481  0.000 -0.349
+"""
+

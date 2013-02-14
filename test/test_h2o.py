@@ -10,11 +10,17 @@ exec('import %s_data as ref'%case)
 
 from loprop import penalty_function, xtang, pairs
 
-def assert_(ref, this, atol=1e-5, text=None):
+def assert_(this, ref, atol=1e-5, text=None):
     if text: print text,
-    print ref, this
-    print "Max deviation", np.amax(ref - this)
-    assert np.allclose(ref, this, atol=atol)
+    print this, ref
+    print "Max deviation", np.amax(this - ref)
+    assert np.allclose(this, ref, atol=atol)
+
+def assert_str(this, ref, text=None):
+    if text: print text,
+    print this, ref
+    assert this == ref
+    
 
 
 def setup():
@@ -405,6 +411,9 @@ def test_polarizability_nobonds():
     # atoms
     assert_(Acmp, ref.Aa, 0.07)
 
+def test_potfile_PAn0():
+    PAn0 = m.output_potential_file(None, maxl=-1, pol=0)
+    assert_str(PAn0, ref.PAn0)
 
 if __name__ == "__main__":
     setup()
