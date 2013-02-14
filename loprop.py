@@ -984,7 +984,9 @@ class MolFrag:
         if maxl >= 1: 
             Dab = self.Dab
             Dsym =self.Dsym
-        if maxl >= 2: QUab = self.QUab
+        if maxl >= 2: 
+            QUab = self.QUab
+            dQUab = self.dQUab
         if pol > 0: Aab = self.Aab + 0.5*self.dAab
 
         if bond_centers:
@@ -1020,7 +1022,7 @@ class MolFrag:
                 line  = ("1" + 3*fmt)%tuple(self.Rab[a, a,:])
                 if maxl >= 0: line += fmt%(self.Z[a] + Qab[a, a])
                 if maxl >= 1: line += (3*fmt)%tuple(Dab.sum(axis=2)[:, a])
-                if maxl >= 2: line += (6*fmt)%tuple(QUab.sum(axis=2)[:,  a])
+                if maxl >= 2: line += (6*fmt)%tuple((QUab+dQUab).sum(axis=2)[:,  a])
                 if pol > 0:
                     Asym = Aab.sum(axis=3)[:, :, a].view(full.matrix)
                     if pol == 1: line += fmt%Asym.trace()
