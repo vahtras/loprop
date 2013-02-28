@@ -133,7 +133,7 @@ class MolFrag:
         #
         # Data from the ISORDK section in AOONEINT
         #
-        isordk = one.readisordk(file=self.aooneint)
+        isordk = one.readisordk(filename=self.aooneint)
         #
         # Number of nuclei
         #
@@ -1120,7 +1120,7 @@ if __name__ == "__main__":
 
     t = timing.timing('Loprop')
     molfrag = MolFrag(o.tmpdir, pf=penalty_function(o.alpha), gc=gc, debug=o.debug )
-    molfrag.output_potential_file(o.potfile, o.max_l, o.pol, o.bc, o.angstrom)
+    print molfrag.output_potential_file(o.potfile, o.max_l, o.pol, o.bc, o.angstrom)
         
         
     #molfrag.output_by_atom(fmt="%9.5f", bond_centers=o.bc)
