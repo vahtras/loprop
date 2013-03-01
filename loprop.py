@@ -465,7 +465,7 @@ class MolFrag:
         xlop=[]
         xlopsb=[]
         for i in range(len(lab)):
-           x.append(prop.read(nbf,lab[i],prp).unpack())
+           x.append(prop.read(lab[i],prp).unpack())
            xlop.append(T.T*x[i]*T)
            xlopsb.append(xlop[i].subblocked(cpa,cpa))
            if debug:
@@ -537,7 +537,7 @@ class MolFrag:
         xlop=[]
         xlopsb=[]
         for i in range(len(lab)):
-           x.append(prop.read(nbf,lab[i],prp).unpack())
+           x.append(prop.read(lab[i],prp).unpack())
            xlop.append(T.T*x[i]*T)
            xlopsb.append(xlop[i].subblocked(cpa,cpa))
            if debug:
@@ -695,7 +695,7 @@ class MolFrag:
             prp=os.path.join(self.tmpdir,"AOPROPER")
             x = []
             for l in lab:
-                x.append(prop.read(self.nbf, l, prp).unpack())
+                x.append(prop.read(l, prp).unpack())
             self._x = x
 
         return self._x
