@@ -1,6 +1,6 @@
 [submodule "daltools"]
 	path = daltools
-	url = https://ovahtras@bitbucket.org/ovahtras/daltools.git
+	url = https://bitbucket.org/ovahtras/daltools.git
 [submodule "util"]
 	path = util
-	url = https://ovahtras@bitbucket.org/ovahtras/util.git
+	url = https://bitbucket.org/ovahtras/util.git
