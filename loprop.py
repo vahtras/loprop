@@ -459,7 +459,8 @@ class MolFrag:
        
         prp = os.path.join(self.tmpdir,"AOPROPER")
         nbf = D.shape[0]
-        x = [prop.read(l, prp).unpack() for l in lab]
+        #x = [prop.read(l, prp).unpack() for l in lab]
+        x = prop.read(*lab, filename=prp, unpack=True)
         xlop = [T.T*xi*T for xi in x]
         xlopsb = [xli.subblocked(cpa, cpa) for xli in xlop]
 
@@ -531,7 +532,8 @@ class MolFrag:
         prp = os.path.join(self.tmpdir,"AOPROPER")
         C = "XYZ"
         nbf = D.shape[0]
-        x = [prop.read(l, prp).unpack() for l in lab]
+        #x = [prop.read(l, prp).unpack() for l in lab]
+        x = prop.read(*lab, filename=prp, unpack=True)
         xlop = [T.T*xi*T for xi in x]
         xlopsb = [xli.subblocked(cpa, cpa) for xli in xlop]
 
@@ -699,7 +701,8 @@ class MolFrag:
         if self._x is None:
             lab = ['XDIPLEN', "YDIPLEN", "ZDIPLEN"]
             prp = os.path.join(self.tmpdir,"AOPROPER")
-            self._x = [prop.read(l, prp).unpack() for l in lab]
+            #self._x = [prop.read(l, prp).unpack() for l in lab]
+            self._x = prop.read(*lab, filename=prp, unpack=True)
 
         return self._x
 
