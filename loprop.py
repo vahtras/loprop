@@ -1066,6 +1066,11 @@ if __name__ == "__main__":
           help='scratch directory [/tmp]'
           )
     OP.add_option(
+          '-f','--daltgz',
+          dest='daltgz', default=None,
+          help='Dalton restart tar ball [None]'
+          )
+    OP.add_option(
           '-p', '--potfile',
           dest='potfile', default='LOPROP.POT',
           help='Potential input file [LOPROP.POT]'
@@ -1113,8 +1118,13 @@ if __name__ == "__main__":
     if not os.path.isdir(o.tmpdir):
         print "%s: Directory not found: %s" % (sys.argv[0], o.tmpdir)
         raise SystemExit
+
+    import tarfile
+    if o.daltgz:
+        tgz = tarfile.open(o.daltgz, 'r:gz')
+        tgz.extractall(path=o.tmpdir)
         
-    needed_files = ["AOONEINT", "DALTON.BAS", "SIRIFC", "AOPROPER", "RSPVEC", "LUINDF"]
+    needed_files = ["AOONEINT", "DALTON.BAS", "SIRIFC", "AOPROPER", "RSPVEC"]
     for file_ in needed_files:
         df = os.path.join(o.tmpdir, file_)
         if not os.path.isfile(df):
@@ -1137,7 +1147,7 @@ if __name__ == "__main__":
 
     t = timing.timing('Loprop')
     molfrag = MolFrag(
-        o.tmpdir, pf=penalty_function(o.alpha), gc=gc, debug=o.debug
+        o.tmpdir, pf=penalty_function(o.alpha), gc=gc
         )
     print molfrag.output_potential_file(
         o.max_l, o.pol, o.bc, o.angstrom
