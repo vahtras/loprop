@@ -976,7 +976,7 @@ class MolFrag:
             self, maxl, pol, bond_centers=False, angstrom=False
             ):
         """Output potential file"""
-        fmt = "%7.3f"
+        fmt = "%10.3f"
         lines = []
         if angstrom: 
             unit = "AA" 
