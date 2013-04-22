@@ -14,7 +14,8 @@ mc = False
 # Bragg-Slater radii () converted from Angstrom to Bohr
 rbs = numpy.array([0, 
       0.25,                                     0.25, 
-      1.45, 1.05, 0.85, 0.70, 0.65, 0.60, 0.50, 0.45
+      1.45, 1.05, 0.85, 0.70, 0.65, 0.60, 0.50, 0.45,
+      1.80, 1.50, 1.25, 1.10, 1.00, 1.00, 1.00, 1.00, 
       ])*angtx
 
 def penalty_function(alpha=2):
