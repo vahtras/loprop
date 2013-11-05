@@ -885,13 +885,16 @@ class MolFrag:
         """Print nfo"""
 
         if max_l >= 0: Qab = self.Qab
-        if max_l >= 1 or pol: Dab = self.Dab
+        if max_l >= 1:
+            Dab = self.Dab
+            Dsym = self.Dsym
         if max_l >= 2:
             QUab = self.QUab
             QUN = self.QUN
             dQUab = self.dQUab
         if  pol:
-            Aab = self.Aab
+            Aab = self.Aab + self.dAab
+
         Z = self.Z
         R = self.R
         Rc = self.Rc
@@ -903,80 +906,74 @@ class MolFrag:
         if self._Dab is not None : Da = Dab.sum(axis=2)
         if self._QUab is not None : 
             QUa = QUab.sum(axis=2) + dQUab.sum(axis=2)
-        if self._Aab is not None: Aa = Aab.sum(axis=2)
+        if self._Aab is not None: 
+            Aab = self.Aab + 0.5*self.dAab
+            Aa = Aab.sum(axis=3)
         if bond_centers:
-            for i in range(noa):
-                for j in range(i+1):
-                    if i == j:
-                        header("Atom    %d"%(j+1))
-                        print "Atom center:       " + \
-                            (3*fmt) % tuple(R[i,:])
-                        print "Nuclear charge:    "+fmt % Z[i]
-                        print "Electronic charge:   "+fmt % Qab[i, i]
-                        print "Total charge:        "+fmt % (Z[i]+Qab[i, i])
-                        if Dab is not None:
-                            print "Electronic dipole    " + \
-                                (3*fmt) % tuple(Dab[:, i, i])
-                            print "Electronic dipole norm" + \
-                                fmt % Dab[:, i, i].norm2()
-                        if QUab is not None:
-                            print "Electronic quadrupole" + \
-                                (6*fmt) % tuple(QUab[:, i, i])
-                        if Aab is not None:
-                            print "Polarizability       ", (3*fmt) % (
-                                  Aab[i, i, 0, 0], Aab[i, i, 1, 1], Aab[i, i, 2, 2]
-                                  )
-                            print Aab[i, i, :, :]
-                            print fmt % (Aab[i, i, :, :].trace()/3)
-                    else:
-                        header("Bond    %d %d" % (i+1, j+1))
-                        print "Bond center:       " + \
-                            (3*fmt) % tuple(0.5*(R[i, :]+R[j, :]))
-                        print "Electronic charge:   "+fmt % Qab[i, j]
-                        print "Total charge:        "+fmt % Qab[i, j]
-                        if Dab is not None:
-                            print "Electronic dipole    " + \
-                                (3*fmt) % tuple(Dab[:, i, j]+Dab[:, j, i])
-                            print "Electronic dipole norm" + \
-                                fmt % (Dab[:, i, j]+Dab[:, j, i]).norm2()
-                        if QUab is not None:
-                            print "Electronic quadrupole" + \
-                                (6*fmt) % tuple(QUab[:, i, j]+QUab[:, j, i])
-                        if Aab is not None:
-                            print "Polarizability       ", (3*fmt) % (
-                                  Aab[i, j, 0, 0] + Aab[j, i, 0, 0],
-                                  Aab[i, j, 1, 1] + Aab[j, i, 1, 1],
-                                  Aab[i, j, 2, 2] + Aab[j, i, 2, 2]
-                                  )
-                            print Aab[i, j, :, :] + Aab[j, i, :, :]
-                            print fmt % ((Aab[i, j, :, :]+Aab[j, i, :, :]).trace()/3)
-        else:
-            for i in range(noa):
-                header("Atomic domain %d" % (i+1))
-                line = " 0"
-                print "Domain center:       "+(3*fmt) % tuple(R[i, :])
-                line += (3*"%17.10f") % tuple(xtang*R[i, :])
-                print "Nuclear charge:      "+fmt % Z[i]
-                print "Electronic charge:   "+fmt % Qa[i]
-                print "Total charge:        "+fmt % (Z[i]+Qa[i])
-                line += "%12.6f" % (Z[i]+Qa[i])
+            for a in range(noa):
+                for b in range(a):
+                    header("Bond    %d %d" % (a+1, b+1))
+                    print "Bond center:       " + \
+                        (3*fmt) % tuple(0.5*(R[a, :]+R[b, :]))
+                    print "Electronic charge:   "+fmt % Qab[a, b]
+                    print "Total charge:        "+fmt % Qab[a, b]
+                    if self._Dab is not None:
+                        print "Electronic dipole    " + \
+                            (3*fmt) % tuple(Dab[:, a, b]+Dab[:, b, a])
+                        print "Electronic dipole norm" + \
+                            fmt % (Dab[:, a, b]+Dab[:, b, a]).norm2()
+                    if self._QUab is not None:
+                        print "Electronic quadrupole" + \
+                            (6*fmt) % tuple(QUab[:, a, b]+QUab[:, b, a])
+                    if self._Aab is not None:
+                        Asym = Aab[:, :, a, b] + Aab[:, :, b, a]
+                        if pol > 0:
+                            print "Isotropic polarizability", fmt % Asym.trace()
+                        if pol > 1:
+                            print "Polarizability       ", (6*fmt) % tuple(Asym.pack().view(full.matrix))
+                header("Atom    %d"%(a+1))
+                print "Atom center:       " + \
+                    (3*fmt) % tuple(R[a,:])
+                print "Nuclear charge:    "+fmt % Z[a]
+                print "Electronic charge:   "+fmt % Qab[a, a]
+                print "Total charge:        "+fmt % (Z[a]+Qab[a, a])
                 if self._Dab is not None:
-                    print "Electronic dipole    "+(3*fmt) % tuple(Da[i, :])
-                    line += (3*"%12.6f") % tuple(Da[i, :])
+                    print "Electronic dipole    " + \
+                        (3*fmt) % tuple(Dab[:, a, a])
+                    print "Electronic dipole norm" + \
+                        fmt % Dab[:, a, a].norm2()
                 if self._QUab is not None:
-                    print "QUab", QUab
-                    print "Electronic quadrupole"+(6*fmt) % tuple(QUa[:, i])
-                    line += (6*"%12.6f") % tuple(QUa[:, i])
+                    print "Electronic quadrupole" + \
+                        (6*fmt) % tuple(QUab[:, a, a])
                 if self._Aab is not None:
-                    print "Polarizability       ", \
-                        Aa[i, :, :].view(full.matrix).sym()
+                    Asym = Aab[:, :, a, a] 
+                    if pol > 0:
+                        print "Isotropic polarizability", fmt % (Asym.trace()/3)
+                    if pol > 1:
+                        print "Polarizability       ", (6*fmt) % tuple(Asym.pack().view(full.matrix))
+        else:
+            for a in range(noa):
+                header("Atomic domain %d" % (a+1))
+                line = " 0"
+                print "Domain center:       "+(3*fmt) % tuple(R[a, :])
+                line += (3*"%17.10f") % tuple(xtang*R[a, :])
+                print "Nuclear charge:      "+fmt % Z[a]
+                print "Electronic charge:   "+fmt % Qa[a]
+                print "Total charge:        "+fmt % (Z[a]+Qa[a])
+                line += "%12.6f" % (Z[a]+Qa[a])
+                if self._Dab is not None:
+                    print "Electronic dipole    "+(3*fmt) % tuple(Da[:, a])
+                    line += (3*"%12.6f") % tuple(Da[a, :])
+                if self._QUab is not None:
+                    #print "QUab", QUab
+                    print "Electronic quadrupole"+(6*fmt) % tuple(QUa[:, a])
+                    line += (6*"%12.6f") % tuple(QUa[:, a])
+                if self._Aab is not None:
+                    Asym = Aa[:, :, a].view(full.matrix)
+                    #print "Polarizability       ", Asym.pack()
+                    print "Isotropic polarizablity"+fmt % (Aa[:, :, a].trace()/3)
                     print "Electronic polarizability" + \
-                        (9*fmt) % tuple(Aa[i, :, :].flatten())
-                    line += (6*"%12.6f") % (
-                        Aa[i, 0, 0], Aa[i, 0, 1], Aa[i, 0, 2], \
-                        Aa[i, 1, 1], Aa[i, 1, 2], Aa[i, 2, 2]
-                        )
-                    print "Isotropic            "+fmt % (Aa[i, :, :].trace()/3)
+                        (6*fmt) % tuple(Asym.pack().view(full.matrix))
     #
     # Total molecular properties
     #
@@ -1007,7 +1004,7 @@ class MolFrag:
             Am = self.Am
             #print "Polarizability       ",Am
             print "Polarizability av    ", fmt % (Am.trace()/3)
-            print "Polarizability       ", (9*fmt) % tuple(Am.flatten('F'))
+            print "Polarizability       ", (6*fmt) % tuple(Am.pack().view(full.matrix))
 
     def output_potential_file(
             self, maxl, pol, bond_centers=False, angstrom=False
@@ -1063,7 +1060,7 @@ class MolFrag:
                 if maxl >= 2: line += (6*fmt) % tuple(QUab[:, a, a])
                 if pol > 0:
                     Asym = Aab[:, :, a, a]
-                    if pol == 1: line += fmt % Asym.trace()
+                    if pol == 1: line += fmt % (Asym.trace()/3)
                     if pol == 2: 
                         line += (6*fmt) % tuple(Asym.pack().view(full.matrix))
                 ab += 1
