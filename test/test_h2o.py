@@ -74,24 +74,7 @@ def test_dipole_nobonds():
     assert_(Daa, ref.Daa)
 
 def test_quadrupole_total():
-    rrab=full.matrix((6, m.noa, m.noa))
-    rRab=full.matrix((6, m.noa, m.noa))
-    RRab=full.matrix((6, m.noa, m.noa))
-    Rabc = 1.0*m.Rab
-    for a in range(m.noa):
-        for b in range(m.noa):
-            Rabc[a,b,:] -= m.Rc
-    for a in range(m.noa):
-        for b in range(m.noa):
-            ij = 0
-            for i in range(3):
-                for j in range(i,3):
-                    rRab[ij, a, b] = m.Dab[i, a, b]*Rabc[a, b, j]\
-                                   + m.Dab[j, a, b]*Rabc[a, b, i]
-                    RRab[ij, a, b] = m.Qab[a, b]*(m.R[a, i] - m.Rc[i])*(m.R[b, j] - m.Rc[j])
-                    ij += 1
-    QUcab = m.QUab + rRab + RRab
-    QUc = QUcab.sum(axis=2).sum(axis=1).view(full.matrix)
+    QUc = m.QUc
     assert_(QUc, ref.QUc)
     
 def test_nuclear_quadrupole():

@@ -92,6 +92,7 @@ class MolFrag:
         self._QUab = None
         self._QUsym = None
         self._QUN = None
+        self._QUc = None
         self._dQa = None
         self._dQab = None
         self._Fab = None
@@ -642,6 +643,29 @@ class MolFrag:
 
     #QUN = property(fget=nuclear_quadrupole)
 
+    @property
+    def QUc(self):
+        if self._QUc is not None: return self._QUc
+
+        rrab=full.matrix((6, self.noa, self.noa))
+        rRab=full.matrix((6, self.noa, self.noa))
+        RRab=full.matrix((6, self.noa, self.noa))
+        Rabc = 1.0*self.Rab
+        for a in range(self.noa):
+            for b in range(self.noa):
+                Rabc[a,b,:] -= self.Rc
+        for a in range(self.noa):
+            for b in range(self.noa):
+                ij = 0
+                for i in range(3):
+                    for j in range(i,3):
+                        rRab[ij, a, b] = self.Dab[i, a, b]*Rabc[a, b, j]\
+                                       + self.Dab[j, a, b]*Rabc[a, b, i]
+                        RRab[ij, a, b] = self.Qab[a, b]*(self.R[a, i] - self.Rc[i])*(self.R[b, j] - self.Rc[j])
+                        ij += 1
+        QUcab = self.QUab + rRab + RRab
+        self._QUc = QUcab.sum(axis=2).sum(axis=1).view(full.matrix)
+        return self._QUc
 
     @property
     def Fab(self, **kwargs):
@@ -941,8 +965,8 @@ class MolFrag:
                     line += (3*"%12.6f") % tuple(Da[i, :])
                 if self._QUab is not None:
                     print "QUab", QUab
-                    print "Electronic quadrupole"+(6*fmt) % tuple(QUa[i, :])
-                    line += (6*"%12.6f") % tuple(QUa[i, :])
+                    print "Electronic quadrupole"+(6*fmt) % tuple(QUa[:, i])
+                    line += (6*"%12.6f") % tuple(QUa[:, i])
                 if self._Aab is not None:
                     print "Polarizability       ", \
                         Aa[i, :, :].view(full.matrix).sym()
@@ -963,19 +987,7 @@ class MolFrag:
             Dc = Qa*(R-Rc)
             DT = Dm+Dc
         if self._QUab is not None:
-            QUm = QUa.sum(axis=0)
-            Rab = full.matrix((noa, noa, 3))
-            for a in range(noa):
-                for b in range(noa):
-                    #Rab[a,b,:]=(R[a,:]+R[b,:])/2-Rc[:]
-                    Rab[a, b, :] = R[b, :]-Rc[:]
-                    ij = 0
-                    for i in range(3):
-                        for j in range(i, 3):
-                            QUm[ij] += Dab[i, a, b]*Rab[a, b, j] + \
-                                       Dab[j, a, b]*Rab[a, b, i]
-                            QUm[ij] += Qab[a, b]*Rab[a, b, i]*Rab[a, b, j]
-                            ij += 1
+            QUm = self.QUc
             QUT = QUm+QUN
 
         header("Molecular")
