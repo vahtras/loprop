@@ -97,6 +97,7 @@ class MolFrag:
         self._Fab = None
         self._la = None
         self._Aab = None
+        self._Am = None
         self._dAab = None
         #if maxl >= 0: self.charge()
         #if maxl >= 1: self.dipole()
@@ -462,6 +463,7 @@ class MolFrag:
         nbf = D.shape[0]
         #x = [prop.read(l, prp).unpack() for l in lab]
         x = prop.read(*lab, filename=prp, unpack=True)
+        #for l, xi in zip(lab, x): print l, xi
         xlop = [T.T*xi*T for xi in x]
         xlopsb = [xli.subblocked(cpa, cpa) for xli in xlop]
 
@@ -837,14 +839,35 @@ class MolFrag:
 
     #dAab = property(fget=get_dAab)
 
-    def output_by_atom(self, fmt="%9.5f", bond_centers=False):
-        """Print nfo"""
-        Qab = self.Qab
-        Dab = self.Dab
-        QUab = self.QUab
-        QUN = self.QUN
-        dQUab = self.dQUab
+    @property
+    def Am(self):
+        "Molecular polarizability"
+
+        if self._Am is not None: return self._Am
+
+        dQa = self.dQa
+        Rab = self.Rab
         Aab = self.Aab
+        noa = self.noa
+
+        self._Am = Aab.sum(axis=3).sum(axis=2).view(full.matrix)
+        for i in range(3):
+            for j in range(3):
+                for a in range(noa):
+                    self._Am[i, j] += Rab[a, a, i]*dQa[a, j]
+        return self._Am
+
+    def output_by_atom(self, fmt="%9.5f", max_l=0, pol=0, bond_centers=False):
+        """Print nfo"""
+
+        if max_l >= 0: Qab = self.Qab
+        if max_l >= 1 or pol: Dab = self.Dab
+        if max_l >= 2:
+            QUab = self.QUab
+            QUN = self.QUN
+            dQUab = self.dQUab
+        if  pol:
+            Aab = self.Aab
         Z = self.Z
         R = self.R
         Rc = self.Rc
@@ -853,10 +876,10 @@ class MolFrag:
     # Form net atomic properties P(a) = sum(b) P(a,b)
     #
         Qa = Qab.diagonal()
-        if Dab is not None : Da = Dab.sum(axis=2)
-        if QUab is not None : 
+        if self._Dab is not None : Da = Dab.sum(axis=2)
+        if self._QUab is not None : 
             QUa = QUab.sum(axis=2) + dQUab.sum(axis=2)
-        if Aab: Aa = Aab.sum(axis=2)
+        if self._Aab is not None: Aa = Aab.sum(axis=2)
         if bond_centers:
             for i in range(noa):
                 for j in range(i+1):
@@ -913,13 +936,14 @@ class MolFrag:
                 print "Electronic charge:   "+fmt % Qa[i]
                 print "Total charge:        "+fmt % (Z[i]+Qa[i])
                 line += "%12.6f" % (Z[i]+Qa[i])
-                if Dab is not None:
+                if self._Dab is not None:
                     print "Electronic dipole    "+(3*fmt) % tuple(Da[i, :])
                     line += (3*"%12.6f") % tuple(Da[i, :])
-                if QUab is not None:
+                if self._QUab is not None:
+                    print "QUab", QUab
                     print "Electronic quadrupole"+(6*fmt) % tuple(QUa[i, :])
                     line += (6*"%12.6f") % tuple(QUa[i, :])
-                if Aab is not None:
+                if self._Aab is not None:
                     print "Polarizability       ", \
                         Aa[i, :, :].view(full.matrix).sym()
                     print "Electronic polarizability" + \
@@ -934,11 +958,11 @@ class MolFrag:
     #
         Ztot = Z.sum()
         Qtot = Qa.sum()
-        if Dab is not None:
+        if self._Dab is not None:
             Dm = Da.sum(axis=0) 
             Dc = Qa*(R-Rc)
             DT = Dm+Dc
-        if QUab is not None:
+        if self._QUab is not None:
             QUm = QUa.sum(axis=0)
             Rab = full.matrix((noa, noa, 3))
             for a in range(noa):
@@ -953,22 +977,22 @@ class MolFrag:
                             QUm[ij] += Qab[a, b]*Rab[a, b, i]*Rab[a, b, j]
                             ij += 1
             QUT = QUm+QUN
-        if Aab is not None: Am = Aa.sum(axis=0)
 
         header("Molecular")
         print "Domain center:       "+(3*fmt) % tuple(Rc)
         print "Nuclear charge:      "+fmt % Ztot
         print "Electronic charge:   "+fmt % Qtot
         print "Total charge:        "+fmt % (Ztot+Qtot)
-        if Dab is not None: 
+        if self._Dab is not None: 
             print "Electronic dipole    "+(3*fmt) % tuple(Dm)
             print "Gauge   dipole       "+(3*fmt) % tuple(Dc)
             print "Total   dipole       "+(3*fmt) % tuple(DT)
-        if QUab is not None:
+        if self._QUab is not None:
             print "Electronic quadrupole"+(6*fmt) % tuple(QUm)
             print "Nuclear    quadrupole"+(6*fmt) % tuple(QUN)
             print "Total      quadrupole"+(6*fmt) % tuple(QUT)
-        if Aab is not None:
+        if self._Aab is not None:
+            Am = self.Am
             #print "Polarizability       ",Am
             print "Polarizability av    ", fmt % (Am.trace()/3)
             print "Polarizability       ", (9*fmt) % tuple(Am.flatten('F'))
@@ -1060,6 +1084,11 @@ if __name__ == "__main__":
           '-d', '--debug',
           dest='debug', action='store_true', default=False,
           help='print for debugging [False]'
+          )
+    OP.add_option(
+          '-v', '--verbose',
+          dest='verbose', action='store_true', default=False,
+          help='print details [False]'
           )
     OP.add_option(
           '-t','--tmpdir',
@@ -1155,6 +1184,7 @@ if __name__ == "__main__":
         )
         
         
-    #molfrag.output_by_atom(fmt="%9.5f", bond_centers=o.bc)
+    if o.verbose:
+        molfrag.output_by_atom(fmt="%9.5f", max_l=o.max_l, pol=o.pol, bond_centers=o.bc)
     print t
      
