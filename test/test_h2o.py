@@ -169,16 +169,7 @@ def test_bond_charge_shift_sum():
 
 def test_polarizability_total():
 
-    dQa = m.dQa
-    Rab = m.Rab
-    Aab = m.Aab
-    noa = m.noa
-    
-    Am = Aab.sum(axis=3).sum(axis=2).view(full.matrix)
-    for i in range(3):
-        for j in range(3):
-            for a in range(noa):
-                Am[i, j] += Rab[a, a, i]*dQa[a, j]
+    Am = m.Am
 
     assert_(Am, ref.Am, 0.015)
         
