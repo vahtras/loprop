@@ -963,7 +963,7 @@ class MolFrag:
                 line += "%12.6f" % (Z[a]+Qa[a])
                 if self._Dab is not None:
                     print "Electronic dipole    "+(3*fmt) % tuple(Da[:, a])
-                    line += (3*"%12.6f") % tuple(Da[a, :])
+                    line += (3*"%12.6f") % tuple(Da[:, a])
                 if self._QUab is not None:
                     #print "QUab", QUab
                     print "Electronic quadrupole"+(6*fmt) % tuple(QUa[:, a])
@@ -980,7 +980,7 @@ class MolFrag:
         Ztot = Z.sum()
         Qtot = Qa.sum()
         if self._Dab is not None:
-            Dm = Da.sum(axis=0) 
+            Dm = Da.sum(axis=1) 
             Dc = Qa*(R-Rc)
             DT = Dm+Dc
         if self._QUab is not None:
