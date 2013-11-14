@@ -27,7 +27,7 @@ def setup():
     global m
     global ff
 # modify Gagliardi penalty function to include unit conversion bug
-    m = loprop.MolFrag(tmpdir, pf=penalty_function(2.0/xtang**2))
+    m = loprop.MolFrag(tmpdir, freqs=(0, 0.5), pf=penalty_function(2.0/xtang**2))
     ff = ref.ff
 
 def test_nuclear_charge():
@@ -155,7 +155,7 @@ def test_polarizability_total():
 
     assert_(Am, ref.Am, 0.015)
 
-def notest_dynamic_polarizability_total():
+def test_dynamic_polarizability_total():
 
     Amw = m.Am[1]
 
