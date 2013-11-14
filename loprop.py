@@ -59,12 +59,20 @@ class MolFrag:
     data from a Dalton runtime scratch directory"""
 
     def __init__(
-        self, tmpdir, pf=penalty_function, sf=shift_function, gc=None
+        self, tmpdir, freqs=None, pf=penalty_function, sf=shift_function, gc=None
         ):
         """Constructur of MolFrac class objects
         input: tmpdir, scratch directory of Dalton calculation
         """
         self.tmpdir = tmpdir
+        if freqs is None:
+            self.freqs = (0,)
+            self.nfreqs = 1
+        else:
+            self.freqs = freqs
+            self.nfreqs = len(freqs)
+        self.rfreqs = range(self.nfreqs)
+
         self.pf = pf
         self.sf = sf
         self.gc = gc
@@ -702,7 +710,7 @@ class MolFrag:
         dQa = self.dQa
         Fab = self.Fab
         Lab = Fab + self.sf(Fab)
-        self._la = dQa/Lab
+        self._la = [rhs/Lab for rhs in dQa]
         return self._la
     #la = property(fget=get_la)
 
@@ -714,7 +722,7 @@ class MolFrag:
         if self._Dk is None:
             lab = ['XDIPLEN', "YDIPLEN", "ZDIPLEN"]
             prp = os.path.join(self.tmpdir,"AOPROPER")
-            self._Dk = [lr.Dk(l, tmpdir=self.tmpdir) for l in lab]
+            self._Dk = [[lr.Dk(l, freq=w, tmpdir=self.tmpdir) for l in lab] for w in self.freqs]
 
         return self._Dk
 
@@ -747,17 +755,19 @@ class MolFrag:
         noa = self.noa
 
         Dk = self.Dk
-        Dklop = [T.I*d*T.I.T for d in Dk]
-        Dklopsb = [d.subblocked(cpa, cpa) for d in Dklop]
+        print "Dk"
+        Dklop = [[T.I*d*T.I.T for d in Dkw] for Dkw in Dk]
+        Dklopsb = [[d.subblocked(cpa, cpa) for d in Dkwlop] for Dkwlop in Dklop]
 
         Slop = T.T*S*T
         Slopsb = Slop.subblocked(cpa, cpa)
 
-        dQa = full.matrix((noa, 3))
+        dQa = full.matrix((self.nfreqs, noa, 3))
         for a in range(noa):
             for i in range(3):
-                dQa[a, i] = \
-              - Slopsb.subblock[a][a]&Dklopsb[i].subblock[a][a]
+                for w in self.rfreqs:
+                    dQa[w, a, i] = \
+                  - Slopsb.subblock[a][a]&Dklopsb[w][i].subblock[a][a]
         self._dQa = dQa
         return self._dQa
 
@@ -774,7 +784,7 @@ class MolFrag:
         la = self.la
         noa = self.noa
 
-        dQab = full.matrix((noa, noa, 3))
+        dQab = full.matrix((self.nfreqs, noa, noa, 3))
         for field in range(3):
             for a in range(noa):
                 Za = self.Z[a]
@@ -782,10 +792,11 @@ class MolFrag:
                 for b in range(a):
                     Zb = self.Z[b]
                     Rb = self.R[b]
-                    dQab[a, b, field] =  \
-                        - (la[a, field]-la[b, field]) * \
+                    for w in self.rfreqs:
+                        dQab[w, a, b, field] =  \
+                        - (la[w][a, field]-la[w][b, field]) * \
                         self.pf(Za, Ra, Zb, Rb)
-                    dQab[b, a, field] = -dQab[a, b, field]
+                        dQab[w, b, a, field] = -dQab[w, a, b, field]
 
         self._dQab = dQab
         return self._dQab
@@ -812,24 +823,26 @@ class MolFrag:
         #Transform property/density to loprop basis
         Slop = T.T*self.S*T
         xlop = [T.T*p*T for p in x]
-        Dklop = [T.I*d*T.I.T for d in Dk]
+        Dklop = [[T.I*d*T.I.T for d in Dkw] for Dkw in Dk]
         #to subblocked
         xlopsb = [p.subblocked(cpa, cpa) for p in xlop]
-        Dklopsb = [d.subblocked(cpa, cpa) for d in Dklop]
+        Dklopsb = [[d.subblocked(cpa, cpa) for d in Dkwlop] for Dkwlop in Dklop]
         Slopsb = Slop.subblocked(cpa, cpa)
            
         noa = len(cpa)
-        Aab = full.matrix((3, 3, noa, noa))
+        Aab = full.matrix((self.nfreqs, 3, 3, noa, noa))
 
         # correction term for shifting origin from O to Rab
         for i in range(3):
             for j in range(3):
                 for a in range(noa):
                     for b in range(noa):
-                        Aab[i, j, a, b] = (
-                           -xlopsb[i].subblock[a][b]&Dklopsb[j].subblock[a][b]
+                        for w in self.rfreqs:
+                            Aab[w, i, j, a, b] = (
+                           -xlopsb[i].subblock[a][b]&Dklopsb[w][j].subblock[a][b]
                            )
-                    Aab[i, j, a, a] -= dQa[a, j]*Rab[a, a, i]
+                    for w in self.rfreqs:
+                        Aab[w, i, j, a, a] -= dQa[w, a, j]*Rab[a, a, i]
 
         self._Aab = Aab
         return self._Aab
@@ -846,17 +859,17 @@ class MolFrag:
         dQab = self.dQab
         dRab = self.dRab
         noa = self.noa
-        dAab = full.matrix((3, 3, noa, noa))
+        dAab = full.matrix((self.nfreqs, 3, 3, noa, noa))
         for a in range(noa):
             for b in range(noa):
                 for i in range(3):
                     for j in range(3):
                         if  mc:
-                            dAab[i, j, a, b] = 2*dRab[a, b, i]*dQab[a, b, j]
+                            dAab[:, i, j, a, b] = 2*dRab[a, b, i]*dQab[:, a, b, j]
                         else:
-                            dAab[i, j, a, b] = (
-                                dRab[a, b, i]*dQab[a, b, j]+
-                                dRab[a, b, j]*dQab[a, b, i]
+                            dAab[:, i, j, a, b] = (
+                                dRab[a, b, i]*dQab[:, a, b, j]+
+                                dRab[a, b, j]*dQab[:, a, b, i]
                                 )
         self._dAab = dAab
         return self._dAab
@@ -874,11 +887,12 @@ class MolFrag:
         Aab = self.Aab
         noa = self.noa
 
-        self._Am = Aab.sum(axis=3).sum(axis=2).view(full.matrix)
+        self._Am = Aab.sum(axis=4).sum(axis=3).view(full.matrix)
         for i in range(3):
             for j in range(3):
                 for a in range(noa):
-                    self._Am[i, j] += Rab[a, a, i]*dQa[a, j]
+                    for w in self.rfreqs:
+                        self._Am[w, i, j] += Rab[a, a, i]*dQa[w, a, j]
         return self._Am
 
     def output_by_atom(self, fmt="%9.5f", max_l=0, pol=0, bond_centers=False):
@@ -1007,7 +1021,7 @@ class MolFrag:
             print "Polarizability       ", (6*fmt) % tuple(Am.pack().view(full.matrix))
 
     def output_potential_file(
-            self, maxl, pol, bond_centers=False, angstrom=False
+            self, maxl, pol, bond_centers=False, angstrom=False, nfreq=1
             ):
         """Output potential file"""
         fmt = "%10.3f"
@@ -1074,10 +1088,12 @@ class MolFrag:
                 if maxl >= 2: 
                     line += (6*fmt) % tuple((QUab+dQUab).sum(axis=2)[:,  a])
                 if pol > 0:
-                    Asym = Aab.sum(axis=3)[:, :, a].view(full.matrix)
-                    if pol == 1: line += fmt % (Asym.trace()/3)
-                    if pol == 2: 
-                        line += (6*fmt) % tuple(Asym.pack().view(full.matrix))
+                    for iw in range(nfreq):
+                        Asym = Aab.sum(axis=4)[iw, :, :, a].view(full.matrix)
+                        if pol == 1: 
+                            line += fmt % (Asym.trace()/3)
+                        if pol == 2: 
+                            line += (6*fmt) % tuple(Asym.pack().view(full.matrix))
                     
                 lines.append(line)
             

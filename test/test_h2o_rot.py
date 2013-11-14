@@ -128,25 +128,25 @@ def test_molcas_shift():
     assert_(Lab, ref.Lab)
 
 def test_total_charge_shift():
-    dQ = m.dQa.sum(axis=0).view(full.matrix)
+    dQ = m.dQa[0].sum(axis=0).view(full.matrix)
     dQref = [0., 0., 0.]
     assert_(dQref, dQ)
 
 def test_atomic_charge_shift():
-    dQa = m.dQa
+    dQa = m.dQa[0]
     dQaref = (ref.dQa[:, 1::2] - ref.dQa[:, 2::2])/(2*ff)
 
     assert_(dQa, dQaref, .006)
 
 def test_lagrangian():
 # values per "perturbation" as in atomic_charge_shift below
-    la = m.la
+    la = m.la[0]
     laref = (ref.la[:,0:6:2] - ref.la[:,1:6:2])/(2*ff)
 # The sign difference is because mocas sets up rhs with opposite sign
     assert_(-laref, la, atol=100)
 
 def test_bond_charge_shift():
-    dQab = m.dQab
+    dQab = m.dQab[0]
     noa = m.noa
 
 
@@ -161,24 +161,14 @@ def test_bond_charge_shift():
     assert_(-dQabref, dQabcmp, 0.006)
 
 def test_bond_charge_shift_sum():
-    dQaref = m.dQa
-    dQa  = m.dQab.sum(axis=1).view(full.matrix)
-    print dQaref, dQa
-    assert np.allclose(dQaref, dQa)
+    dQa  = m.dQab[0].sum(axis=1).view(full.matrix)
+    dQaref = m.dQa[0]
+    assert_(dQa, dQaref)
 
 
 def test_polarizability_total():
 
-    dQa = m.dQa
-    Rab = m.Rab
-    Aab = m.Aab
-    noa = m.noa
-    
-    Am = Aab.sum(axis=3).sum(axis=2).view(full.matrix)
-    for i in range(3):
-        for j in range(3):
-            for a in range(noa):
-                Am[i, j] += Rab[a, a, i]*dQa[a, j]
+    Am = m.Am[0]
 
     assert_(Am, ref.Am, 0.015)
         
@@ -359,7 +349,7 @@ def test_altint():
 
 def test_polarizability_allbonds_atoms():
 
-    Aab = m.Aab #+ m.dAab
+    Aab = m.Aab[0] #+ m.dAab
     noa = m.noa
 
     Acmp=full.matrix(ref.Aab.shape)
@@ -378,7 +368,7 @@ def test_polarizability_allbonds_atoms():
 
 def test_polarizability_allbonds_bonds():
 
-    Aab = m.Aab + m.dAab/2
+    Aab = m.Aab[0] + m.dAab[0]/2
     noa = m.noa
 
     Acmp=full.matrix(ref.Aab.shape)
@@ -398,7 +388,7 @@ def test_polarizability_allbonds_bonds():
 
 def test_polarizability_nobonds():
 
-    Aab = m.Aab + m.dAab/2
+    Aab = m.Aab[0] + m.dAab[0]/2
     noa = m.noa
 
     Acmp = full.matrix((6, noa ))
