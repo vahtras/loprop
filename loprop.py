@@ -422,35 +422,22 @@ class MolFrag:
 
         if self._Dab is not None: return self._Dab
 
+        x = self.x
         D = self.D
-        T = self.T
-        cpa = self.cpa
-        Z = self.Z
         Rab = self.Rab
         Qab = self.Qab
-
-        lab = ['XDIPLEN', "YDIPLEN", "ZDIPLEN"]
        
-        prp = os.path.join(self.tmpdir,"AOPROPER")
-        nbf = self.nbf
-        x = prop.read(*lab, filename=prp, unpack=True)
-        xlop = [T.T*xi*T for xi in x]
-        xlopsb = [xli.subblocked(cpa, cpa) for xli in xlop]
-
-        Ti = T.I
-        noa = len(cpa)
-        dab = full.matrix((3, noa, noa))
+        noa = self.noa
+        _Dab = full.matrix((3, noa, noa))
         for i in range(3):
             for a in range(noa):
                 for b in range(noa):
-                    dab[i, a, b] = -(
-                         xlopsb[i].subblock[a][b]&D.subblock[a][b]
+                    _Dab[i, a, b] = -(
+                         x[i].subblock[a][b]&D.subblock[a][b]
                          ) \
                          -Qab[a, b]*Rab[a, b, i]
-        if debug:
-            print "dipole:dab", dab
         
-        self._Dab = dab
+        self._Dab = _Dab
         return self._Dab
 
     @property
@@ -662,14 +649,21 @@ class MolFrag:
 
     @property
     def x(self):
-        """Read dipole matrices """
+        """Read dipole matrices to blocked loprop basis"""
 
-        if self._x is None:
-            lab = ['XDIPLEN', "YDIPLEN", "ZDIPLEN"]
-            prp = os.path.join(self.tmpdir,"AOPROPER")
-            #self._x = [prop.read(l, prp).unpack() for l in lab]
-            self._x = prop.read(*lab, filename=prp, unpack=True)
+        if self._x is not None:
+            return self._x
+        
+        lab = ['XDIPLEN', "YDIPLEN", "ZDIPLEN"]
+        prp = os.path.join(self.tmpdir,"AOPROPER")
+        T = self.T
+        cpa = self.cpa
+        _x = [
+            (T.T*p*T).subblocked(cpa, cpa) for p in
+            prop.read(*lab, filename=prp, unpack=True)
+            ]
 
+        self._x = _x
         return self._x
 
     @property
@@ -737,10 +731,10 @@ class MolFrag:
         x = self.x
 
         #Transform property/density to loprop basis
-        xlop = [T.T*p*T for p in x]
+        #xlop = [T.T*p*T for p in x]
         Dklop = [[T.I*d*T.I.T for d in Dkw] for Dkw in Dk]
         #to subblocked
-        xlopsb = [p.subblocked(cpa, cpa) for p in xlop]
+        #xlopsb = [p.subblocked(cpa, cpa) for p in xlop]
         Dklopsb = [[d.subblocked(cpa, cpa) for d in Dkwlop] for Dkwlop in Dklop]
            
         noa = len(cpa)
@@ -753,7 +747,7 @@ class MolFrag:
                     for b in range(noa):
                         for w in self.rfreqs:
                             Aab[w, i, j, a, b] = (
-                           -xlopsb[i].subblock[a][b]&Dklopsb[w][j].subblock[a][b]
+                           -x[i].subblock[a][b]&Dklopsb[w][j].subblock[a][b]
                            )
                     for w in self.rfreqs:
                         Aab[w, i, j, a, a] -= dQa[w, a, j]*Rab[a, a, i]
