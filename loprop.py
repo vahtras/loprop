@@ -821,11 +821,13 @@ class MolFrag:
                         print "Electronic quadrupole" + \
                             (6*fmt) % tuple(QUab[:, a, b]+QUab[:, b, a])
                     if self._Aab is not None:
-                        Asym = Aab[:, :, a, b] + Aab[:, :, b, a]
-                        if pol > 0:
-                            print "Isotropic polarizability", fmt % Asym.trace()
-                        if pol > 1:
-                            print "Polarizability       ", (6*fmt) % tuple(Asym.pack().view(full.matrix))
+                        for iw, w in enumerate(self.freqs):
+                            Asym = Aab[iw, :, :, a, b] + Aab[iw, :, :, b, a]
+                            if pol > 0:
+                                print "Isotropic polarizability (%g)" % w, fmt % Asym.trace()
+                            if pol > 1:
+                                print "Polarizability (%g)      " % w, 
+                                print (6*fmt) % tuple(Asym.pack().view(full.matrix))
                 header("Atom    %d"%(a+1))
                 print "Atom center:       " + \
                     (3*fmt) % tuple(R[a,:])
@@ -841,11 +843,12 @@ class MolFrag:
                     print "Electronic quadrupole" + \
                         (6*fmt) % tuple(QUab[:, a, a])
                 if self._Aab is not None:
-                    Asym = Aab[:, :, a, a] 
-                    if pol > 0:
-                        print "Isotropic polarizability", fmt % (Asym.trace()/3)
-                    if pol > 1:
-                        print "Polarizability       ", (6*fmt) % tuple(Asym.pack().view(full.matrix))
+                    for iw, w in enumerate(self.freqs):
+                        Asym = Aab[iw, :, :, a, a] 
+                        if pol > 0:
+                            print "Isotropic polarizability (%g)" % w, fmt % (Asym.trace()/3)
+                        if pol > 1:
+                            print "Polarizability (%g)      " % w, (6*fmt) % tuple(Asym.pack().view(full.matrix))
         else:
             for a in range(noa):
                 header("Atomic domain %d" % (a+1))
@@ -864,11 +867,11 @@ class MolFrag:
                     print "Electronic quadrupole"+(6*fmt) % tuple(QUa[:, a])
                     line += (6*"%12.6f") % tuple(QUa[:, a])
                 if self._Aab is not None:
-                    Asym = Aa[:, :, a].view(full.matrix)
-                    #print "Polarizability       ", Asym.pack()
-                    print "Isotropic polarizablity"+fmt % (Aa[:, :, a].trace()/3)
-                    print "Electronic polarizability" + \
-                        (6*fmt) % tuple(Asym.pack().view(full.matrix))
+                    for iw, w in enumerate(self.freqs):
+                        Asym = Aa[iw, :, :, a].view(full.matrix)
+                        print "Isotropic polarizablity (w=%g)" % w + fmt % (Aa[iw, :, :, a].trace()/3)
+                        print "Electronic polarizability (w=%g)" % w + \
+                            (6*fmt) % tuple(Asym.pack().view(full.matrix))
     #
     # Total molecular properties
     #
@@ -896,13 +899,13 @@ class MolFrag:
             print "Nuclear    quadrupole"+(6*fmt) % tuple(QUN)
             print "Total      quadrupole"+(6*fmt) % tuple(QUT)
         if self._Aab is not None:
-            Am = self.Am
-            #print "Polarizability       ",Am
-            print "Polarizability av    ", fmt % (Am.trace()/3)
-            print "Polarizability       ", (6*fmt) % tuple(Am.pack().view(full.matrix))
+            for iw, w in enumerate(self.freqs):
+                Am = self.Am[iw]
+                print "Polarizability av (%g)   " % w, fmt % (Am.trace()/3)
+                print "Polarizability (%g)      " % w, (6*fmt) % tuple(Am.pack().view(full.matrix))
 
     def output_potential_file(
-            self, maxl, pol, bond_centers=False, angstrom=False, nfreq=1
+            self, maxl, pol, bond_centers=False, angstrom=False
             ):
         """Output potential file"""
         fmt = "%10.3f"
@@ -940,10 +943,11 @@ class MolFrag:
                     if maxl >= 2: line += (6*fmt) % \
                         tuple(QUab[:, a, b] +QUab[:, b, a])
                     if pol > 0:
-                        Asym = Aab[:, :, a, b] + Aab[:, :, b, a]
-                        if pol == 1: line += fmt % Asym.trace()
-                        if pol == 2: 
-                            line += (6*fmt)%tuple(Asym.pack().view(full.matrix))
+                        for iw, w in enumerate(self.freqs):
+                            Asym = Aab[iw, :, :, a, b] + Aab[iw, :, :, b, a]
+                            if pol == 1: line += fmt % Asym.trace()
+                            if pol == 2: 
+                                line += (6*fmt)%tuple(Asym.pack().view(full.matrix))
                     ab += 1
                         
 
@@ -954,10 +958,11 @@ class MolFrag:
                 if maxl >= 1: line += (3*fmt) % tuple(Dsym[:, ab])
                 if maxl >= 2: line += (6*fmt) % tuple(QUab[:, a, a])
                 if pol > 0:
-                    Asym = Aab[:, :, a, a]
-                    if pol == 1: line += fmt % (Asym.trace()/3)
-                    if pol == 2: 
-                        line += (6*fmt) % tuple(Asym.pack().view(full.matrix))
+                    for iw, w in enumerate(self.freqs):
+                        Asym = Aab[iw, :, :, a, a]
+                        if pol == 1: line += fmt % (Asym.trace()/3)
+                        if pol == 2: 
+                            line += (6*fmt) % tuple(Asym.pack().view(full.matrix))
                 ab += 1
                     
                 lines.append(line)
@@ -969,7 +974,7 @@ class MolFrag:
                 if maxl >= 2: 
                     line += (6*fmt) % tuple((QUab+dQUab).sum(axis=2)[:,  a])
                 if pol > 0:
-                    for iw in range(nfreq):
+                    for iw in range(self.nfreqs):
                         Asym = Aab.sum(axis=4)[iw, :, :, a].view(full.matrix)
                         if pol == 1: 
                             line += fmt % (Asym.trace()/3)
@@ -1035,6 +1040,12 @@ if __name__ == "__main__":
           )
 
     OP.add_option(
+          '-w','--frequencies',
+          dest='freqs', default=None,
+          help='Dynamic polarizabilities (0.)'
+          )
+
+    OP.add_option(
           '-a','--polarizabilities',
           dest='pol', type='int', default=0,
           help='Localized polarizabilities (1=isotropic, 2=full)'
@@ -1059,6 +1070,11 @@ if __name__ == "__main__":
     if o.daltgz:
         tgz = tarfile.open(o.daltgz, 'r:gz')
         tgz.extractall(path=o.tmpdir)
+    
+    if o.freqs:
+        freqs = map(float, o.freqs.split())
+    else:
+        freqs = (0.0, )
         
     needed_files = ["AOONEINT", "DALTON.BAS", "SIRIFC", "AOPROPER", "RSPVEC"]
     for file_ in needed_files:
@@ -1083,7 +1099,7 @@ if __name__ == "__main__":
 
     t = timing.timing('Loprop')
     molfrag = MolFrag(
-        o.tmpdir, pf=penalty_function(o.alpha), gc=gc
+        o.tmpdir, pf=penalty_function(o.alpha), gc=gc, freqs=freqs
         )
     print molfrag.output_potential_file(
         o.max_l, o.pol, o.bc, o.angstrom
