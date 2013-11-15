@@ -736,25 +736,19 @@ class MolFrag:
         """Charge shift per atom"""
         if self._dQa is not None: return self._dQa
 
-        S = self.S
         T = self.T
         cpa = self.cpa
         noa = self.noa
 
         Dk = self.Dk
-        print "Dk"
         Dklop = [[T.I*d*T.I.T for d in Dkw] for Dkw in Dk]
         Dklopsb = [[d.subblocked(cpa, cpa) for d in Dkwlop] for Dkwlop in Dklop]
-
-        Slop = T.T*S*T
-        Slopsb = Slop.subblocked(cpa, cpa)
 
         dQa = full.matrix((self.nfreqs, noa, 3))
         for a in range(noa):
             for i in range(3):
                 for w in self.rfreqs:
-                    dQa[w, a, i] = \
-                  - Slopsb.subblock[a][a]&Dklopsb[w][i].subblock[a][a]
+                    dQa[w, a, i] = - Dklopsb[w][i].subblock[a][a].tr()
         self._dQa = dQa
         return self._dQa
 
