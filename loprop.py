@@ -619,9 +619,10 @@ class MolFrag:
         T = self.T
         cpa = self.cpa
 
-        _Dk = [
-            [(T.I*lr.Dk(l, freq=w, tmpdir=self.tmpdir)*T.I.T).subblocked(cpa, cpa) for l in lab] 
-            for w in self.freqs
+        _Dk = [[(T.I*d*T.I.T).subblocked(cpa, cpa) 
+            for d in dw
+            ] for dw in
+            lr.Dk(*lab, freqs=self.freqs, tmpdir=self.tmpdir)
             ]
 
         self._Dk = _Dk
