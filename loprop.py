@@ -87,10 +87,7 @@ class MolFrag:
         self._D = None
         self._Dk = None
         self.get_basis_info()
-        #self.get_overlap()
         self.get_isordk()
-        #self.get_density()
-        #self.transformation()
         self._x = None
 
         self._Qab = None
@@ -614,11 +611,20 @@ class MolFrag:
     def Dk(self):
         """Read perturbed densities"""
 
-        if self._Dk is None:
-            lab = ['XDIPLEN', "YDIPLEN", "ZDIPLEN"]
-            prp = os.path.join(self.tmpdir,"AOPROPER")
-            self._Dk = [[lr.Dk(l, freq=w, tmpdir=self.tmpdir) for l in lab] for w in self.freqs]
+        if self._Dk is not None:
+            return self._Dk
 
+        lab = ['XDIPLEN', "YDIPLEN", "ZDIPLEN"]
+        prp = os.path.join(self.tmpdir,"AOPROPER")
+        T = self.T
+        cpa = self.cpa
+
+        _Dk = [
+            [(T.I*lr.Dk(l, freq=w, tmpdir=self.tmpdir)*T.I.T).subblocked(cpa, cpa) for l in lab] 
+            for w in self.freqs
+            ]
+
+        self._Dk = _Dk
         return self._Dk
 
     @property
@@ -656,14 +662,12 @@ class MolFrag:
         noa = self.noa
 
         Dk = self.Dk
-        Dklop = [[T.I*d*T.I.T for d in Dkw] for Dkw in Dk]
-        Dklopsb = [[d.subblocked(cpa, cpa) for d in Dkwlop] for Dkwlop in Dklop]
 
         dQa = full.matrix((self.nfreqs, noa, 3))
         for a in range(noa):
             for i in range(3):
                 for w in self.rfreqs:
-                    dQa[w, a, i] = - Dklopsb[w][i].subblock[a][a].tr()
+                    dQa[w, a, i] = - Dk[w][i].subblock[a][a].tr()
         self._dQa = dQa
         return self._dQa
 
@@ -673,7 +677,6 @@ class MolFrag:
         if self._dQab is not None: return self._dQab
 
         dQa = self.dQa
-        #la = self.dQa/self.Fab
         la = self.la
         noa = self.noa
 
@@ -702,7 +705,7 @@ class MolFrag:
 
         D = self.D
         Dk = self.Dk
-        T = self.T
+        #T = self.T
         cpa = self.cpa
         Z = self.Z
         Rab = self.Rab
@@ -710,13 +713,6 @@ class MolFrag:
         dQa = self.dQa
         x = self.x
 
-        #Transform property/density to loprop basis
-        #xlop = [T.T*p*T for p in x]
-        Dklop = [[T.I*d*T.I.T for d in Dkw] for Dkw in Dk]
-        #to subblocked
-        #xlopsb = [p.subblocked(cpa, cpa) for p in xlop]
-        Dklopsb = [[d.subblocked(cpa, cpa) for d in Dkwlop] for Dkwlop in Dklop]
-           
         noa = len(cpa)
         Aab = full.matrix((self.nfreqs, 3, 3, noa, noa))
 
@@ -727,7 +723,7 @@ class MolFrag:
                     for b in range(noa):
                         for w in self.rfreqs:
                             Aab[w, i, j, a, b] = (
-                           -x[i].subblock[a][b]&Dklopsb[w][j].subblock[a][b]
+                           -x[i].subblock[a][b]&Dk[w][j].subblock[a][b]
                            )
                     for w in self.rfreqs:
                         Aab[w, i, j, a, a] -= dQa[w, a, j]*Rab[a, a, i]
@@ -759,7 +755,6 @@ class MolFrag:
         self._dAab = dAab
         return self._dAab
 
-    #dAab = property(fget=get_dAab)
 
     @property
     def Am(self):
