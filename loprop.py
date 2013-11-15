@@ -11,6 +11,17 @@ xtang = 0.5291772108
 angtx = 1.0/xtang
 mc = False
 
+def verbose2(func):
+    import inspect
+    def wrapper(self, *args, **kwargs):
+        print "before %s from %s" % (func.__name__, inspect.stack()[1][3])
+        print "with arguments", args, kwargs
+        result = func(self, *args, **kwargs)
+        print "after %s backto %s" % (func.__name__, inspect.stack()[1][3])
+        return result
+    return wrapper
+
+
 # Bragg-Slater radii () converted from Angstrom to Bohr
 rbs = numpy.array([0, 
       0.25,                                     0.25, 
@@ -133,6 +144,7 @@ class MolFrag:
             print "Occupied/atom", self.opa, "\nTotal", self.noc
 
     @property
+    @verbose2
     def S(self):
         """
         Get overlap, nuclear charges and coordinates from AOONEINT
@@ -201,7 +213,6 @@ class MolFrag:
                 print "main:Dv", Dv
                 print "main:D&S", self._D&self.S
         return self._D
-    #D = property(fget=get_density)
 
 
     @property
@@ -412,41 +423,17 @@ class MolFrag:
         """ set charge/atom property"""
         if self._Qab is not None: return self._Qab
 
-        S = self.S
         D = self.D
         T = self.T
         cpa = self.cpa
         
         Ti = T.I
-        if debug:
-            print "charge:Inverse transformation", Ti
-        if 1:
-            Slop = T.T*S*T
-            Dlop = Ti*D*Ti.T
-        elif 0: #dumb tests
-            Slop = T.T*S*T
-            Dlop = Ti*D*T
-        else: #in loprop article
-            Slop = Ti*S*T
-            Dlop = Ti*D*T
-        if debug:
-            print "charge:Slop", Slop
-            print "charge:Dlop", Dlop
-            print "charge:Dlop&Slop", Dlop&Slop
-            #print "charge:Dlop",Dlop
-        Slopsb = Slop.subblocked(cpa, cpa)
+        Dlop = Ti*D*Ti.T
         Dlopsb = Dlop.subblocked(cpa, cpa)
-        if debug:
-            print "charge:Slopsb", Slopsb
-            print "charge:Dlopsb", Dlopsb
-        noa = len(cpa)
+        noa = self.noa
         qa = full.matrix((noa, noa))
         for a in range(noa):
-            qa[a, a] = Slopsb.subblock[a][a]&Dlopsb.subblock[a][a]
-            if debug:
-                for b in range(a):
-                    qa[a, b] = Slopsb.subblock[a][b]&Dlopsb.subblock[a][b]
-                    qa[b, a] = Slopsb.subblock[b][a]&Dlopsb.subblock[b][a]
+            qa[a, a] = Dlopsb.subblock[a][a].tr()
         self._Qab = -qa
         return self._Qab
 
