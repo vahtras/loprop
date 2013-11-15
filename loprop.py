@@ -83,7 +83,6 @@ class MolFrag:
         self.dalton_bas = os.path.join(tmpdir,'DALTON.BAS')
         self.sirifc = os.path.join(tmpdir,'SIRIFC')
 
-        self._S = None
         self._T = None
         self._D = None
         self._Dk = None
@@ -132,15 +131,11 @@ class MolFrag:
             print "Orbitals/atom", self.cpa, "\nTotal", self.nbf
             print "Occupied/atom", self.opa, "\nTotal", self.noc
 
-    @property
     def S(self):
         """
         Get overlap, nuclear charges and coordinates from AOONEINT
         """
-        if self._S is None:
-            self._S = one.read("OVERLAP", self.aooneint).unpack().unblock()
-        return self._S
-    #S = property(fget=get_overlap)
+        return one.read("OVERLAP", self.aooneint).unpack().unblock()
         
 
     def get_isordk(self):
@@ -196,10 +191,7 @@ class MolFrag:
         if self._D is None:
             Di, Dv = dens.ifc(filename=self.sirifc)
             self._D = Di + Dv
-            if debug:
-                print "main:Di", Di
-                print "main:Dv", Dv
-                print "main:D&S", self._D&self.S
+                #print "main:D&S", self._D&self.S
         return self._D
 
 
@@ -222,7 +214,7 @@ class MolFrag:
 
         if self._T is not None: return self._T
 
-        S = self.S
+        S = self.S()
         cpa = self.cpa
         opa = self.opa
     #
@@ -782,13 +774,11 @@ class MolFrag:
         x = self.x
 
         #Transform property/density to loprop basis
-        Slop = T.T*self.S*T
         xlop = [T.T*p*T for p in x]
         Dklop = [[T.I*d*T.I.T for d in Dkw] for Dkw in Dk]
         #to subblocked
         xlopsb = [p.subblocked(cpa, cpa) for p in xlop]
         Dklopsb = [[d.subblocked(cpa, cpa) for d in Dkwlop] for Dkwlop in Dklop]
-        Slopsb = Slop.subblocked(cpa, cpa)
            
         noa = len(cpa)
         Aab = full.matrix((self.nfreqs, 3, 3, noa, noa))
