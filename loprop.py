@@ -186,14 +186,16 @@ class MolFrag:
     @property
     def D(self, debug=False):
         """ 
-        Density from SIRIFC 
+        Density from SIRIFC in blocked loprop basis
         """
-        if self._D is None:
-            Di, Dv = dens.ifc(filename=self.sirifc)
-            self._D = Di + Dv
-                #print "main:D&S", self._D&self.S
-        return self._D
+        if self._D is not None:
+            return self._D
 
+        Di, Dv = dens.ifc(filename=self.sirifc)
+        D = Di + Dv
+        Ti = self.T.I
+        self._D = (Ti*D*Ti.T).subblocked(self.cpa, self.cpa)
+        return self._D
 
     @property
     def T(self, debug=False):
@@ -407,19 +409,13 @@ class MolFrag:
         T = self.T
         cpa = self.cpa
         
-        Ti = T.I
-        Dlop = Ti*D*Ti.T
-        Dlopsb = Dlop.subblocked(cpa, cpa)
         noa = self.noa
-        qa = full.matrix((noa, noa))
+        _Qab = full.matrix((noa, noa))
         for a in range(noa):
-            qa[a, a] = Dlopsb.subblock[a][a].tr()
-        self._Qab = -qa
+            _Qab[a, a] = - D.subblock[a][a].tr()
+        self._Qab = _Qab
         return self._Qab
 
-    #Qab = property(fget=charge)
-
-    #def dipole(self, debug=False):
     @property
     def Dab(self, debug=False):
         """Set dipole property"""
@@ -436,25 +432,19 @@ class MolFrag:
         lab = ['XDIPLEN', "YDIPLEN", "ZDIPLEN"]
        
         prp = os.path.join(self.tmpdir,"AOPROPER")
-        nbf = D.shape[0]
-        #x = [prop.read(l, prp).unpack() for l in lab]
+        nbf = self.nbf
         x = prop.read(*lab, filename=prp, unpack=True)
-        #for l, xi in zip(lab, x): print l, xi
         xlop = [T.T*xi*T for xi in x]
         xlopsb = [xli.subblocked(cpa, cpa) for xli in xlop]
 
         Ti = T.I
-        Dlop = Ti*D*Ti.T
-        Dlopsb = Dlop.subblocked(cpa, cpa)
-        if debug:
-            print "dipole:Dlopsb", Dlopsb
         noa = len(cpa)
         dab = full.matrix((3, noa, noa))
         for i in range(3):
             for a in range(noa):
                 for b in range(noa):
                     dab[i, a, b] = -(
-                         xlopsb[i].subblock[a][b]&Dlopsb.subblock[a][b]
+                         xlopsb[i].subblock[a][b]&D.subblock[a][b]
                          ) \
                          -Qab[a, b]*Rab[a, b, i]
         if debug:
@@ -463,9 +453,6 @@ class MolFrag:
         self._Dab = dab
         return self._Dab
 
-    #Dab = property(fget=dipole)
-
-    #def dipole_sym(self):
     @property
     def Dsym(self):
         """Symmetrize density contributions from atom pairs """
@@ -485,9 +472,6 @@ class MolFrag:
         self._Dsym = dsym
         return self._Dsym
 
-    #Dsym = property(fget=dipole_sym)
-
-    #def quadrupole(self, debug=False):
     @property
     def QUab(self, debug=False):
         """Quadrupole moment"""
@@ -510,17 +494,12 @@ class MolFrag:
 
         prp = os.path.join(self.tmpdir,"AOPROPER")
         C = "XYZ"
-        nbf = D.shape[0]
-        #x = [prop.read(l, prp).unpack() for l in lab]
+        nbf = self.nbf
         x = prop.read(*lab, filename=prp, unpack=True)
         xlop = [T.T*xi*T for xi in x]
         xlopsb = [xli.subblocked(cpa, cpa) for xli in xlop]
 
         Ti = T.I
-        Dlop = Ti*D*Ti.T
-        Dlopsb = Dlop.subblocked(cpa, cpa)
-        if debug:
-            print "prop:Dlopsb", Dlopsb
         noa = len(cpa)
         QUab = full.matrix((6, noa, noa))
         rrab = full.matrix((6, noa, noa))
@@ -537,13 +516,12 @@ class MolFrag:
                         #ij=i*(i+1)/2+j
                         #print "i j ij lab",C[i],C[j],ij,lab[ij]
                         rrab[ij, a, b] = -(
-                            xlopsb[ij].subblock[a][b]&Dlopsb.subblock[a][b]
+                            xlopsb[ij].subblock[a][b]&D.subblock[a][b]
                             ) 
                         rRab[ij, a, b] = Dab[i, a, b]*Rab[j]+Dab[j, a, b]*Rab[i]
                         RRab[ij, a, b] = Rab[i]*Rab[j]*Qab[a, b]
                         ij += 1
         QUab = rrab-rRab-RRab
-        #print "rrab", rrab
         self._QUab = QUab
         #
         # Addition term - gauge correction summing up bonds
@@ -573,9 +551,6 @@ class MolFrag:
 
         return self._QUab
 
-    #QUab = property(fget=quadrupole)
-
-    #def quadrupole_sym(self):
     @property
     def QUsym(self):
         """Quadrupole moment symmetrized over atom pairs"""
@@ -595,9 +570,6 @@ class MolFrag:
         self._QUsym = qusym
         return self._QUsym
 
-    #QUsym = property(fget=quadrupole_sym)
-
-    #def nuclear_quadrupole(self):
     @property
     def QUN(self):
         """Nuclear contribution to quadrupole"""
@@ -615,8 +587,6 @@ class MolFrag:
                     ij += 1
         self._QUN = qn
         return self._QUN
-
-    #QUN = property(fget=nuclear_quadrupole)
 
     @property
     def QUc(self):
@@ -660,7 +630,6 @@ class MolFrag:
             Fab[a, a] += - Fab[a, :].sum()
         self._Fab = Fab
         return self._Fab
-    #Fab = property(fget=get_Fab)
 
     @property
     def la(self):
@@ -724,9 +693,6 @@ class MolFrag:
         self._dQa = dQa
         return self._dQa
 
-    #dQa = property(fget = get_dQa)
-
-    #def get_dQab(self):
     @property
     def dQab(self):
         """Charge transfer matrix"""
@@ -755,9 +721,6 @@ class MolFrag:
         return self._dQab
 
 
-    #dQab = property(fget = get_dQab)
-
-    #def get_Aab(self, debug=False):
     @property
     def Aab(self):
         """Localized polariziabilities"""
@@ -798,9 +761,6 @@ class MolFrag:
         self._Aab = Aab
         return self._Aab
 
-    #Aab = property(fget=get_Aab)
-
-    #def get_dAab(self):
     @property
     def dAab(self):
         """Charge transfer contribution to bond polarizability"""
