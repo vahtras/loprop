@@ -465,9 +465,6 @@ class MolFrag:
         if self._QUab is not None: return self._QUab
 
         D = self.D
-        T = self.T
-        cpa = self.cpa
-        Z = self.Z
         R = self.R
         Rc = self.Rc
         dRab = self.dRab
@@ -478,35 +475,24 @@ class MolFrag:
                            "YYSECMOM", "YZSECMOM", 
                                        "ZZSECMOM")
 
+        xy = self.getprop(*lab)
 
-        prp = os.path.join(self.tmpdir,"AOPROPER")
-        C = "XYZ"
-        nbf = self.nbf
-        x = prop.read(*lab, filename=prp, unpack=True)
-        xlop = [T.T*xi*T for xi in x]
-        xlopsb = [xli.subblocked(cpa, cpa) for xli in xlop]
-
-        Ti = T.I
-        noa = len(cpa)
+        noa = self.noa
         QUab = full.matrix((6, noa, noa))
         rrab = full.matrix((6, noa, noa))
         rRab = full.matrix((6, noa, noa))
         RRab = full.matrix((6, noa, noa))
+        Rab = self.Rab
         for a in range(noa):
             for b in range(noa):
-                Rab = (R[a, :]+R[b, :])/2
-                # using b as expansion center
-                #Rab=R[b,:]
                 ij = 0
                 for i in range(3):
                     for j in range(i, 3):
-                        #ij=i*(i+1)/2+j
-                        #print "i j ij lab",C[i],C[j],ij,lab[ij]
                         rrab[ij, a, b] = -(
-                            xlopsb[ij].subblock[a][b]&D.subblock[a][b]
+                            xy[ij].subblock[a][b]&D.subblock[a][b]
                             ) 
-                        rRab[ij, a, b] = Dab[i, a, b]*Rab[j]+Dab[j, a, b]*Rab[i]
-                        RRab[ij, a, b] = Rab[i]*Rab[j]*Qab[a, b]
+                        rRab[ij, a, b] = Dab[i, a, b]*Rab[a,b,j]+Dab[j, a, b]*Rab[a,b,i]
+                        RRab[ij, a, b] = Rab[a,b,i]*Rab[a,b,j]*Qab[a, b]
                         ij += 1
         QUab = rrab-rRab-RRab
         self._QUab = QUab
@@ -522,18 +508,6 @@ class MolFrag:
                         dQUab[ij, a, b] = dRab[a, b, i]*Dab[j, a, b] \
                                       +dRab[a, b, j]*Dab[i, a, b]
                         ij += 1
-        if False:
-            QUaa = QUab.sum(axis=2).view(full.matrix)
-            dQUaa = dQUab.sum(axis=2).view(full.matrix)
-            print 'QUab', QUab.T
-            print "dQUab", dQUab.T
-            print "dQUaa", dQUaa.T
-            print "QUaa+dQUaa", (QUaa + dQUaa).T
-            dQUsum = dQUaa.sum(axis=1).view(full.matrix)
-            print "dQUsum", dQUsum
-            print \
-                "Electronic quadrupole moment by atomic domain, summed(B):",\
-                " Q(A,B)", QUaa+dQUaa
         self.dQUab = - dQUab
 
         return self._QUab
@@ -655,16 +629,22 @@ class MolFrag:
             return self._x
         
         lab = ['XDIPLEN', "YDIPLEN", "ZDIPLEN"]
-        prp = os.path.join(self.tmpdir,"AOPROPER")
+
+        self._x = self.getprop(*lab) 
+        return self._x
+
+    def getprop(self, *args):
+        """Read general property matrices to blocked loprop basis"""
+
         T = self.T
         cpa = self.cpa
-        _x = [
+        prp = os.path.join(self.tmpdir,"AOPROPER")
+
+        return [
             (T.T*p*T).subblocked(cpa, cpa) for p in
-            prop.read(*lab, filename=prp, unpack=True)
+            prop.read(*args, filename=prp, unpack=True)
             ]
 
-        self._x = _x
-        return self._x
 
     @property
     def dQa(self):
