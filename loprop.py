@@ -11,17 +11,6 @@ xtang = 0.5291772108
 angtx = 1.0/xtang
 mc = False
 
-def verbose2(func):
-    import inspect
-    def wrapper(self, *args, **kwargs):
-        print "before %s from %s" % (func.__name__, inspect.stack()[1][3])
-        print "with arguments", args, kwargs
-        result = func(self, *args, **kwargs)
-        print "after %s backto %s" % (func.__name__, inspect.stack()[1][3])
-        return result
-    return wrapper
-
-
 # Bragg-Slater radii () converted from Angstrom to Bohr
 rbs = numpy.array([0, 
       0.25,                                     0.25, 
@@ -144,7 +133,6 @@ class MolFrag:
             print "Occupied/atom", self.opa, "\nTotal", self.noc
 
     @property
-    @verbose2
     def S(self):
         """
         Get overlap, nuclear charges and coordinates from AOONEINT
@@ -699,9 +687,7 @@ class MolFrag:
         Lab = Fab + self.sf(Fab)
         self._la = [rhs/Lab for rhs in dQa]
         return self._la
-    #la = property(fget=get_la)
 
-    #def get_linear_response_density(self):
     @property
     def Dk(self):
         """Read perturbed densities"""
@@ -713,9 +699,6 @@ class MolFrag:
 
         return self._Dk
 
-    #Dk = property(fget=get_linear_response_density)
-
-    #def get_dipole_property(self):
     @property
     def x(self):
         """Read dipole matrices """
@@ -728,9 +711,6 @@ class MolFrag:
 
         return self._x
 
-    #x = property(fget=get_dipole_property)
-        
-    #def get_dQa(self):
     @property
     def dQa(self):
         """Charge shift per atom"""
