@@ -20,7 +20,8 @@ def assert_(this, ref, atol=1e-5, text=None):
 def assert_str(this, ref, text=None):
     if text: print text,
     print this, ref
-    assert this == ref
+    # allow string inequality from round-off errors
+    assert this.replace("-0.000", " 0.000") == ref.replace("-0.000", " 0.000")
 
 
 def setup():
