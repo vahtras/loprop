@@ -619,11 +619,8 @@ class MolFrag:
         T = self.T
         cpa = self.cpa
 
-        _Dk = [[(T.I*d*T.I.T).subblocked(cpa, cpa) 
-            for d in dw
-            ] for dw in
-            lr.Dk(*lab, freqs=self.freqs, tmpdir=self.tmpdir)
-            ]
+        Dkao = lr.Dk(*lab, freqs=self.freqs, tmpdir=self.tmpdir)
+        _Dk = {lw:(T.I*Dkao[lw]*T.I.T).subblocked(cpa, cpa) for lw in Dkao}
 
         self._Dk = _Dk
         return self._Dk
@@ -663,12 +660,13 @@ class MolFrag:
         noa = self.noa
 
         Dk = self.Dk
+        labs = ('XDIPLEN', 'YDIPLEN', 'ZDIPLEN')
 
         dQa = full.matrix((self.nfreqs, noa, 3))
         for a in range(noa):
-            for i in range(3):
-                for w in self.rfreqs:
-                    dQa[w, a, i] = - Dk[w][i].subblock[a][a].tr()
+            for il, l in enumerate(labs):
+                for iw, w in enumerate(self.freqs):
+                    dQa[iw, a, il] = - Dk[(l,w)].subblock[a][a].tr()
         self._dQa = dQa
         return self._dQa
 
@@ -715,19 +713,20 @@ class MolFrag:
         x = self.x
 
         noa = len(cpa)
+        labs = ('XDIPLEN', 'YDIPLEN', 'ZDIPLEN')
         Aab = full.matrix((self.nfreqs, 3, 3, noa, noa))
 
         # correction term for shifting origin from O to Rab
-        for i in range(3):
-            for j in range(3):
+        for i,li in enumerate(labs):
+            for j,lj in enumerate(labs):
                 for a in range(noa):
                     for b in range(noa):
-                        for w in self.rfreqs:
-                            Aab[w, i, j, a, b] = (
-                           -x[i].subblock[a][b]&Dk[w][j].subblock[a][b]
+                        for jw, w in enumerate(self.freqs):
+                            Aab[jw, i, j, a, b] = (
+                           -x[i].subblock[a][b]&Dk[(lj, w)].subblock[a][b]
                            )
-                    for w in self.rfreqs:
-                        Aab[w, i, j, a, a] -= dQa[w, a, j]*Rab[a, a, i]
+                    for jw in self.rfreqs:
+                        Aab[jw, i, j, a, a] -= dQa[jw, a, j]*Rab[a, a, i]
 
         self._Aab = Aab
         return self._Aab
