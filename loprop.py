@@ -845,24 +845,26 @@ class MolFrag:
         labs = ('XDIPLEN', 'YDIPLEN', 'ZDIPLEN')
         Bab = full.matrix((self.nfreqs, 3, 3, 3, noa, noa))
 
-        # correction term for shifting origin from O to Rab
+        #correction term for shifting origin from O to Rab
         for i,li in enumerate(labs):
             jk = 0
             for j,lj in enumerate(labs):
                 for k, lk in enumerate(labs[j:]):
-                    jk += 1
-                    ljk = lj.ljust(8) + lk.ljust(8)
+                    ljk = lk.ljust(8) + lj.ljust(8) 
                     for a in range(noa):
                         for b in range(noa):
                             for jw, w in enumerate(self.freqs):
                                 Bab[jw, i, j, k, a, b] = (
                                -x[i].subblock[a][b]&D2k[(ljk, w, w)].subblock[a][b]
                                )
-                        for jw in self.rfreqs:
-                            Bab[jw, i, j, k, a, a] -= d2Qa[jw, a, jk]*Rab[a, a, i]
+                        #for jw in self.rfreqs:
+                        #    #print i,a,Rab[a,a,i]
+                        #    #print i,j,k, jk,d2Qa[jw,a,jk]
+                        #    Bab[jw, i, j, k, a, a] -= d2Qa[jw, a, jk]*Rab[a, a, i]
+                    jk += 1
 
-        self._Aab = Aab
-        return self._Aab
+        self._Bab = Bab
+        return self._Bab
 
     @property
     def dAab(self):
@@ -907,6 +909,29 @@ class MolFrag:
                     for w in self.rfreqs:
                         self._Am[w, i, j] += Rab[a, a, i]*dQa[w, a, j]
         return self._Am
+
+    @property
+    def Bm(self):
+        "Molecular polarizability"
+
+        if self._Bm is not None: return self._Bm
+
+        d2Qa = self.d2Qa
+        Rab = self.Rab
+        Bab = self.Bab
+        noa = self.noa
+
+        self._Bm = Bab.sum(axis=5).sum(axis=4).view(full.matrix)
+        #for i in range(3):
+        #    jk = 0
+        #    for j in range(3):
+        #        for k in range(j,3):
+        #            print 'ijk',i,j,k,jk
+        #            for a in range(noa):
+        #                for w in self.rfreqs:
+        #                    self._Bm[w, i, j, k] += Rab[a, a, i]*d2Qa[w, a, jk]
+        #            jk += 1
+        return self._Bm
 
     def output_by_atom(self, fmt="%9.5f", max_l=0, pol=0, bond_centers=False):
         """Print nfo"""
