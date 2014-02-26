@@ -86,6 +86,7 @@ class MolFrag:
         self._T = None
         self._D = None
         self._Dk = None
+        self._D2k = None
         self.get_basis_info()
         self.get_isordk()
         self._x = None
@@ -98,11 +99,16 @@ class MolFrag:
         self._QUN = None
         self._QUc = None
         self._dQa = None
+        self._d2Qa = None
         self._dQab = None
+        self._d2Qab = None
         self._Fab = None
         self._la = None
+        self._l2a = None
         self._Aab = None
+        self._Bab = None
         self._Am = None
+        self._Bm = None
         self._dAab = None
         #if maxl >= 0: self.charge()
         #if maxl >= 1: self.dipole()
@@ -608,6 +614,24 @@ class MolFrag:
         return self._la
 
     @property
+    def l2a(self):
+        """Lagrangian for local poplarizabilities"""
+        #
+        # The shift should satisfy
+        #   sum(a) sum(b) (F(a,b) + C)l(b) = sum(a) dq(a) = 0
+        # =>sum(a, b) F(a, b) + N*C*sum(b) l(b) = 0
+        # => C = -sum(a, b)F(a,b) / sum(b)l(b)
+        #
+
+        if self._l2a is not None: return self._l2a
+        #
+        d2Qa = self.d2Qa
+        Fab = self.Fab
+        Lab = Fab + self.sf(Fab)
+        self._l2a = [rhs/Lab for rhs in d2Qa]
+        return self._l2a
+
+    @property
     def Dk(self):
         """Read perturbed densities"""
 
@@ -624,6 +648,25 @@ class MolFrag:
 
         self._Dk = _Dk
         return self._Dk
+
+    @property
+    def D2k(self):
+        """Read perturbed densities"""
+
+        if self._D2k is not None:
+            return self._D2k
+
+        lab = ['XDIPLEN ', "YDIPLEN ", "ZDIPLEN "]
+        qrlab = [lab[j]+lab[i] for i in range(3) for j in range(i,3)]
+        prp = os.path.join(self.tmpdir, "AOPROPER")
+        T = self.T
+        cpa = self.cpa
+
+        Dkao = lr.Dk(*qrlab, freqs=self.freqs, tmpdir=self.tmpdir)
+        _D2k = {lw:(T.I*Dkao[lw]*T.I.T).subblocked(cpa, cpa) for lw in Dkao}
+
+        self._D2k = _D2k
+        return self._D2k
 
     @property
     def x(self):
@@ -671,6 +714,32 @@ class MolFrag:
         return self._dQa
 
     @property
+    def d2Qa(self):
+        """Charge shift per atom"""
+        if self._d2Qa is not None: return self._d2Qa
+
+        T = self.T
+        cpa = self.cpa
+        noa = self.noa
+
+        D2k = self.D2k
+                
+
+        # static
+        wb = wc = 0.0
+        d2Qa = full.matrix((1, noa, 6))
+
+        lab = ['XDIPLEN ', "YDIPLEN ", "ZDIPLEN "]
+        qrlab = [lab[j]+lab[i] for i in range(3) for j in range(i,3)]
+
+        for a in range(noa):
+            for il, l in enumerate(qrlab):
+                il = qrlab.index(l)
+                d2Qa[0, a, il] = - D2k[(l,wb,wc)].subblock[a][a].tr()
+        self._d2Qa = d2Qa
+        return self._d2Qa
+
+    @property
     def dQab(self):
         """Charge transfer matrix"""
         if self._dQab is not None: return self._dQab
@@ -695,6 +764,32 @@ class MolFrag:
 
         self._dQab = dQab
         return self._dQab
+
+    @property
+    def d2Qab(self):
+        """Charge transfer matrix for double perturbation"""
+        if self._d2Qab is not None: return self._d2Qab
+
+        d2Qa = self.d2Qa
+        l2a = self.l2a
+        noa = self.noa
+
+        d2Qab = full.matrix((self.nfreqs, noa, noa, 6))
+        for field in range(6):
+            for a in range(noa):
+                Za = self.Z[a]
+                Ra = self.R[a]
+                for b in range(a):
+                    Zb = self.Z[b]
+                    Rb = self.R[b]
+                    for w in self.rfreqs:
+                        d2Qab[w, a, b, field] =  \
+                        - (l2a[w][a, field]-l2a[w][b, field]) * \
+                        self.pf(Za, Ra, Zb, Rb)
+                        d2Qab[w, b, a, field] = -d2Qab[w, a, b, field]
+
+        self._d2Qab = d2Qab
+        return self._d2Qab
 
 
     @property
@@ -727,6 +822,44 @@ class MolFrag:
                            )
                     for jw in self.rfreqs:
                         Aab[jw, i, j, a, a] -= dQa[jw, a, j]*Rab[a, a, i]
+
+        self._Aab = Aab
+        return self._Aab
+
+    @property
+    def Bab(self):
+        """Localized polariziabilities"""
+        if self._Bab is not None: return self._Bab
+
+        D = self.D
+        D2k = self.D2k
+        #T = self.T
+        cpa = self.cpa
+        Z = self.Z
+        Rab = self.Rab
+        Qab = self.Qab
+        d2Qa = self.d2Qa
+        x = self.x
+
+        noa = len(cpa)
+        labs = ('XDIPLEN', 'YDIPLEN', 'ZDIPLEN')
+        Bab = full.matrix((self.nfreqs, 3, 3, 3, noa, noa))
+
+        # correction term for shifting origin from O to Rab
+        for i,li in enumerate(labs):
+            jk = 0
+            for j,lj in enumerate(labs):
+                for k, lk in enumerate(labs[j:]):
+                    jk += 1
+                    ljk = lj.ljust(8) + lk.ljust(8)
+                    for a in range(noa):
+                        for b in range(noa):
+                            for jw, w in enumerate(self.freqs):
+                                Bab[jw, i, j, k, a, b] = (
+                               -x[i].subblock[a][b]&D2k[(ljk, w, w)].subblock[a][b]
+                               )
+                        for jw in self.rfreqs:
+                            Bab[jw, i, j, k, a, a] -= d2Qa[jw, a, jk]*Rab[a, a, i]
 
         self._Aab = Aab
         return self._Aab
