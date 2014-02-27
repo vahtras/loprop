@@ -663,6 +663,7 @@ class MolFrag:
         cpa = self.cpa
 
         Dkao = lr.Dk(*qrlab, freqs=self.freqs, tmpdir=self.tmpdir)
+        print "Dkao.keys", Dkao.keys()
         _D2k = {lw:(T.I*Dkao[lw]*T.I.T).subblocked(cpa, cpa) for lw in Dkao}
 
         self._D2k = _D2k
@@ -857,10 +858,12 @@ class MolFrag:
                                 Bab[jw, i, j, k, a, b] = (
                                -x[i].subblock[a][b]&D2k[(ljk, w, w)].subblock[a][b]
                                )
-                        #for jw in self.rfreqs:
-                        #    #print i,a,Rab[a,a,i]
-                        #    #print i,j,k, jk,d2Qa[jw,a,jk]
-                        #    Bab[jw, i, j, k, a, a] -= d2Qa[jw, a, jk]*Rab[a, a, i]
+                                Bab[jw, i, k, j, a, b] = Bab[jw, i, j, k, a, b] 
+                        for jw in self.rfreqs:
+                            #print i,a,Rab[a,a,i]
+                            #print i,j,k, jk,d2Qa[jw,a,jk]
+                            Bab[jw, i, j, k, a, a] -= d2Qa[jw, a, jk]*Rab[a, a, i]
+                            Bab[jw, i, k, j, a, a] -= d2Qa[jw, a, jk]*Rab[a, a, i]
                     jk += 1
 
         self._Bab = Bab
@@ -922,15 +925,15 @@ class MolFrag:
         noa = self.noa
 
         self._Bm = Bab.sum(axis=5).sum(axis=4).view(full.matrix)
-        #for i in range(3):
-        #    jk = 0
-        #    for j in range(3):
-        #        for k in range(j,3):
-        #            print 'ijk',i,j,k,jk
-        #            for a in range(noa):
-        #                for w in self.rfreqs:
-        #                    self._Bm[w, i, j, k] += Rab[a, a, i]*d2Qa[w, a, jk]
-        #            jk += 1
+        for i in range(3):
+            jk = 0
+            for j in range(3):
+                for k in range(j,3):
+                    print 'ijk',i,j,k,jk
+                    for a in range(noa):
+                        for w in self.rfreqs:
+                            self._Bm[w, i, j, k] += Rab[a, a, i]*d2Qa[w, a, jk]
+                    jk += 1
         return self._Bm
 
     def output_by_atom(self, fmt="%9.5f", max_l=0, pol=0, bond_centers=False):

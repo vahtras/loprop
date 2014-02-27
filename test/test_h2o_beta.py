@@ -165,6 +165,15 @@ def test_polarizability_total():
 
     assert_(Am, ref.Am, 0.015)
 
+def test_hyp():
+    import pdb; pdb.set_trace()
+    r = m.x
+    D2k = m.D2k
+    z = r[2].unblock()
+    xx = D2k['XDIPLEN XDIPLEN '].unblock()
+    bzxx = z&xx
+    assert_(bzxx, -14.739735491)
+
 def notest_hyperpolarizability_total():
     Bm = m.Bm[0]
     ref.Bm
@@ -431,4 +440,4 @@ def test_potfile_PA22():
 
 if __name__ == "__main__":
     setup()
-    test_total_charge_shift2()
+    test_hyp()
