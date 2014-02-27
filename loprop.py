@@ -3,7 +3,7 @@
 Loprop model implementation (J. Chem. Phys. 121, 4494 (2004))
 """
 import os, sys, math, numpy
-from daltools import one, mol, dens, prop, lr
+from daltools import one, mol, dens, prop, lr, qr
 from util import full, blocked, subblocked, timing
 
 full.matrix.fmt = "%14.6f"
@@ -662,7 +662,7 @@ class MolFrag:
         T = self.T
         cpa = self.cpa
 
-        Dkao = lr.Dk(*qrlab, freqs=self.freqs, tmpdir=self.tmpdir)
+        Dkao = qr.D2k(*qrlab, freqs=self.freqs, tmpdir=self.tmpdir)
         print "Dkao.keys", Dkao.keys()
         _D2k = {lw:(T.I*Dkao[lw]*T.I.T).subblocked(cpa, cpa) for lw in Dkao}
 

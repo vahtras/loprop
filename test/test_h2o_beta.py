@@ -166,11 +166,10 @@ def test_polarizability_total():
     assert_(Am, ref.Am, 0.015)
 
 def test_hyp():
-    import pdb; pdb.set_trace()
     r = m.x
     D2k = m.D2k
     z = r[2].unblock()
-    xx = D2k['XDIPLEN XDIPLEN '].unblock()
+    xx = D2k[('XDIPLEN XDIPLEN ', 0.0, 0.0)].unblock()
     bzxx = z&xx
     assert_(bzxx, -14.739735491)
 
