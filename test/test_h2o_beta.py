@@ -165,18 +165,59 @@ def test_polarizability_total():
 
     assert_(Am, ref.Am, 0.015)
 
-def test_hyp():
+def test_beta_zxx():
     r = m.x
     D2k = m.D2k
     z = r[2].unblock()
     xx = D2k[('XDIPLEN XDIPLEN ', 0.0, 0.0)].unblock()
-    bzxx = z&xx
-    assert_(bzxx, -14.739735491)
+    bzxx = - z&xx
+    assert_(bzxx, ref.Bm[2, 0], .005)
 
-def notest_hyperpolarizability_total():
+def test_beta_xzx():
+    r = m.x
+    D2k = m.D2k
+    x = r[0].unblock()
+    zx = D2k[('ZDIPLEN XDIPLEN ', 0.0, 0.0)].unblock()
+    bxzx = - x&zx
+    assert_(bxzx, ref.Bm[0, 2], .005)
+
+def test_beta_xxz():
+    r = m.x
+    D2k = m.D2k
+    x = r[0].unblock()
+    xz = D2k[('XDIPLEN ZDIPLEN ', 0.0, 0.0)].unblock()
+    bxxz = - x&xz
+    assert_(bxxz, ref.Bm[0, 2], .005)
+
+def test_beta_yyz():
+    r = m.x
+    D2k = m.D2k
+    y = r[1].unblock()
+    yz = D2k[('YDIPLEN ZDIPLEN ', 0.0, 0.0)].unblock()
+    byyz = - y&yz
+    assert_(byyz, ref.Bm[1, 4], .005)
+
+def test_beta_zyy():
+    r = m.x
+    D2k = m.D2k
+    z = r[2].unblock()
+    yy = D2k[('YDIPLEN YDIPLEN ', 0.0, 0.0)].unblock()
+    bzyy = - z&yy
+    assert_(bzyy, ref.Bm[2, 3], .005)
+
+def test_beta_zzz():
+    r = m.x
+    D2k = m.D2k
+    z = r[2].unblock()
+    zz = D2k[('ZDIPLEN ZDIPLEN ', 0.0, 0.0)].unblock()
+    bzzz = - z&zz
+    assert_(bzzz, ref.Bm[2, 5], .005)
+
+def test_hyperpolarizability_total():
     Bm = m.Bm[0]
+    Bab = m.Bab.sum(axis=4).sum(axis=3)
     ref.Bm
-    assert_(Bm, ref.Bm)
+    assert_(Bm, ref.Bm, .005)
 
 def notest_dynamic_polarizability_total():
 
@@ -439,4 +480,4 @@ def test_potfile_PA22():
 
 if __name__ == "__main__":
     setup()
-    test_hyp()
+    test_hyperpolarizability_total()

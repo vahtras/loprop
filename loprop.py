@@ -2,7 +2,11 @@
 """
 Loprop model implementation (J. Chem. Phys. 121, 4494 (2004))
 """
-import os, sys, math, numpy
+import os
+import sys
+import pdb
+import math
+import numpy
 from daltools import one, mol, dens, prop, lr, qr
 from util import full, blocked, subblocked, timing
 
@@ -795,7 +799,11 @@ class MolFrag:
 
     @property
     def Aab(self):
-        """Localized polariziabilities"""
+        """Localized polariziabilities:
+
+        Contribution from change in localized dipole moment
+        - d (r - R(AB)):D(AB) = - r:dD(AB) + dQ(A) R(A) \delta(A,B)
+        """
         if self._Aab is not None: return self._Aab
 
         D = self.D
@@ -827,47 +835,6 @@ class MolFrag:
         self._Aab = Aab
         return self._Aab
 
-    @property
-    def Bab(self):
-        """Localized polariziabilities"""
-        if self._Bab is not None: return self._Bab
-
-        D = self.D
-        D2k = self.D2k
-        #T = self.T
-        cpa = self.cpa
-        Z = self.Z
-        Rab = self.Rab
-        Qab = self.Qab
-        d2Qa = self.d2Qa
-        x = self.x
-
-        noa = len(cpa)
-        labs = ('XDIPLEN', 'YDIPLEN', 'ZDIPLEN')
-        Bab = full.matrix((self.nfreqs, 3, 3, 3, noa, noa))
-
-        #correction term for shifting origin from O to Rab
-        for i,li in enumerate(labs):
-            jk = 0
-            for j,lj in enumerate(labs):
-                for k, lk in enumerate(labs[j:]):
-                    ljk = lk.ljust(8) + lj.ljust(8) 
-                    for a in range(noa):
-                        for b in range(noa):
-                            for jw, w in enumerate(self.freqs):
-                                Bab[jw, i, j, k, a, b] = (
-                               -x[i].subblock[a][b]&D2k[(ljk, w, w)].subblock[a][b]
-                               )
-                                Bab[jw, i, k, j, a, b] = Bab[jw, i, j, k, a, b] 
-                        for jw in self.rfreqs:
-                            #print i,a,Rab[a,a,i]
-                            #print i,j,k, jk,d2Qa[jw,a,jk]
-                            Bab[jw, i, j, k, a, a] -= d2Qa[jw, a, jk]*Rab[a, a, i]
-                            Bab[jw, i, k, j, a, a] -= d2Qa[jw, a, jk]*Rab[a, a, i]
-                    jk += 1
-
-        self._Bab = Bab
-        return self._Bab
 
     @property
     def dAab(self):
@@ -896,7 +863,14 @@ class MolFrag:
 
     @property
     def Am(self):
-        "Molecular polarizability"
+        """Molecular polarizability:
+
+        To reconstruct the molecular polarizability  from localized 
+        polarizabilties one has to reexpand in terms of an arbitrary but common 
+        origin leading to the correction term below
+
+        d<-r> = - sum(A,B) (r-R(A,B))dD(A,B) + R(A) dQ(A) \delta(A,B)
+        """
 
         if self._Am is not None: return self._Am
 
@@ -914,8 +888,48 @@ class MolFrag:
         return self._Am
 
     @property
+    def Bab(self):
+        """Localized polariziabilities"""
+        if self._Bab is not None: return self._Bab
+
+        D = self.D
+        D2k = self.D2k
+        #T = self.T
+        cpa = self.cpa
+        Z = self.Z
+        Rab = self.Rab
+        Qab = self.Qab
+        d2Qa = self.d2Qa
+        x = self.x
+
+        noa = len(cpa)
+        labs = ('XDIPLEN ', 'YDIPLEN ', 'ZDIPLEN ')
+        qlabs = [labs[i] + labs[j] for i in range(3) for j in range(i,3)]
+        Bab = full.matrix((self.nfreqs, 3, 6, noa, noa))
+        #pdb.set_trace()
+
+        #correction term for shifting origin from O to Rab
+        for i, li in enumerate(labs):
+            for jk,ljk in enumerate(qlabs):
+                print i,jk, li, ljk
+                for a in range(noa):
+                    for b in range(noa):
+                        for iw, w in enumerate(self.freqs):
+                            Bab[iw, i, jk, a, b] = (
+                                -x[i].subblock[a][b]&D2k[(ljk, w, w)].subblock[a][b]
+                                )
+                    for iw in self.rfreqs:
+                        #print i,a,Rab[a,a,i]
+                        #print i,j,k, jk,d2Qa[jw,a,jk]
+                        pass
+                        #Bab[iw, i, jk, a, a] -= d2Qa[iw, a, jk]*Rab[a, a, i]
+
+        self._Bab = Bab
+        return self._Bab
+
+    @property
     def Bm(self):
-        "Molecular polarizability"
+        "Molecular hyperpolarizability"
 
         if self._Bm is not None: return self._Bm
 
@@ -924,16 +938,14 @@ class MolFrag:
         Bab = self.Bab
         noa = self.noa
 
-        self._Bm = Bab.sum(axis=5).sum(axis=4).view(full.matrix)
+        self._Bm = Bab.sum(axis=4).sum(axis=3).view(full.matrix)
+        #pdb.set_trace()
         for i in range(3):
-            jk = 0
-            for j in range(3):
-                for k in range(j,3):
-                    print 'ijk',i,j,k,jk
-                    for a in range(noa):
-                        for w in self.rfreqs:
-                            self._Bm[w, i, j, k] += Rab[a, a, i]*d2Qa[w, a, jk]
-                    jk += 1
+            for jk in range(6):
+                for a in range(noa):
+                    for w in self.rfreqs:
+                        pass
+                        #self._Bm[w, i, jk] += Rab[a, a, i]*d2Qa[w, a, jk]
         return self._Bm
 
     def output_by_atom(self, fmt="%9.5f", max_l=0, pol=0, bond_centers=False):
