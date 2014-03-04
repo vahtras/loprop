@@ -110,6 +110,7 @@ class MolFrag:
         self._Dab = None
         self._Dsym = None
         self._QUab = None
+        self._QUa = None
         self._QUsym = None
         self._QUN = None
         self._QUc = None
@@ -435,6 +436,10 @@ class MolFrag:
         self._Qab = _Qab
         return self._Qab
 
+    @property 
+    def Qa(self):
+        return self.Qab.diagonal()
+
     @property
     def Dab(self, debug=False):
         """Set dipole property"""
@@ -539,6 +544,16 @@ class MolFrag:
         self.dQUab = - dQUab
 
         return self._QUab
+
+    @property
+    def QUa(self):
+        """Sum up quadrupole bond terms to atoms"""
+        if self._QUa is not None: return self._QUa
+
+        QUab = self.QUab + self.dQUab
+        noa = self.noa
+        self._QUa = QUab.sum(axis=2).view(full.matrix)
+        return self._QUa
 
     @property
     def QUsym(self):
@@ -1000,13 +1015,16 @@ class MolFrag:
 
         if max_l >= 0: 
             Qab = self.Qab
+            Qa = Qab.diagonal()
         if max_l >= 1:
             Dab = self.Dab
+            Da = self.Da
             Dsym = self.Dsym
         if max_l >= 2:
             QUab = self.QUab
             QUN = self.QUN
             dQUab = self.dQUab
+            QUa = self.QUa
         if  pol:
             Aab = self.Aab + self.dAab
         if  hyperpol:
@@ -1020,12 +1038,6 @@ class MolFrag:
     #
     # Form net atomic properties P(a) = sum(b) P(a,b)
     #
-        if self._Qab is not None: 
-            Qa = self._Qab.diagonal()
-        if self._Dab is not None:
-            Da = Dab.sum(axis=2).view(full.matrix)
-        if self._QUab is not None : 
-            QUa = QUab.sum(axis=2) + dQUab.sum(axis=2)
         if self._Aab is not None: 
             Aab = self.Aab + 0.5*self.dAab
             Aa = Aab.sum(axis=3)

@@ -46,7 +46,7 @@ def test_total_charge():
     assert_(Qtot, ref.Qtot)
 
 def test_charge():
-    Qaa = m.Qab.diagonal()
+    Qaa = m.Qa
     assert_(ref.Q, Qaa)
 
 def test_total_dipole():
