@@ -57,6 +57,16 @@ def header(string):
     border = '-'*len(string)
     print "\n%s\n%s\n%s" % (border, string, border)
 
+def output_beta(beta, dip=None, fmt="%10.6f"):
+    """Repeated output format for b(x; yz)"""
+    print "Hyperpolarizability"
+    print "beta(x, *) " + (6*fmt) % tuple(beta[0,:])
+    print "beta(y, *) " + (6*fmt) % tuple(beta[1,:])
+    print "beta(z, *) " + (6*fmt) % tuple(beta[2,:])
+    betakk = beta[:,0] + beta[:, 3] + beta[:, 5]
+    print "beta(:, kk)" + (3*fmt) % tuple(betakk)
+    if dip is not  None:
+        print "beta//dip  " + (fmt) % (betakk & dip)
 
 class MolFrag:
     """An instance of the MolFrag class is created and populated with
@@ -114,6 +124,7 @@ class MolFrag:
         self._Am = None
         self._Bm = None
         self._dAab = None
+        self._dBab = None
         #if maxl >= 0: self.charge()
         #if maxl >= 1: self.dipole()
         #if maxl >= 2: self.quadrupole()
@@ -928,6 +939,32 @@ class MolFrag:
         return self._Bab
 
     @property
+    def dBab(self):
+        """Charge transfer contribution to bond polarizability"""
+        if self._dAab is not None: return self._dAab
+
+        dQa = self.dQa
+        d2Qa = self.d2Qa
+        dQab = self.dQab
+        d2Qab = self.d2Qab
+        dRab = self.dRab
+        noa = self.noa
+        dBab = full.matrix((self.nfreqs, 3, 6, noa, noa))
+        for a in range(noa):
+            for b in range(noa):
+                for i in range(3):
+                    for j in range(6):
+                        if  True:
+                            dBab[:, i, j, a, b] = 2*dRab[a, b, i]*d2Qab[:, a, b, j]
+                        else:
+                            dAab[:, i, j, a, b] = (
+                                dRab[a, b, i]*d2Qab[:, a, b, j]+
+                                dRab[a, b, j]*d2Qab[:, a, b, i]
+                                )
+        self._dBab = dBab
+        return self._dBab
+
+    @property
     def Bm(self):
         "Molecular hyperpolarizability"
 
@@ -948,7 +985,7 @@ class MolFrag:
                         #self._Bm[w, i, jk] += Rab[a, a, i]*d2Qa[w, a, jk]
         return self._Bm
 
-    def output_by_atom(self, fmt="%9.5f", max_l=0, pol=0, bond_centers=False):
+    def output_by_atom(self, fmt="%9.5f", max_l=0, pol=0, hyperpol=0, bond_centers=False):
         """Print nfo"""
 
         if max_l >= 0: Qab = self.Qab
@@ -961,6 +998,9 @@ class MolFrag:
             dQUab = self.dQUab
         if  pol:
             Aab = self.Aab + self.dAab
+        if  hyperpol:
+            Bab = self.Bab + self.dBab
+         
 
         Z = self.Z
         R = self.R
@@ -970,12 +1010,15 @@ class MolFrag:
     # Form net atomic properties P(a) = sum(b) P(a,b)
     #
         Qa = Qab.diagonal()
-        if self._Dab is not None : Da = Dab.sum(axis=2)
+        if self._Dab is not None : Da = Dab.sum(axis=2).view(full.matrix)
         if self._QUab is not None : 
             QUa = QUab.sum(axis=2) + dQUab.sum(axis=2)
         if self._Aab is not None: 
             Aab = self.Aab + 0.5*self.dAab
             Aa = Aab.sum(axis=3)
+        if self._Bab is not None: 
+            Bab = self.Bab + 0.5*self.dBab
+            Ba = Bab.sum(axis=3)
         if bond_centers:
             for a in range(noa):
                 for b in range(a):
@@ -1000,6 +1043,11 @@ class MolFrag:
                             if pol > 1:
                                 print "Polarizability (%g)      " % w, 
                                 print (6*fmt) % tuple(Asym.pack().view(full.matrix))
+                    if self._Bab is not None:
+                        for iw, w in enumerate(self.freqs):
+                            Bsym = Bab[iw, :, :, a, b] + Bab[iw, :, :, b, a]
+                            output_beta(Bsym, Da[:, a])
+
                 header("Atom    %d"%(a+1))
                 print "Atom center:       " + \
                     (3*fmt) % tuple(R[a,:])
@@ -1021,6 +1069,11 @@ class MolFrag:
                             print "Isotropic polarizability (%g)" % w, fmt % (Asym.trace()/3)
                         if pol > 1:
                             print "Polarizability (%g)      " % w, (6*fmt) % tuple(Asym.pack().view(full.matrix))
+                if self._Bab is not None:
+                    for iw, w in enumerate(self.freqs):
+                        Bsym = Bab[iw, :, :, a, a] 
+                        output_beta(Bsym, Da[:, a])
+
         else:
             for a in range(noa):
                 header("Atomic domain %d" % (a+1))
@@ -1045,13 +1098,17 @@ class MolFrag:
                         print "Isotropic polarizablity (w=%g)" % w + fmt % (Aa[iw, :, :, a].trace()/3)
                         print "Electronic polarizability (w=%g)" % w + \
                             (6*fmt) % tuple(Asym.pack().view(full.matrix))
+                if self._Bab is not None:
+                    for iw, w in enumerate(self.freqs):
+                        Bsym = Ba[iw, :, :, a].view(full.matrix)
+                        output_beta(Bsym, Da[:, a])
     #
     # Total molecular properties
     #
         Ztot = Z.sum()
         Qtot = Qa.sum()
         if self._Dab is not None:
-            Dm = Da.sum(axis=1) 
+            Dm = Da.sum(axis=1).view(full.matrix)
             Dc = Qa*(R-Rc)
             DT = Dm+Dc
         if self._QUab is not None:
@@ -1076,6 +1133,11 @@ class MolFrag:
                 Am = self.Am[iw]
                 print "Polarizability av (%g)   " % w, fmt % (Am.trace()/3)
                 print "Polarizability (%g)      " % w, (6*fmt) % tuple(Am.pack().view(full.matrix))
+        if self._Bab is not None:
+            for iw, w in enumerate(self.freqs):
+                Bm = self.Bm[iw]
+                output_beta(Bm, dip=Dm, fmt=fmt)
+
 
     def output_potential_file(
             self, maxl, pol, bond_centers=False, angstrom=False
@@ -1225,6 +1287,12 @@ if __name__ == "__main__":
           )
 
     OP.add_option(
+          '-B','--hyperpolarizabilities',
+          dest='beta', type='int', default=0,
+          help='Localized hyperpolarizabilities (1=isotropic, 2=full)'
+          )
+
+    OP.add_option(
           '-s','--screening (alpha)',
           dest='alpha', type='float', default=2.0,
           help='Screening parameter for penalty function'
@@ -1280,6 +1348,6 @@ if __name__ == "__main__":
         
         
     if o.verbose:
-        molfrag.output_by_atom(fmt="%9.5f", max_l=o.max_l, pol=o.pol, bond_centers=o.bc)
+        molfrag.output_by_atom(fmt="%9.5f", max_l=o.max_l, pol=o.pol, hyperpol=o.beta, bond_centers=o.bc)
     print t
      
