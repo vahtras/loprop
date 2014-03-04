@@ -1005,11 +1005,11 @@ class MolFrag:
         Z = self.Z
         R = self.R
         Rc = self.Rc
-        noa = Qab.shape[0]
+        noa = self.noa
     #
     # Form net atomic properties P(a) = sum(b) P(a,b)
     #
-        Qa = Qab.diagonal()
+        if self._Qab is not None: Qa = Qab.diagonal()
         if self._Dab is not None : Da = Dab.sum(axis=2).view(full.matrix)
         if self._QUab is not None : 
             QUa = QUab.sum(axis=2) + dQUab.sum(axis=2)
@@ -1081,9 +1081,10 @@ class MolFrag:
                 print "Domain center:       "+(3*fmt) % tuple(R[a, :])
                 line += (3*"%17.10f") % tuple(xtang*R[a, :])
                 print "Nuclear charge:      "+fmt % Z[a]
-                print "Electronic charge:   "+fmt % Qa[a]
-                print "Total charge:        "+fmt % (Z[a]+Qa[a])
-                line += "%12.6f" % (Z[a]+Qa[a])
+                if self._Qab is not None:
+                    print "Electronic charge:   "+fmt % Qa[a]
+                    print "Total charge:        "+fmt % (Z[a]+Qa[a])
+                    line += "%12.6f" % (Z[a]+Qa[a])
                 if self._Dab is not None:
                     print "Electronic dipole    "+(3*fmt) % tuple(Da[:, a])
                     print "Electronic dipole norm"+(fmt) % Da[:, a].view(full.matrix).norm2()
@@ -1106,7 +1107,8 @@ class MolFrag:
     # Total molecular properties
     #
         Ztot = Z.sum()
-        Qtot = Qa.sum()
+        if self._Qab is not None:
+            Qtot = Qa.sum()
         if self._Dab is not None:
             Dm = Da.sum(axis=1).view(full.matrix)
             Dc = Qa*(R-Rc)
@@ -1118,8 +1120,9 @@ class MolFrag:
         header("Molecular")
         print "Domain center:       "+(3*fmt) % tuple(Rc)
         print "Nuclear charge:      "+fmt % Ztot
-        print "Electronic charge:   "+fmt % Qtot
-        print "Total charge:        "+fmt % (Ztot+Qtot)
+        if self._Qab is not None: 
+            print "Electronic charge:   "+fmt % Qtot
+            print "Total charge:        "+fmt % (Ztot+Qtot)
         if self._Dab is not None: 
             print "Electronic dipole    "+(3*fmt) % tuple(Dm)
             print "Gauge   dipole       "+(3*fmt) % tuple(Dc)
