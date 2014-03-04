@@ -1033,6 +1033,7 @@ class MolFrag:
                 line += "%12.6f" % (Z[a]+Qa[a])
                 if self._Dab is not None:
                     print "Electronic dipole    "+(3*fmt) % tuple(Da[:, a])
+                    print "Electronic dipole norm"+(fmt) % Da[:, a].view(full.matrix).norm2()
                     line += (3*"%12.6f") % tuple(Da[:, a])
                 if self._QUab is not None:
                     #print "QUab", QUab
