@@ -106,6 +106,7 @@ class MolFrag:
         self._x = None
 
         self._Qab = None
+        self._Da = None
         self._Dab = None
         self._Dsym = None
         self._QUab = None
@@ -459,6 +460,15 @@ class MolFrag:
         return self._Dab
 
     @property
+    def Da(self):
+        """Sum up bonds contributions to atom"""
+        if self._Da is not None: return self._Da
+
+        Dab = self.Dab
+        self._Da = Dab.sum(axis=2).view(full.matrix)
+        return self._Da
+
+    @property
     def Dsym(self):
         """Symmetrize density contributions from atom pairs """
         if self._Dsym is not None: return self._Dsym
@@ -678,7 +688,7 @@ class MolFrag:
         cpa = self.cpa
 
         Dkao = qr.D2k(*qrlab, freqs=self.freqs, tmpdir=self.tmpdir)
-        print "Dkao.keys", Dkao.keys()
+        #print "Dkao.keys", Dkao.keys()
         _D2k = {lw:(T.I*Dkao[lw]*T.I.T).subblocked(cpa, cpa) for lw in Dkao}
 
         self._D2k = _D2k
@@ -988,7 +998,8 @@ class MolFrag:
     def output_by_atom(self, fmt="%9.5f", max_l=0, pol=0, hyperpol=0, bond_centers=False):
         """Print nfo"""
 
-        if max_l >= 0: Qab = self.Qab
+        if max_l >= 0: 
+            Qab = self.Qab
         if max_l >= 1:
             Dab = self.Dab
             Dsym = self.Dsym
@@ -1009,8 +1020,10 @@ class MolFrag:
     #
     # Form net atomic properties P(a) = sum(b) P(a,b)
     #
-        if self._Qab is not None: Qa = Qab.diagonal()
-        if self._Dab is not None : Da = Dab.sum(axis=2).view(full.matrix)
+        if self._Qab is not None: 
+            Qa = self._Qab.diagonal()
+        if self._Dab is not None:
+            Da = Dab.sum(axis=2).view(full.matrix)
         if self._QUab is not None : 
             QUa = QUab.sum(axis=2) + dQUab.sum(axis=2)
         if self._Aab is not None: 
@@ -1046,7 +1059,7 @@ class MolFrag:
                     if self._Bab is not None:
                         for iw, w in enumerate(self.freqs):
                             Bsym = Bab[iw, :, :, a, b] + Bab[iw, :, :, b, a]
-                            output_beta(Bsym, Da[:, a])
+                            output_beta(Bsym, self.Da[:, a])
 
                 header("Atom    %d"%(a+1))
                 print "Atom center:       " + \
@@ -1086,9 +1099,9 @@ class MolFrag:
                     print "Total charge:        "+fmt % (Z[a]+Qa[a])
                     line += "%12.6f" % (Z[a]+Qa[a])
                 if self._Dab is not None:
-                    print "Electronic dipole    "+(3*fmt) % tuple(Da[:, a])
-                    print "Electronic dipole norm"+(fmt) % Da[:, a].view(full.matrix).norm2()
-                    line += (3*"%12.6f") % tuple(Da[:, a])
+                    print "Electronic dipole    "+(3*fmt) % tuple(self.Da[:, a])
+                    print "Electronic dipole norm"+(fmt) % self.Da[:, a].view(full.matrix).norm2()
+                    line += (3*"%12.6f") % tuple(self.Da[:, a])
                 if self._QUab is not None:
                     #print "QUab", QUab
                     print "Electronic quadrupole"+(6*fmt) % tuple(QUa[:, a])
@@ -1102,7 +1115,7 @@ class MolFrag:
                 if self._Bab is not None:
                     for iw, w in enumerate(self.freqs):
                         Bsym = Ba[iw, :, :, a].view(full.matrix)
-                        output_beta(Bsym, Da[:, a])
+                        output_beta(Bsym, self.Da[:, a])
     #
     # Total molecular properties
     #
@@ -1110,7 +1123,7 @@ class MolFrag:
         if self._Qab is not None:
             Qtot = Qa.sum()
         if self._Dab is not None:
-            Dm = Da.sum(axis=1).view(full.matrix)
+            Dm = self.Da.sum(axis=1).view(full.matrix)
             Dc = Qa*(R-Rc)
             DT = Dm+Dc
         if self._QUab is not None:
