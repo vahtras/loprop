@@ -1,4 +1,4 @@
-# DALTON.BAS with INTGRL directive created  4Mar14  15:45:21
+# DALTON.BAS with INTGRL directive created  4Mar14  23:25:35
 # Directive in input mol file was:
 # > INTGRL                                                                      
 INTGRL
