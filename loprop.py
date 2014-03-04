@@ -1090,22 +1090,17 @@ class MolFrag:
         else:
             for a in range(noa):
                 header("Atomic domain %d" % (a+1))
-                line = " 0"
                 print "Domain center:       "+(3*fmt) % tuple(R[a, :])
-                line += (3*"%17.10f") % tuple(xtang*R[a, :])
                 print "Nuclear charge:      "+fmt % Z[a]
                 if self._Qab is not None:
                     print "Electronic charge:   "+fmt % Qa[a]
                     print "Total charge:        "+fmt % (Z[a]+Qa[a])
-                    line += "%12.6f" % (Z[a]+Qa[a])
                 if self._Dab is not None:
                     print "Electronic dipole    "+(3*fmt) % tuple(self.Da[:, a])
                     print "Electronic dipole norm"+(fmt) % self.Da[:, a].view(full.matrix).norm2()
-                    line += (3*"%12.6f") % tuple(self.Da[:, a])
                 if self._QUab is not None:
                     #print "QUab", QUab
                     print "Electronic quadrupole"+(6*fmt) % tuple(QUa[:, a])
-                    line += (6*"%12.6f") % tuple(QUa[:, a])
                 if self._Aab is not None:
                     for iw, w in enumerate(self.freqs):
                         Asym = Aa[iw, :, :, a].view(full.matrix)
