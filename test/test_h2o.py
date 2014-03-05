@@ -51,12 +51,7 @@ def test_charge():
     assert_(ref.Q, Qaa)
 
 def test_total_dipole():
-    # molecular dipole moment wrt gauge center gc
-    Dtot = m.Dab.sum(axis=2).sum(axis=1).view(full.matrix)
-    Qa = m.Qab.diagonal()
-    Q = Qa.sum()
-    Dtot += Qa*m.R - Q*m.Rc
-    assert_(Dtot, ref.Dtot)
+    assert_(m.Dtot, ref.Dtot)
 
 def test_dipole_allbonds():
     D = full.matrix(ref.D.shape)

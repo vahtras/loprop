@@ -493,6 +493,12 @@ class MolFrag:
         return self._Dsym
 
     @property
+    def Dtot(self):
+        _Dtot = self.Da.sum(axis=1).view(full.matrix) 
+        _Dtot += self.Qa*self.R - self.Qa.sum()*self.Rc
+        return _Dtot
+
+    @property
     def QUab(self, debug=False):
         """Quadrupole moment"""
         if self._QUab is not None: return self._QUab
