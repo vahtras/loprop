@@ -60,13 +60,16 @@ def header(string):
 def output_beta(beta, dip=None, fmt="%10.6f"):
     """Repeated output format for b(x; yz)"""
     print "Hyperpolarizability"
+    print "beta(:, xx xy xz yy yz zz)"
+    print "--------------------------"
     print "beta(x, *) " + (6*fmt) % tuple(beta[0,:])
     print "beta(y, *) " + (6*fmt) % tuple(beta[1,:])
     print "beta(z, *) " + (6*fmt) % tuple(beta[2,:])
     betakk = beta[:,0] + beta[:, 3] + beta[:, 5]
     print "beta(:, kk)" + (3*fmt) % tuple(betakk)
     if dip is not  None:
-        print "beta//dip  " + (fmt) % (betakk & dip)
+        betapar = 0.2*(betakk & dip)/dip.norm2()
+        print "beta//dip  " + (fmt) % betapar
 
 class MolFrag:
     """An instance of the MolFrag class is created and populated with
