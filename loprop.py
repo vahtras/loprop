@@ -3,7 +3,7 @@
 Loprop model implementation (J. Chem. Phys. 121, 4494 (2004))
 """
 import os, sys, math, numpy
-from daltools import one, mol, dens, prop, lr
+from daltools import one, mol, dens, prop, lr, sirifc
 from util import full, blocked, subblocked, timing
 
 full.matrix.fmt = "%14.6f"
@@ -82,6 +82,7 @@ class MolFrag:
         self.aooneint = os.path.join(tmpdir,'AOONEINT')
         self.dalton_bas = os.path.join(tmpdir,'DALTON.BAS')
         self.sirifc = os.path.join(tmpdir,'SIRIFC')
+        assert sirifc.sirifc(name=self.sirifc).nsym == 1
 
         self._T = None
         self._D = None
@@ -776,7 +777,7 @@ class MolFrag:
                         self._Am[w, i, j] += Rab[a, a, i]*dQa[w, a, j]
         return self._Am
 
-    def output_by_atom(self, fmt="%9.5f", max_l=0, pol=0, bond_centers=False):
+    def output_by_atom(self, fmt="%9.5f", max_l=0, pol=0, bond_centers=False, angstrom=False):
         """Print nfo"""
 
         if max_l >= 0: Qab = self.Qab
@@ -789,6 +790,14 @@ class MolFrag:
             dQUab = self.dQUab
         if  pol:
             Aab = self.Aab + self.dAab
+        if angstrom: 
+            unit = "AA" 
+            xconv = 0.5291772108
+            xconv3 = 0.5291772108**3
+        else: 
+            unit = "AU"
+            xconv = 1
+            xconv3 = 1
 
         Z = self.Z
         R = self.R
@@ -809,7 +818,7 @@ class MolFrag:
                 for b in range(a):
                     header("Bond    %d %d" % (a+1, b+1))
                     print "Bond center:       " + \
-                        (3*fmt) % tuple(0.5*(R[a, :]+R[b, :]))
+                        (3*fmt) % tuple(0.5*(R[a, :]+R[b, :])*xconv)
                     print "Electronic charge:   "+fmt % Qab[a, b]
                     print "Total charge:        "+fmt % Qab[a, b]
                     if self._Dab is not None:
@@ -824,13 +833,13 @@ class MolFrag:
                         for iw, w in enumerate(self.freqs):
                             Asym = Aab[iw, :, :, a, b] + Aab[iw, :, :, b, a]
                             if pol > 0:
-                                print "Isotropic polarizability (%g)" % w, fmt % Asym.trace()
+                                print "Isotropic polarizability (%g)" % w, fmt % (Asym.trace()/3*xconv3)
                             if pol > 1:
                                 print "Polarizability (%g)      " % w, 
-                                print (6*fmt) % tuple(Asym.pack().view(full.matrix))
+                                print (6*fmt) % tuple(Asym.pack().view(full.matrix)*xconv3)
                 header("Atom    %d"%(a+1))
                 print "Atom center:       " + \
-                    (3*fmt) % tuple(R[a,:])
+                    (3*fmt) % tuple(R[a,:]*xconv)
                 print "Nuclear charge:    "+fmt % Z[a]
                 print "Electronic charge:   "+fmt % Qab[a, a]
                 print "Total charge:        "+fmt % (Z[a]+Qab[a, a])
@@ -846,14 +855,14 @@ class MolFrag:
                     for iw, w in enumerate(self.freqs):
                         Asym = Aab[iw, :, :, a, a] 
                         if pol > 0:
-                            print "Isotropic polarizability (%g)" % w, fmt % (Asym.trace()/3)
+                            print "Isotropic polarizability (%g)" % w, fmt % (Asym.trace()/3*xconv3)
                         if pol > 1:
-                            print "Polarizability (%g)      " % w, (6*fmt) % tuple(Asym.pack().view(full.matrix))
+                            print "Polarizability (%g)      " % w, (6*fmt) % tuple(Asym.pack().view(full.matrix)*xconv3)
         else:
             for a in range(noa):
                 header("Atomic domain %d" % (a+1))
                 line = " 0"
-                print "Domain center:       "+(3*fmt) % tuple(R[a, :])
+                print "Domain center:       "+(3*fmt) % tuple(R[a, :]*xconv)
                 line += (3*"%17.10f") % tuple(xtang*R[a, :])
                 print "Nuclear charge:      "+fmt % Z[a]
                 print "Electronic charge:   "+fmt % Qa[a]
@@ -869,9 +878,9 @@ class MolFrag:
                 if self._Aab is not None:
                     for iw, w in enumerate(self.freqs):
                         Asym = Aa[iw, :, :, a].view(full.matrix)
-                        print "Isotropic polarizablity (w=%g)" % w + fmt % (Aa[iw, :, :, a].trace()/3)
+                        print "Isotropic polarizablity (w=%g)" % w + fmt % (Aa[iw, :, :, a].trace()/3*xconv3)
                         print "Electronic polarizability (w=%g)" % w + \
-                            (6*fmt) % tuple(Asym.pack().view(full.matrix))
+                            (6*fmt) % tuple(Asym.pack().view(full.matrix)*xconv3)
     #
     # Total molecular properties
     #
@@ -886,7 +895,7 @@ class MolFrag:
             QUT = QUm+QUN
 
         header("Molecular")
-        print "Domain center:       "+(3*fmt) % tuple(Rc)
+        print "Domain center:       "+(3*fmt) % tuple(Rc*xconv)
         print "Nuclear charge:      "+fmt % Ztot
         print "Electronic charge:   "+fmt % Qtot
         print "Total charge:        "+fmt % (Ztot+Qtot)
@@ -901,8 +910,8 @@ class MolFrag:
         if self._Aab is not None:
             for iw, w in enumerate(self.freqs):
                 Am = self.Am[iw]
-                print "Polarizability av (%g)   " % w, fmt % (Am.trace()/3)
-                print "Polarizability (%g)      " % w, (6*fmt) % tuple(Am.pack().view(full.matrix))
+                print "Polarizability av (%g)   " % w, fmt % (Am.trace()/3*xconv3)
+                print "Polarizability (%g)      " % w, (6*fmt) % tuple(Am.pack().view(full.matrix)*xconv3)
 
     def output_potential_file(
             self, maxl, pol, bond_centers=False, angstrom=False
@@ -912,8 +921,12 @@ class MolFrag:
         lines = []
         if angstrom: 
             unit = "AA" 
+            xconv = 0.5291772108
+            xconv3 = 0.5291772108**3
         else: 
             unit = "AU"
+            xconv = 1
+            xconv3 = 1
         lines.append(unit)
 
         noa = self.noa
@@ -937,7 +950,7 @@ class MolFrag:
             ab = 0
             for a in range(noa):
                 for b in range(a):
-                    line  = ("1" + 3*fmt) % tuple(self.Rab[a, b, :])
+                    line  = ("1" + 3*fmt) % tuple(self.Rab[a, b, :]*xconv)
                     if maxl >= 0: line += fmt % Qab[a, b]
                     if maxl >= 1: line += (3*fmt) % tuple(Dsym[:, ab])
                     if maxl >= 2: line += (6*fmt) % \
@@ -945,9 +958,9 @@ class MolFrag:
                     if pol > 0:
                         for iw, w in enumerate(self.freqs):
                             Asym = Aab[iw, :, :, a, b] + Aab[iw, :, :, b, a]
-                            if pol == 1: line += fmt % Asym.trace()
+                            if pol == 1: line += fmt % (Asym.trace()*xconv3/3)
                             if pol == 2: 
-                                line += (6*fmt)%tuple(Asym.pack().view(full.matrix))
+                                line += (6*fmt)%tuple(Asym.pack().view(full.matrix)*xconv3)
                     ab += 1
                         
 
@@ -968,7 +981,7 @@ class MolFrag:
                 lines.append(line)
         else:
             for a in range(noa):
-                line  = ("1" + 3*fmt) % tuple(self.Rab[a, a, :])
+                line  = ("1" + 3*fmt) % tuple(self.Rab[a, a, :]*xconv)
                 if maxl >= 0: line += fmt % (self.Z[a] + Qab[a, a])
                 if maxl >= 1: line += (3*fmt) % tuple(Dab.sum(axis=2)[:, a])
                 if maxl >= 2: 
@@ -977,9 +990,9 @@ class MolFrag:
                     for iw in range(self.nfreqs):
                         Asym = Aab.sum(axis=4)[iw, :, :, a].view(full.matrix)
                         if pol == 1: 
-                            line += fmt % (Asym.trace()/3)
+                            line += fmt % (Asym.trace()/3*xconv3)
                         if pol == 2: 
-                            line += (6*fmt) % tuple(Asym.pack().view(full.matrix))
+                            line += (6*fmt) % tuple(Asym.pack().view(full.matrix)*xconv3)
                     
                 lines.append(line)
             
@@ -1107,6 +1120,6 @@ if __name__ == "__main__":
         
         
     if o.verbose:
-        molfrag.output_by_atom(fmt="%9.5f", max_l=o.max_l, pol=o.pol, bond_centers=o.bc)
+        molfrag.output_by_atom(fmt="%9.5f", max_l=o.max_l, pol=o.pol, bond_centers=o.bc, angstrom=o.angstrom)
     print t
      
