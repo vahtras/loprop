@@ -1,7 +1,7 @@
 import os 
 import numpy as np
-import loprop
-from util import full
+from .. import loprop
+from ..daltools.util import full
 
 import re
 thisdir  = os.path.dirname(__file__)
@@ -9,7 +9,7 @@ case = "h2o"
 tmpdir=os.path.join(thisdir, case, 'tmp')
 exec('import %s_data as ref'%case)
 
-from loprop import penalty_function, xtang, pairs
+from ..loprop import penalty_function, xtang, pairs
 
 def assert_(this, ref, atol=1e-5, text=None):
     if text: print text,
