@@ -1,6 +1,3 @@
 [submodule "daltools"]
 	path = daltools
 	url = git@repo.ctcc.no:loprop/daltools.git
-[submodule "util"]
-	path = util
-	url = git@repo.ctcc.no:loprop/util.git
