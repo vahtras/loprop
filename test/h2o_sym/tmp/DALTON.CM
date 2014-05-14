@@ -1,0 +1,68 @@
+  ------------------------------------------------------------------------
+  Molcas                                                                  
+  test013 (with symmetry)                                                 
+  ------------------------------------------------------------------------
+Full point group is: C(2v)          
+Represented as:      C2v
+  Number of atom types :    2
+  Total number of atoms:    3
+
+  label    atoms   charge   prim   cont     basis
+  ----------------------------------------------------------------------
+  O           1    8.0000    42    30      [10s5p2d1f|4s3p2d1f]                               
+  H1          2    1.0000    16    14      [5s2p1d|3s2p1d]                                    
+  total:      3   10.0000    74    58
+
+  Spherical harmonic basis used.
+
+ **********************************************************************
+ *SIRIUS* a direct, restricted step, second order MCSCF program       *
+ **********************************************************************
+
+ 
+     Date and time (Linux)  : Wed May 14 13:08:15 2014
+     Host name              : ubuntu                                  
+
+ Title lines from ".mol" input file:
+     Molcas                                                                  
+     test013 (with symmetry)                                                 
+
+ Print level on unit LUPRI =   2 is   0
+ Print level on unit LUW4  =   2 is   5
+
+@    Restricted, closed shell Hartree-Fock calculation.
+
+@    Time-dependent Hartree-Fock calculation (random phase approximation).
+
+ Initial molecular orbitals are obtained according to
+ ".MOSTART EHT   " input option
+
+     Wave function specification
+     ============================
+@    Wave function type        >>> HF <<<
+@    Number of closed shell electrons          10
+@    Number of electrons in active shells       0
+@    Total charge of the molecule               0
+
+@    Spin multiplicity and 2 M_S                1         0
+@    Total number of symmetries                 4 (point group: C2v)
+@    Reference state symmetry                   1 (irrep name : A1 )
+
+     Orbital specifications
+     ======================
+     Abelian symmetry species          All |    1    2    3    4
+                                           |  A1   B1   B2   A2 
+                                       --- |  ---  ---  ---  ---
+     Total number of orbitals           58 |   23   11   17    7
+     Number of basis functions          58 |   23   11   17    7
+
+      ** Automatic occupation of RHF orbitals **
+
+      -- Initial occupation of symmetries is determined from extended Huckel guess.           
+      -- Initial occupation of symmetries is :
+@    Occupied SCF orbitals               5 |    3    1    1    0
+
+     Maximum number of Fock   iterations      0
+     Maximum number of DIIS   iterations     60
+     Maximum number of QC-SCF iterations     60
+     Threshold for SCF convergence     1.00D-05
