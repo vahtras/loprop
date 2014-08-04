@@ -59,11 +59,12 @@ class MolFrag:
     data from a Dalton runtime scratch directory"""
 
     def __init__(
-        self, tmpdir, freqs=None, pf=penalty_function, sf=shift_function, gc=None
+        self, tmpdir, max_l=0, freqs=None, pf=penalty_function, sf=shift_function, gc=None
         ):
         """Constructur of MolFrac class objects
         input: tmpdir, scratch directory of Dalton calculation
         """
+        self.max_l = max_l
         self.tmpdir = tmpdir
         if freqs is None:
             self.freqs = (0,)
@@ -999,6 +1000,31 @@ class MolFrag:
 
         return "\n".join(lines) + "\n"
 
+    def print_atom_domain(self, n, angstrom=False):
+        fmt = "%9.5f"
+        if angstrom:
+            xconv = 0.5291772108
+        else:
+            xconv = 1
+        retstr = """\
+---------------
+Atomic domain %d
+---------------
+Domain center:       """  % (n+1,) + (3*fmt+"\n") % tuple(self.Rab[n, n, :]*xconv)
+
+        print "self.max_l", self.max_l
+        if self.max_l >= 0:
+            retstr += ("Nuclear charge:      " + fmt + "\n") % self.Z[n]
+            retstr += ("Electronic charge:   " + fmt + "\n") % self.Qab[n, n]
+            retstr += ("Total charge:        " + fmt + "\n") % (self.Z[n] + self.Qab[n,n])
+        if self.max_l >= 1:
+            retstr += ("Electronic dipole    " + 3*fmt + "\n") % tuple(self.Dab.sum(axis=2)[:, n])
+
+        if self.max_l >= 2:
+            retstr += ("Electronic quadrupole" + 6*fmt + "\n") % tuple((self.QUab+self.dQUab).sum(axis=2)[:,  n])
+
+        return retstr
+
 
 if __name__ == "__main__":
     import optparse
@@ -1112,7 +1138,7 @@ if __name__ == "__main__":
 
     t = timing.timing('Loprop')
     molfrag = MolFrag(
-        o.tmpdir, pf=penalty_function(o.alpha), gc=gc, freqs=freqs
+        o.tmpdir, o.max_l, pf=penalty_function(o.alpha), gc=gc, freqs=freqs
         )
     print molfrag.output_potential_file(
         o.max_l, o.pol, o.bc, o.angstrom

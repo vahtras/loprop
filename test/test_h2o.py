@@ -18,10 +18,15 @@ def assert_(this, ref, atol=1e-5, text=None):
     assert np.allclose(this, ref, atol=atol)
 
 def assert_str(this, ref, text=None):
+    def stripm0(numstr):
+        # allow string inequality from round-off errors
+        return numstr.replace("-0.000", " 0.000")
     if text: print text,
-    print this, ref
-    # allow string inequality from round-off errors
-    assert this.replace("-0.000", " 0.000") == ref.replace("-0.000", " 0.000")
+    thism0 = stripm0(this)
+    refm0 = stripm0(ref)
+    print thism0, refm0
+    print len(thism0), len(refm0)
+    assert thism0 == refm0
 
 
 def setup():
@@ -414,6 +419,22 @@ def test_potfile_PA21():
 def test_potfile_PA22():
     PA22 = m.output_potential_file(maxl=2, pol=2)
     assert_str(PA22, ref.PA22)
+
+def test_outfile_PAn0_atom_domain():
+    m.max_l = -1
+    assert_str(m.print_atom_domain(0), ref.OUTPUT_n0_1)
+
+def test_outfile_PA00_atom_domain():
+    m.max_l = 0
+    assert_str(m.print_atom_domain(0), ref.OUTPUT_00_1)
+
+def test_outfile_PA10_atom_domain():
+    m.max_l = 1
+    assert_str(m.print_atom_domain(0), ref.OUTPUT_10_1)
+
+def test_outfile_PA10_atom_domain():
+    m.max_l = 2
+    assert_str(m.print_atom_domain(0), ref.OUTPUT_20_1)
 
 if __name__ == "__main__":
     setup()
