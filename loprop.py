@@ -6,7 +6,7 @@ import os, sys, math, numpy
 from daltools import one, mol, dens, prop, lr, sirifc
 from daltools.util import full, blocked, subblocked, timing
 
-full.matrix.fmt = "%14.6f"
+#full.matrix.fmt = "%14.6f"
 xtang = 0.5291772108
 angtx = 1.0/xtang
 mc = False
@@ -59,12 +59,13 @@ class MolFrag:
     data from a Dalton runtime scratch directory"""
 
     def __init__(
-        self, tmpdir, max_l=0, freqs=None, pf=penalty_function, sf=shift_function, gc=None
+        self, tmpdir, max_l=0, pol=0, freqs=None, pf=penalty_function, sf=shift_function, gc=None
         ):
         """Constructur of MolFrac class objects
         input: tmpdir, scratch directory of Dalton calculation
         """
         self.max_l = max_l
+        self.pol = pol
         self.tmpdir = tmpdir
         if freqs is None:
             self.freqs = (0,)
@@ -813,7 +814,7 @@ class MolFrag:
             QUa = QUab.sum(axis=2) + dQUab.sum(axis=2)
         if self._Aab is not None: 
             Aab = self.Aab + 0.5*self.dAab
-            Aa = Aab.sum(axis=3)
+            Aa = Aab.sum(axis=4)
         if bond_centers:
             for a in range(noa):
                 for b in range(a):
@@ -1022,6 +1023,20 @@ Domain center:       """  % (n+1,) + (3*fmt+"\n") % tuple(self.Rab[n, n, :]*xcon
 
         if self.max_l >= 2:
             retstr += ("Electronic quadrupole" + 6*fmt + "\n") % tuple((self.QUab+self.dQUab).sum(axis=2)[:,  n])
+
+        if self.pol == 1:
+            for iw, w in enumerate(self.freqs):
+                retstr += ("Isotropic polarizablity (w=%g)" % w + fmt + "\n") % (
+                (self.Aab + 0.5*self.dAab).sum(axis=4)[iw, :, :, n].trace()/3
+                )
+
+        if self.pol == 2:
+            for iw, w in enumerate(self.freqs):
+                a_lower = (self.Aab + 0.5*self.dAab).sum(axis=4)[iw, :, :, n].view(full.matrix).pack()
+                retstr += ("Electronic polarizability (w=%g)" % w + 6*fmt + "\n") % tuple(
+                a_lower
+                )
+
 
         return retstr
 
