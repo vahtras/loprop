@@ -57,7 +57,7 @@ def header(string):
     border = '-'*len(string)
     print "\n%s\n%s\n%s" % (border, string, border)
 
-def output_beta(beta, dip=None, fmt="%10.6f"):
+def output_beta(beta, dip=None, fmt="%12.6f"):
     """Repeated output format for b(x; yz)"""
     print "Hyperpolarizability"
     print "beta(:, xx xy xz yy yz zz)"
@@ -1380,6 +1380,6 @@ if __name__ == "__main__":
         
         
     if o.verbose:
-        molfrag.output_by_atom(fmt="%9.5f", max_l=o.max_l, pol=o.pol, hyperpol=o.beta, bond_centers=o.bc)
+        molfrag.output_by_atom(fmt="%12.5f", max_l=o.max_l, pol=o.pol, hyperpol=o.beta, bond_centers=o.bc)
     print t
      
