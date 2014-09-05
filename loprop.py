@@ -158,7 +158,8 @@ class MolFrag:
         """
         Get overlap, nuclear charges and coordinates from AOONEINT
         """
-        return one.read("OVERLAP", self.aooneint).unpack().unblock()
+        S = one.read("OVERLAP", self.aooneint)
+        return  S.unpack().unblock()
         
 
     def get_isordk(self):
@@ -217,7 +218,7 @@ class MolFrag:
         Di, Dv = dens.ifc(filename=self.sirifc)
         D = Di + Dv
         Ti = self.T.I
-        self._D = (Ti*D*Ti.T).subblocked(self.cpa, self.cpa)
+        self._D = ( Ti * D * Ti.T ).subblocked(self.cpa, self.cpa)
         return self._D
 
     @property
@@ -282,7 +283,7 @@ class MolFrag:
         #
         # Full transformration
         #
-        S1 = T1.T*S*T1
+        S1 = T1.T * S * T1
         if debug:
             print "Overlap after step 1", S1
         #t1.stop()
@@ -925,6 +926,7 @@ class MolFrag:
         noa = self.noa
 
         self._Am = Aab.sum(axis=4).sum(axis=3).view(full.matrix)
+
         for i in range(3):
             for j in range(3):
                 for a in range(noa):
@@ -934,7 +936,7 @@ class MolFrag:
 
     @property
     def Bab(self):
-        """Localized polariziabilities"""
+        """Localized hyperpolariziabilities"""
         if self._Bab is not None: return self._Bab
 
         D = self.D
@@ -950,18 +952,19 @@ class MolFrag:
         noa = len(cpa)
         labs = ('XDIPLEN ', 'YDIPLEN ', 'ZDIPLEN ')
         qlabs = [labs[i] + labs[j] for i in range(3) for j in range(i,3)]
-        Bab = full.matrix((self.nfreqs, 3, 6, noa, noa))
+        Bab = full.matrix( (self.nfreqs, 3, 6, noa, noa) )
+
         #pdb.set_trace()
 
         #correction term for shifting origin from O to Rab
         for i, li in enumerate(labs):
             for jk,ljk in enumerate(qlabs):
-                print i,jk, li, ljk
+                #print i,jk, li, ljk
                 for a in range(noa):
                     for b in range(noa):
                         for iw, w in enumerate(self.freqs):
                             Bab[iw, i, jk, a, b] = (
-                                -x[i].subblock[a][b]&D2k[(ljk, w, w)].subblock[a][b]
+                                -x[i].subblock[a][b] & D2k [(ljk, w, w)].subblock[a][b]
                                 )
                     for iw in self.rfreqs:
                         #print i,a,Rab[a,a,i]
@@ -974,8 +977,8 @@ class MolFrag:
 
     @property
     def dBab(self):
-        """Charge transfer contribution to bond polarizability"""
-        if self._dAab is not None: return self._dAab
+        """Charge transfer contribution to bond hyperpolarizabilitypolarizability"""
+        if self._dBab is not None: return self._dBab
 
         dQa = self.dQa
         d2Qa = self.d2Qa
@@ -1008,6 +1011,7 @@ class MolFrag:
         Rab = self.Rab
         Bab = self.Bab
         noa = self.noa
+
 
         self._Bm = Bab.sum(axis=4).sum(axis=3).view(full.matrix)
         #pdb.set_trace()
@@ -1172,7 +1176,7 @@ class MolFrag:
 
 
     def output_potential_file(
-            self, maxl, pol, bond_centers=False, angstrom=False
+            self, maxl, pol, hyper, bond_centers=False, angstrom=False
             ):
         """Output potential file"""
         fmt = "%10.3f"
@@ -1198,7 +1202,11 @@ class MolFrag:
         if maxl >= 2: 
             QUab = self.QUab
             dQUab = self.dQUab
-        if pol > 0: Aab = self.Aab + 0.5*self.dAab
+        if pol > 0:
+            Aab = self.Aab + 0.5*self.dAab
+
+        if hyper > 0:
+            Bab = self.Bab + 0.5*self.dBab
 
         if bond_centers:
             ab = 0
@@ -1247,7 +1255,16 @@ class MolFrag:
                             line += fmt % (Asym.trace()/3)
                         if pol == 2: 
                             line += (6*fmt) % tuple(Asym.pack().view(full.matrix))
-                    
+                if hyper > 0:
+                    for iw in range(self.nfreqs):
+                        Bsym = Bab.sum(axis=4)[iw, :, :, a].view(full.matrix)
+                        if hyper == 1:
+                            dip = self.Da[:,a]
+                            betakk = Bsym[:,0] + Bsym[:, 3] + Bsym[:, 5]
+                            line += fmt % ( 0.2 * (betakk & dip) / dip.norm2() )
+                        if hyper == 2:
+                            Btotsym = Bsym.symmetrize_first_beta()
+                            line += 10*fmt % tuple( Btotsym )
                 lines.append(line)
             
 
@@ -1375,7 +1392,7 @@ if __name__ == "__main__":
         o.tmpdir, pf=penalty_function(o.alpha), gc=gc, freqs=freqs
         )
     print molfrag.output_potential_file(
-        o.max_l, o.pol, o.bc, o.angstrom
+        o.max_l, o.pol, o.beta, o.bc, o.angstrom
         )
         
         
