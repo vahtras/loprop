@@ -21,6 +21,24 @@ rbs = numpy.array([0,
       1.45, 1.05, 0.85, 0.70, 0.65, 0.60, 0.50, 0.45,
       1.80, 1.50, 1.25, 1.10, 1.00, 1.00, 1.00, 1.00, 
       ])*angtx
+def symmetrize_first_beta( beta ):
+# naive solution, transforms matrix B[ (x,y,z) ][ (xx, xy, xz, yy, yz, zz) ] into array
+# Symmtrized UT array    B[ (xxx, xxy, xxz, xyy, xyz, xzz, yyy, yyz, yzz, zzz) ]
+
+    new = full.matrix( 10 )
+
+    new[0] = beta[0,0]
+    new[1] = (beta[0,1] + beta[1,0] ) /2
+    new[2] = (beta[0,2] + beta[2,0] ) /2
+    new[3] = (beta[0,3] + beta[1,1] ) /2
+    new[4] = (beta[0,4] + beta[1,2] + beta[2,1] ) /3
+    new[5] = (beta[0,5] + beta[2,2] ) /2
+    new[6] = beta[1,3] 
+    new[7] = (beta[1,4] + beta[2,3] ) /2
+    new[8] = (beta[1,5] + beta[2,4] ) /2
+    new[9] = beta[2,5]
+
+    return new
 
 def penalty_function(alpha=2):
     """Returns function object """
@@ -922,16 +940,11 @@ class MolFrag:
 
         dQa = self.dQa
         Rab = self.Rab
-        Aab = self.Aab
+        Aab = self.Aab + 0.5 * self.dAab
         noa = self.noa
 
         self._Am = Aab.sum(axis=4).sum(axis=3).view(full.matrix)
 
-        for i in range(3):
-            for j in range(3):
-                for a in range(noa):
-                    for w in self.rfreqs:
-                        self._Am[w, i, j] += Rab[a, a, i]*dQa[w, a, j]
         return self._Am
 
     @property
@@ -1009,18 +1022,11 @@ class MolFrag:
 
         d2Qa = self.d2Qa
         Rab = self.Rab
-        Bab = self.Bab
+        Bab = self.Bab #+ 0.25 * self.dBab
         noa = self.noa
 
-
         self._Bm = Bab.sum(axis=4).sum(axis=3).view(full.matrix)
-        #pdb.set_trace()
-        for i in range(3):
-            for jk in range(6):
-                for a in range(noa):
-                    for w in self.rfreqs:
-                        pass
-                        #self._Bm[w, i, jk] += Rab[a, a, i]*d2Qa[w, a, jk]
+
         return self._Bm
 
     def output_by_atom(self, fmt="%9.5f", max_l=0, pol=0, hyperpol=0, bond_centers=False):
@@ -1206,7 +1212,7 @@ class MolFrag:
             Aab = self.Aab + 0.5*self.dAab
 
         if hyper > 0:
-            Bab = self.Bab + 0.5*self.dBab
+            Bab = self.Bab 
 
         if bond_centers:
             ab = 0
@@ -1225,7 +1231,6 @@ class MolFrag:
                                 line += (6*fmt)%tuple(Asym.pack().view(full.matrix))
                     ab += 1
                         
-
                     lines.append(line)
 
                 line  = ("1" + 3*fmt) % tuple(self.Rab[a, a, :])
@@ -1263,10 +1268,9 @@ class MolFrag:
                             betakk = Bsym[:,0] + Bsym[:, 3] + Bsym[:, 5]
                             line += fmt % ( 0.2 * (betakk & dip) / dip.norm2() )
                         if hyper == 2:
-                            Btotsym = Bsym.symmetrize_first_beta()
+                            Btotsym = symmetrize_first_beta( Bsym )
                             line += 10*fmt % tuple( Btotsym )
                 lines.append(line)
-            
 
         return "\n".join(lines) + "\n"
 
@@ -1394,7 +1398,6 @@ if __name__ == "__main__":
     print molfrag.output_potential_file(
         o.max_l, o.pol, o.beta, o.bc, o.angstrom
         )
-        
         
     if o.verbose:
         molfrag.output_by_atom(fmt="%12.5f", max_l=o.max_l, pol=o.pol, hyperpol=o.beta, bond_centers=o.bc)
