@@ -1,0 +1,35 @@
+ Print level for DALTON.STAT    1
+ Info: second round in NORM, I=           4
+
+
+ QDUMP calls QTRACE for dump of internal trace stack
+
+
+ QTRACE dump of internal trace stack
+
+ ========================
+      level    module
+ ========================
+          8    HUCORT      
+          7    HUCDRV      
+          6    SIRRDI      
+          5    SIRINP      
+          4    SIRCTL      
+          3    SIRIUS      
+          2    DALTON      
+          1    DALTON main 
+ ========================
+
+
+ >>>> CPU and wall time for SIRINP :       0.004       0.003
+
+ >>>> CPU and wall time for SCF :       0.068       0.070
+
+
+
+ >>>> Total CPU  time used in SIRIUS :      0.08 seconds
+ >>>> Total wall time used in SIRIUS :      0.08 seconds
+
+ 
+     Date and time (Linux)  : Wed May 14 13:08:15 2014
+     Host name              : ubuntu                                  

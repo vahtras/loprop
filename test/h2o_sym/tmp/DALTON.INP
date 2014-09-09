@@ -1,0 +1,14 @@
+**DALTON INPUT                                    
+.RUN RESP                                         
+*END OF GENERAL                                   
+**WAVE FUNCTION                                   
+.INTERFACE                                        
+.HF                                               
+**INTEGRAL                                        
+.NOSUP                                            
+.DIPLEN                                           
+.SECMOM                                           
+**RESPONSE                                        
+*LINEAR
+.DIPLEN                                           
+*END OF                                           

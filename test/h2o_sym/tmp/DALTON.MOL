@@ -1,0 +1,11 @@
+-------- START OF -MOLPLT- INPUT FILE ----------
+NATOMS=   3   NKINDS=   2    NBONDS=   0
+     Molcas                                                                  
+     test013 (with symmetry)                                                 
+  O  2 0.30
+  H  5 0.22
+  O     0.000000    0.000000   -0.062007
+  H     0.000000    0.783976    0.492052
+  H     0.000000   -0.783976    0.492052
+BONDATOMS 
+-------- END OF -MOLPLT- INPUT FILE ----------
