@@ -769,14 +769,10 @@ class MolFrag:
         dQa = self.dQa
         Rab = self.Rab
         Aab = self.Aab
+        dAab = self.dAab
         noa = self.noa
 
-        self._Am = Aab.sum(axis=4).sum(axis=3).view(full.matrix)
-        for i in range(3):
-            for j in range(3):
-                for a in range(noa):
-                    for w in self.rfreqs:
-                        self._Am[w, i, j] += Rab[a, a, i]*dQa[w, a, j]
+        self._Am = (Aab + 0.5*dAab).sum(axis=4).sum(axis=3).view(full.matrix)
         return self._Am
 
     def output_by_atom(self, fmt="%9.5f", max_l=0, pol=0, bond_centers=False, angstrom=False):
