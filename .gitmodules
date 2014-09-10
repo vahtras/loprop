@@ -1,6 +1,3 @@
 [submodule "daltools"]
 	path = daltools
 	url = git@repo.theochem.kth.se:vahtras/daltools.git
-[submodule "util"]
-	path = util
-	url = git@repo.theochem.kth.se:vahtras/util.git
