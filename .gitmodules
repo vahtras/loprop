@@ -1,3 +1,3 @@
 [submodule "daltools"]
 	path = daltools
-	url = git@bitbucket.org:ovahtras/daltools.git
+	url = git@gitr.sys.kth.se:vahtras/daltools.git
