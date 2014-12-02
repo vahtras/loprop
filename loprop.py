@@ -245,7 +245,7 @@ class MolFrag:
         #
         GS = 1
         if GS:
-            T1 = blocked.matrix(cpa, cpa)
+            T1 = blocked.BlockDiagonalMatrix(cpa, cpa)
             for at in range(noa):
                 T1.subblock[at] = Ubl.subblock[0][at].GST(S)
             if debug:
