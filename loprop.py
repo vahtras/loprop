@@ -1071,7 +1071,7 @@ class MolFrag:
 
         if self._Bab is not None: 
             Bab = self.Bab + 0.5*self.dBab
-            Ba = Bab.sum(axis=3)#CHECK THIS
+            Ba = Bab.sum(axis=4)
 
         if bond_centers:
             for a in range(noa):
@@ -1236,7 +1236,7 @@ class MolFrag:
             Aab = self.Aab + 0.5*self.dAab
 
         if hyper > 0:
-            Bab = self.Bab 
+            Bab = self.Bab + 0.5*self.dBab
 
         if bond_centers:
             ab = 0
