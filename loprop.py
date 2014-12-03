@@ -982,10 +982,7 @@ class MolFrag:
                                 -x[i].subblock[a][b] & D2k [(ljk, w, w)].subblock[a][b]
                                 )
                     for iw in self.rfreqs:
-                        #print i,a,Rab[a,a,i]
-                        #print i,j,k, jk,d2Qa[jw,a,jk]
-                        pass
-                        #Bab[iw, i, jk, a, a] -= d2Qa[iw, a, jk]*Rab[a, a, i]
+                        Bab[iw, i, jk, a, a] -= d2Qa[iw, a, jk]*Rab[a, a, i]
 
         self._Bab = Bab
         return self._Bab
@@ -1025,9 +1022,10 @@ class MolFrag:
         d2Qa = self.d2Qa
         Rab = self.Rab
         Bab = self.Bab #+ 0.25 * self.dBab
+        dBab = self.dBab
         noa = self.noa
 
-        self._Bm = Bab.sum(axis=4).sum(axis=3).view(full.matrix)
+        self._Bm = (Bab + 0.5*dBab).sum(axis=4).sum(axis=3).view(full.matrix)
 
         return self._Bm
 
@@ -1138,7 +1136,7 @@ class MolFrag:
                 line = " 0"
                 line += (3*"%17.10f") % tuple(xtang*R[a, :])
                 print "Nuclear charge:      "+fmt % Z[a]
-                if self._Qab is not None:
+                if self.max_l >= 0:
                     print "Electronic charge:   "+fmt % Qa[a]
                     print "Total charge:        "+fmt % (Z[a]+Qa[a])
                 if self._Dab is not None:
@@ -1161,25 +1159,27 @@ class MolFrag:
     # Total molecular properties
     #
         Ztot = Z.sum()
-        if self._Qab is not None:
+        if self.max_l >= 0:
             Qtot = Qa.sum()
-        if self._Dab is not None:
+        if self.max_l >= 1:
             Dm = self.Da.sum(axis=1).view(full.matrix)
             Dc = Qa*(R-Rc)
             DT = Dm+Dc
         if self._QUab is not None:
             QUm = self.QUc
             QUT = QUm+QUN
+        if self._Bab is not None:
+            Dm = self.Da.sum(axis=1).view(full.matrix)
 
         header("Molecular")
         print "Domain center:       "+(3*fmt) % tuple(Rc*xconv)
         print "Nuclear charge:      "+fmt % Ztot
 
-        if self._Qab is not None: 
+        if self.max_l >= 0:
             print "Electronic charge:   "+fmt % Qtot
             print "Total charge:        "+fmt % (Ztot+Qtot)
 
-        if self._Dab is not None: 
+        if self.max_l >= 1:
             print "Electronic dipole    "+(3*fmt) % tuple(Dm)
             print "Gauge   dipole       "+(3*fmt) % tuple(Dc)
             print "Total   dipole       "+(3*fmt) % tuple(DT)
