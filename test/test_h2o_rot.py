@@ -45,16 +45,11 @@ def test_total_charge():
     assert_(Qtot, ref.Qtot)
 
 def test_charge():
-    Qaa = m.Qab.diagonal()
+    Qaa = m.Qa
     assert_(ref.Q, Qaa)
 
 def test_total_dipole():
-    # molecular dipole moment wrt gauge center gc
-    Dtot = m.Dab.sum(axis=2).sum(axis=1).view(full.matrix)
-    Qa = m.Qab.diagonal()
-    Q = Qa.sum()
-    Dtot += Qa*m.R - Q*m.Rc
-    assert_(Dtot, ref.Dtot)
+    assert_(m.Dtot, ref.Dtot)
 
 def test_dipole_allbonds():
     D = full.matrix(ref.D.shape)
@@ -401,27 +396,27 @@ def test_polarizability_nobonds():
     assert_(Acmp, ref.Aa, 0.07)
 
 def test_potfile_PAn0():
-    PAn0 = m.output_potential_file(maxl=-1, pol=0)
+    PAn0 = m.output_potential_file(maxl=-1, pol=0, hyper=0)
     assert_str(PAn0, ref.PAn0)
 
 def test_potfile_PA00():
-    PA00 = m.output_potential_file(maxl=0, pol=0)
+    PA00 = m.output_potential_file(maxl=0, pol=0, hyper=0)
     assert_str(PA00, ref.PA00)
 
 def test_potfile_PA10():
-    PA10 = m.output_potential_file(maxl=1, pol=0)
+    PA10 = m.output_potential_file(maxl=1, pol=0, hyper=0)
     assert_str(PA10, ref.PA10)
 
 def test_potfile_PA20():
-    PA20 = m.output_potential_file(maxl=2, pol=0)
+    PA20 = m.output_potential_file(maxl=2, pol=0, hyper=0)
     assert_str(PA20, ref.PA20)
 
 def test_potfile_PA21():
-    PA21 = m.output_potential_file(maxl=2, pol=1)
+    PA21 = m.output_potential_file(maxl=2, pol=1, hyper=0)
     assert_str(PA21, ref.PA21)
 
 def test_potfile_PA22():
-    PA22 = m.output_potential_file(maxl=2, pol=2)
+    PA22 = m.output_potential_file(maxl=2, pol=2, hyper=0)
     assert_str(PA22, ref.PA22)
 
 if __name__ == "__main__":
