@@ -20,6 +20,7 @@ rbs = numpy.array([0,
       1.45, 1.05, 0.85, 0.70, 0.65, 0.60, 0.50, 0.45,
       1.80, 1.50, 1.25, 1.10, 1.00, 1.00, 1.00, 1.00, 
       ])*angtx
+
 def symmetrize_first_beta( beta ):
 # naive solution, transforms matrix B[ (x,y,z) ][ (xx, xy, xz, yy, yz, zz) ] into array
 # Symmtrized UT array    B[ (xxx, xxy, xxz, xyy, xyz, xzz, yyy, yyz, yzz, zzz) ]
@@ -1200,6 +1201,49 @@ class MolFrag:
                 Bm = self.Bm[iw]
                 output_beta(Bm, dip=Dm, fmt=fmt)
 
+    def output_template(self, maxl = 0, pol = 0, hyper = 0):
+        l_dict = { 0 : "charge", 1 : "dipole", 2 : "quadrupole",
+                }
+#Upper triangular alpha
+        a_dict = { 0 : "", 2 : "alpha" }
+#Upper triangular beta
+        b_dict = { 0 : "", 2 : "beta" }
+
+        line = ""
+
+        Aab = self.Aab + 0.5 * self.dAab
+        Bab = self.Bab + 0.5 * self.dBab
+
+        if maxl not in l_dict:
+            print "ERROR: called output_template with wrong argument range"
+        if pol not in a_dict:
+            print "ERROR: called output_template with wrong argument range"
+        if hyper not in b_dict:
+            print "ERROR: called output_template with wrong argument range"
+        if maxl >= 0:
+            for a in range(self.noa):
+                line += '["charge"] : [ %.3f ],\n' %(self.Z[a] + self.Qab[a, a])
+        if maxl >= 1:
+            for a in range(self.noa):
+                line += '["dipole"] : [ %.3f, %.3f, %.3f ],\n' %(tuple(self.Dab.sum(axis=2)[:, a]))
+        if maxl >= 2:
+            for a in range(self.noa):
+                line += '["quadrupole"] : [ %.3f, %.3f, %.3f, %.3f, %.3f, %.3f ],\n' %(tuple((self.QUab+self.dQUab).sum(axis=2)[:, a]))
+        if pol >= 2:
+            for a in range(self.noa):
+# Only for one frequency for now, todo, fix later if needed general
+                Asym = Aab.sum(axis=4)[0, :, :, a].view(full.matrix)
+                A = Asym.pack().view(full.matrix).copy()
+                A[2], A[3] = A[3], A[2]
+                line += '["alpha"] : [ %.3f, %.3f, %.3f, %.3f, %.3f, %.3f ],\n' %(tuple(A))
+        if hyper >= 2:
+            for a in range(self.noa):
+# Only for one frequency for now, todo, fix later if needed general
+                Bsym = symmetrize_first_beta( Bab.sum(axis=4)[0, :, :, a].view(full.matrix) )
+                line += '["beta"] : [ %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f ],\n' %(tuple(Bsym))
+        return line
+
+
 
     def output_potential_file(
             self, maxl, pol, hyper, bond_centers=False, angstrom=False
@@ -1414,6 +1458,12 @@ if __name__ == "__main__":
           dest='alpha', type='float', default=2.0,
           help='Screening parameter for penalty function'
           )
+    OP.add_option(
+          '--template',
+          action = 'store_true',
+          default= False,
+          help='Write atomic properties in templated format',
+          )
 
     o, a = OP.parse_args(sys.argv[1:])
 
@@ -1460,8 +1510,12 @@ if __name__ == "__main__":
         o.tmpdir, o.max_l, pf=penalty_function(o.alpha), gc=gc, freqs=freqs
         )
     print molfrag.output_potential_file(
-        o.max_l, o.pol, o.beta, o.bc, o.angstrom
+        o.max_l, o.pol, o.beta, o.bc, o.angstrom,
         )
+    if o.template:
+        print molfrag.output_template(
+            o.max_l, o.pol, o.beta,
+            )
         
     if o.verbose:
         molfrag.output_by_atom(fmt="%12.5f", max_l=o.max_l, pol=o.pol, hyperpol=o.beta, bond_centers=o.bc, angstrom=o.angstrom)
