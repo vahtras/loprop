@@ -1,12 +1,12 @@
 import unittest, os
 from ..loprop import MolFrag, penalty_function, shift_function
 
-DIR = "/home/ignat/repos/loprop_fix/test/h2o_beta/tmp"
+DIR = "h2o_beta/tmp"
 
 class TemplateTest( unittest.TestCase ):
 
     def setUp(self):
-        self.tmp = DIR
+        self.tmp = os.path.join( os.path.dirname( __file__ ), DIR)
 
     def test_h2o_beta_dir(self):
         assert os.path.isdir( self.tmp )
