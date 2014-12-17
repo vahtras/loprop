@@ -1,10 +1,10 @@
 How to cite this software
 =========================
 
-@Manual{LoPropDalton,
+@article{Vahtras:13276,
 author = {Olav Vahtras},
-title = {LoProp for Dalton}
-year = 2014,
+title = {LoProp for Dalton},
+year = {2014},
 doi = {10.5281/zenodo.13276},
-url = {http://github.com/vahtras/loprop}
+url = {http://dx.doi.org/10.5281/zenodo.13276},
 }
