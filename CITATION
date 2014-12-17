@@ -1,0 +1,10 @@
+How to cite this software
+=========================
+
+@Manual{LoPropDalton,
+author = {Olav Vahtras},
+title = {LoProp for Dalton}
+year = 2014,
+doi = {10.5281/zenodo.13276},
+url = {http://github.com/vahtras/loprop}
+}
