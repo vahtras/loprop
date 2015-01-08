@@ -1201,7 +1201,7 @@ class MolFrag:
                 Bm = self.Bm[iw]
                 output_beta(Bm, dip=Dm, fmt=fmt)
 
-    def output_template(self, maxl = 0, pol = 0, hyper = 0):
+    def output_template(self, maxl = 0, pol = 0, hyper = 0, template_full = False):
         l_dict = { 0 : "charge", 1 : "dipole", 2 : "quadrupole",
                 }
 #Upper triangular alpha
@@ -1214,6 +1214,7 @@ class MolFrag:
         Aab = self.Aab + 0.5 * self.dAab
         Bab = self.Bab + 0.5 * self.dBab
 
+
         if maxl not in l_dict:
             print "ERROR: called output_template with wrong argument range"
         if pol not in a_dict:
@@ -1221,26 +1222,45 @@ class MolFrag:
         if hyper not in b_dict:
             print "ERROR: called output_template with wrong argument range"
         if maxl >= 0:
-            for a in range(self.noa):
-                line += '["charge"] : [ %.3f ],\n' %(self.Z[a] + self.Qab[a, a])
+            if template_full:
+                line += '["charge"] : [ %.3f ],\n' %(self.Z.sum()+ self.Qab.sum())
+            else:
+                for a in range(self.noa):
+                    line += '["charge"] : [ %.3f ],\n' %(self.Z[a] + self.Qab[a, a])
         if maxl >= 1:
-            for a in range(self.noa):
-                line += '["dipole"] : [ %.3f, %.3f, %.3f ],\n' %(tuple(self.Dab.sum(axis=2)[:, a]))
+            if template_full:
+                line += '["dipole"] : [ %.3f, %.3f, %.3f ],\n' %(tuple(self.Dab.sum(axis=(1,2))[:]))
+            else:
+                for a in range(self.noa):
+                    line += '["dipole"] : [ %.3f, %.3f, %.3f ],\n' %(tuple(self.Dab.sum(axis=2)[:, a]))
         if maxl >= 2:
-            for a in range(self.noa):
-                line += '["quadrupole"] : [ %.3f, %.3f, %.3f, %.3f, %.3f, %.3f ],\n' %(tuple((self.QUab+self.dQUab).sum(axis=2)[:, a]))
+            if template_full:
+                line += '["quadrupole"] : [ %.3f, %.3f, %.3f, %.3f, %.3f, %.3f ],\n' %(tuple((self.QUab+self.dQUab).sum(axis=(1,2))[:]))
+            else:
+                for a in range(self.noa):
+                    line += '["quadrupole"] : [ %.3f, %.3f, %.3f, %.3f, %.3f, %.3f ],\n' %(tuple((self.QUab+self.dQUab).sum(axis=2)[:, a]))
         if pol >= 2:
-            for a in range(self.noa):
-# Only for one frequency for now, todo, fix later if needed general
-                Asym = Aab.sum(axis=4)[0, :, :, a].view(full.matrix)
+            if template_full:
+                Asym = Aab.sum(axis=(3,4))[0, :, :].view(full.matrix)
                 A = Asym.pack().view(full.matrix).copy()
                 A[2], A[3] = A[3], A[2]
                 line += '["alpha"] : [ %.3f, %.3f, %.3f, %.3f, %.3f, %.3f ],\n' %(tuple(A))
-        if hyper >= 2:
-            for a in range(self.noa):
+            else:
+                for a in range(self.noa):
 # Only for one frequency for now, todo, fix later if needed general
-                Bsym = symmetrize_first_beta( Bab.sum(axis=4)[0, :, :, a].view(full.matrix) )
+                    Asym = Aab.sum(axis=4)[0, :, :, a].view(full.matrix)
+                    A = Asym.pack().view(full.matrix).copy()
+                    A[2], A[3] = A[3], A[2]
+                    line += '["alpha"] : [ %.3f, %.3f, %.3f, %.3f, %.3f, %.3f ],\n' %(tuple(A))
+        if hyper >= 2:
+            if template_full:
+                Bsym = symmetrize_first_beta( Bab.sum(axis=(3,4))[0, :, :].view(full.matrix) )
                 line += '["beta"] : [ %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f ],\n' %(tuple(Bsym))
+            else:
+                for a in range(self.noa):
+# Only for one frequency for now, todo, fix later if needed general
+                    Bsym = symmetrize_first_beta( Bab.sum(axis=4)[0, :, :, a].view(full.matrix) )
+                    line += '["beta"] : [ %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f ],\n' %(tuple(Bsym))
         return line
 
 
@@ -1458,11 +1478,19 @@ if __name__ == "__main__":
           dest='alpha', type='float', default=2.0,
           help='Screening parameter for penalty function'
           )
+    
     OP.add_option(
           '--template',
           action = 'store_true',
           default= False,
           help='Write atomic properties in templated format',
+          )
+ 
+    OP.add_option(
+          '--template_full',
+          action = 'store_true',
+          default= False,
+          help='Write atomic properties in templated format, centered on first atom',
           )
 
     o, a = OP.parse_args(sys.argv[1:])
@@ -1515,6 +1543,7 @@ if __name__ == "__main__":
     if o.template:
         print molfrag.output_template(
             o.max_l, o.pol, o.beta,
+            template_full = o.template_full
             )
         
     if o.verbose:
