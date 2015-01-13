@@ -16,7 +16,7 @@ class TemplateTest( unittest.TestCase ):
                 freqs = None,
                 pf = penalty_function(2.0),
                 sf = shift_function,
-                gc = None).output_template(2, 2, 2) == \
+                gc = None).output_template(2, 2, 2, decimal =3) == \
 """["charge"] : [ -0.703 ],
 ["charge"] : [ 0.352 ],
 ["charge"] : [ 0.352 ],
