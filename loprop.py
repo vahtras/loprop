@@ -1230,7 +1230,10 @@ class MolFrag:
                     line += '["charge"] : [ %s ],\n'%fmt %(self.Z[a] + self.Qab[a, a])
         if maxl >= 1:
             if template_full:
-                line += '["dipole"] : [ %s, %s, %s ],\n'%tuple([fmt for i in range(3)]) %(tuple(self.Dab.sum(axis=(1,2))[:]))
+                Dm = self.Da.sum(axis=1).view(full.matrix)
+                Dc = self.Qab.diagonal()*(self.R-self.Rc)
+                DT = Dm+Dc
+                line += '["dipole"] : [ %s, %s, %s ],\n'%tuple([fmt for i in range(3)]) %(tuple(DT))
             else:
                 for a in range(self.noa):
                     line += '["dipole"] : [ %s, %s, %s ],\n'%tuple([fmt for i in range(3)]) %(tuple(self.Dab.sum(axis=2)[:, a]))
