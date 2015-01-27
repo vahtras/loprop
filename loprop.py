@@ -1270,10 +1270,10 @@ class MolFrag:
 
 
     def output_potential_file(
-            self, maxl, pol, hyper, bond_centers=False, angstrom=False
+            self, maxl, pol, hyper, bond_centers=False, angstrom=False, decimal = 3
             ):
         """Output potential file"""
-        fmt = "%10.3f"
+        fmt = "%10."+"%df" %decimal
         lines = []
         if angstrom: 
             unit = "AA" 
@@ -1550,7 +1550,7 @@ if __name__ == "__main__":
         o.tmpdir, o.max_l, pf=penalty_function(o.alpha), gc=gc, freqs=freqs
         )
     print molfrag.output_potential_file(
-        o.max_l, o.pol, o.beta, o.bc, o.angstrom,
+        o.max_l, o.pol, o.beta, o.bc, o.angstrom, decimal = o.decimal
         )
     if o.template:
         print molfrag.output_template(
