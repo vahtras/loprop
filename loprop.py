@@ -1201,7 +1201,7 @@ class MolFrag:
                 Bm = self.Bm[iw]
                 output_beta(Bm, dip=Dm, fmt=fmt)
 
-    def output_template(self, maxl = 0, pol = 0, hyper = 0, template_full = False, decimal = 4):
+    def output_template(self, maxl = 0, pol = 0, hyper = 0, template_full = False, decimal = 4, freqs = None):
         l_dict = { 0 : "charge", 1 : "dipole", 2 : "quadrupole",
                 }
 #Upper triangular alpha
@@ -1212,8 +1212,10 @@ class MolFrag:
         fmt = "%."+"%df" %decimal
         line = ""
 
-        Aab = self.Aab + 0.5 * self.dAab
-        Bab = self.Bab + 0.5 * self.dBab
+        if pol > 0:
+            Aab = self.Aab + 0.5 * self.dAab
+        if hyper > 0:
+            Bab = self.Bab + 0.5 * self.dBab
 
 
         if maxl not in l_dict:
@@ -1556,7 +1558,8 @@ if __name__ == "__main__":
         print molfrag.output_template(
             o.max_l, o.pol, o.beta,
             template_full = o.template_full,
-            decimal = o.decimal
+            decimal = o.decimal,
+            freqs = freqs,
             )
         
     if o.verbose:
