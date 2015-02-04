@@ -20,6 +20,7 @@ rbs = numpy.array([0,
       1.45, 1.05, 0.85, 0.70, 0.65, 0.60, 0.50, 0.45,
       1.80, 1.50, 1.25, 1.10, 1.00, 1.00, 1.00, 1.00, 
       ])*angtx
+
 def symmetrize_first_beta( beta ):
 # naive solution, transforms matrix B[ (x,y,z) ][ (xx, xy, xz, yy, yz, zz) ] into array
 # Symmtrized UT array    B[ (xxx, xxy, xxz, xyy, xyz, xzz, yyy, yyz, yzz, zzz) ]
@@ -1200,12 +1201,81 @@ class MolFrag:
                 Bm = self.Bm[iw]
                 output_beta(Bm, dip=Dm, fmt=fmt)
 
+    def output_template(self, maxl = 0, pol = 0, hyper = 0, template_full = False, decimal = 4, freqs = None):
+        l_dict = { 0 : "charge", 1 : "dipole", 2 : "quadrupole",
+                }
+#Upper triangular alpha
+        a_dict = { 0 : "", 2 : "alpha" }
+#Upper triangular beta
+        b_dict = { 0 : "", 2 : "beta" }
+
+        fmt = "%."+"%df" %decimal
+        line = ""
+
+        if pol > 0:
+            Aab = self.Aab + 0.5 * self.dAab
+        if hyper > 0:
+            Bab = self.Bab + 0.5 * self.dBab
+
+
+        if maxl not in l_dict:
+            print "ERROR: called output_template with wrong argument range"
+        if pol not in a_dict:
+            print "ERROR: called output_template with wrong argument range"
+        if hyper not in b_dict:
+            print "ERROR: called output_template with wrong argument range"
+        if maxl >= 0:
+            if template_full:
+                line += '["charge"] : [ %s ],\n'%fmt %(self.Z.sum()+ self.Qab.sum())
+            else:
+                for a in range(self.noa):
+                    line += '["charge"] : [ %s ],\n'%fmt %(self.Z[a] + self.Qab[a, a])
+        if maxl >= 1:
+            if template_full:
+                Dm = self.Da.sum(axis=1).view(full.matrix)
+                Dc = self.Qab.diagonal()*(self.R-self.Rc)
+                DT = Dm+Dc
+                line += '["dipole"] : [ %s, %s, %s ],\n'%tuple([fmt for i in range(3)]) %(tuple(DT))
+            else:
+                for a in range(self.noa):
+                    line += '["dipole"] : [ %s, %s, %s ],\n'%tuple([fmt for i in range(3)]) %(tuple(self.Dab.sum(axis=2)[:, a]))
+        if maxl >= 2:
+            if template_full:
+                line += '["quadrupole"] : [ %s, %s, %s, %s, %s, %s ],\n'%tuple([fmt for i in range(6)]) %(tuple((self.QUab+self.dQUab).sum(axis=(1,2))[:]))
+            else:
+                for a in range(self.noa):
+                    line += '["quadrupole"] : [ %s, %s, %s, %s, %s, %s ],\n'%tuple([fmt for i in range(6)]) %(tuple((self.QUab+self.dQUab).sum(axis=2)[:, a]))
+        if pol >= 2:
+            if template_full:
+                Asym = Aab.sum(axis=(3,4))[0, :, :].view(full.matrix)
+                A = Asym.pack().view(full.matrix).copy()
+                A[2], A[3] = A[3], A[2]
+                line += '["alpha"] : [ %s, %s, %s, %s, %s, %s ],\n'%tuple([fmt for i in range(6)]) %(tuple(A))
+            else:
+                for a in range(self.noa):
+# Only for one frequency for now, todo, fix later if needed general
+                    Asym = Aab.sum(axis=4)[0, :, :, a].view(full.matrix)
+                    A = Asym.pack().view(full.matrix).copy()
+                    A[2], A[3] = A[3], A[2]
+                    line += '["alpha"] : [ %s, %s, %s, %s, %s, %s ],\n'%tuple([fmt for i in range(6)]) %(tuple(A))
+        if hyper >= 2:
+            if template_full:
+                Bsym = symmetrize_first_beta( Bab.sum(axis=(3,4))[0, :, :].view(full.matrix) )
+                line += '["beta"] : [ %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ],\n' %tuple([fmt for i in range(len(Bsym))]) %(tuple(Bsym))
+            else:
+                for a in range(self.noa):
+# Only for one frequency for now, todo, fix later if needed general
+                    Bsym = symmetrize_first_beta( Bab.sum(axis=4)[0, :, :, a].view(full.matrix) )
+                    line += '["beta"] : [ %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ],\n' %(tuple([fmt for i in range(len(Bsym))])) %(tuple(Bsym))
+        return line
+
+
 
     def output_potential_file(
-            self, maxl, pol, hyper, bond_centers=False, angstrom=False
+            self, maxl, pol, hyper, bond_centers=False, angstrom=False, decimal = 3
             ):
         """Output potential file"""
-        fmt = "%10.3f"
+        fmt = "%10."+"%df" %decimal
         lines = []
         if angstrom: 
             unit = "AA" 
@@ -1414,6 +1484,28 @@ if __name__ == "__main__":
           dest='alpha', type='float', default=2.0,
           help='Screening parameter for penalty function'
           )
+    
+    OP.add_option(
+          '--template',
+          action = 'store_true',
+          default= False,
+          help='Write atomic properties in templated format',
+          )
+ 
+    OP.add_option(
+          '--template_full',
+          action = 'store_true',
+          default= False,
+          help='Write atomic properties in templated format, centered on first atom',
+          )
+
+    OP.add_option(
+          '--decimal',
+          default= 3,
+          type = int,
+          help='Significant digits for template output.',
+          )
+
 
     o, a = OP.parse_args(sys.argv[1:])
 
@@ -1460,8 +1552,15 @@ if __name__ == "__main__":
         o.tmpdir, o.max_l, pf=penalty_function(o.alpha), gc=gc, freqs=freqs
         )
     print molfrag.output_potential_file(
-        o.max_l, o.pol, o.beta, o.bc, o.angstrom
+        o.max_l, o.pol, o.beta, o.bc, o.angstrom, decimal = o.decimal
         )
+    if o.template:
+        print molfrag.output_template(
+            o.max_l, o.pol, o.beta,
+            template_full = o.template_full,
+            decimal = o.decimal,
+            freqs = freqs,
+            )
         
     if o.verbose:
         molfrag.output_by_atom(fmt="%12.5f", max_l=o.max_l, pol=o.pol, hyperpol=o.beta, bond_centers=o.bc, angstrom=o.angstrom)
