@@ -1335,7 +1335,7 @@ class MolFrag:
                     for iw, w in enumerate(self.freqs):
                         Asym = Aab[iw, :, :, a, a]
                         if pol == 1: line += fmt % (Asym.trace()/3)
-                        if pol == 2: 
+                        if pol %10 == 2: 
                             line += (6*fmt) % tuple(Asym.pack().view(full.matrix))
                 ab += 1
                     
@@ -1352,7 +1352,7 @@ class MolFrag:
                         Asym = Aab.sum(axis=4)[iw, :, :, a].view(full.matrix)
                         if pol == 1: 
                             line += fmt % (Asym.trace()/3*xconv3)
-                        if pol == 2: 
+                        elif pol %10 == 2: 
                             line += (6*fmt) % tuple(Asym.pack().view(full.matrix)*xconv3)
 
                 if hyper > 0:
