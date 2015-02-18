@@ -1275,7 +1275,7 @@ class MolFrag:
             self, maxl, pol, hyper, bond_centers=False, angstrom=False, decimal = 3
             ):
         """Output potential file"""
-        fmt = "%10."+"%df" %decimal
+        fmt = "%" + "%d." %(7 + decimal) + "%df" % decimal
         lines = []
         if angstrom: 
             unit = "AA" 
