@@ -1224,12 +1224,15 @@ class MolFrag:
             print "ERROR: called output_template with wrong argument range"
         if hyper not in b_dict:
             print "ERROR: called output_template with wrong argument range"
+
+        elem_dict = {1:"H", 6:"C", 7: "N", 8 : "O", 16 : "S"}
         if maxl >= 0:
             if template_full:
+# Put point dipole on center of charge
                 line += '["charge"] : [ %s ],\n'%fmt %(self.Z.sum()+ self.Qab.sum())
             else:
                 for a in range(self.noa):
-                    line += '["charge"] : [ %s ],\n'%fmt %(self.Z[a] + self.Qab[a, a])
+                    line += "( '%s%d', "%(elem_dict[self.Z[a]] ,a+1) + '"charge") : [ %s ],\n'%fmt %(self.Z[a] + self.Qab[a, a])
         if maxl >= 1:
             if template_full:
                 Dm = self.Da.sum(axis=1).view(full.matrix)
@@ -1238,13 +1241,13 @@ class MolFrag:
                 line += '["dipole"] : [ %s, %s, %s ],\n'%tuple([fmt for i in range(3)]) %(tuple(DT))
             else:
                 for a in range(self.noa):
-                    line += '["dipole"] : [ %s, %s, %s ],\n'%tuple([fmt for i in range(3)]) %(tuple(self.Dab.sum(axis=2)[:, a]))
+                    line += "( '%s%d', "%(elem_dict[self.Z[a]] ,a+1) + '"dipole") : [ %s, %s, %s ],\n'%tuple([fmt for i in range(3)]) %(tuple(self.Dab.sum(axis=2)[:, a]))
         if maxl >= 2:
             if template_full:
-                line += '["quadrupole"] : [ %s, %s, %s, %s, %s, %s ],\n'%tuple([fmt for i in range(6)]) %(tuple((self.QUab+self.dQUab).sum(axis=(1,2))[:]))
+                line +='["quadrupole"] : [ %s, %s, %s, %s, %s, %s ],\n'%tuple([fmt for i in range(6)]) %(tuple((self.QUab+self.dQUab).sum(axis=(1,2))[:]))
             else:
                 for a in range(self.noa):
-                    line += '["quadrupole"] : [ %s, %s, %s, %s, %s, %s ],\n'%tuple([fmt for i in range(6)]) %(tuple((self.QUab+self.dQUab).sum(axis=2)[:, a]))
+                    line +=  "( '%s%d', "%(elem_dict[self.Z[a]] ,a+1) + '"quadrupole") : [ %s, %s, %s, %s, %s, %s ],\n'%tuple([fmt for i in range(6)]) %(tuple((self.QUab+self.dQUab).sum(axis=2)[:, a]))
         if pol >= 2:
             if template_full:
                 Asym = Aab.sum(axis=(3,4))[0, :, :].view(full.matrix)
@@ -1257,7 +1260,7 @@ class MolFrag:
                     Asym = Aab.sum(axis=4)[0, :, :, a].view(full.matrix)
                     A = Asym.pack().view(full.matrix).copy()
                     A[2], A[3] = A[3], A[2]
-                    line += '["alpha"] : [ %s, %s, %s, %s, %s, %s ],\n'%tuple([fmt for i in range(6)]) %(tuple(A))
+                    line += "( '%s%d', "%(elem_dict[self.Z[a]] ,a+1) +  '"alpha") : [ %s, %s, %s, %s, %s, %s ],\n'%tuple([fmt for i in range(6)]) %(tuple(A))
         if hyper >= 2:
             if template_full:
                 Bsym = symmetrize_first_beta( Bab.sum(axis=(3,4))[0, :, :].view(full.matrix) )
@@ -1266,7 +1269,7 @@ class MolFrag:
                 for a in range(self.noa):
 # Only for one frequency for now, todo, fix later if needed general
                     Bsym = symmetrize_first_beta( Bab.sum(axis=4)[0, :, :, a].view(full.matrix) )
-                    line += '["beta"] : [ %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ],\n' %(tuple([fmt for i in range(len(Bsym))])) %(tuple(Bsym))
+                    line += "( '%s%d', "%(elem_dict[self.Z[a]] ,a+1) +  '"beta") : [ %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ],\n' %(tuple([fmt for i in range(len(Bsym))])) %(tuple(Bsym))
         return line
 
 
