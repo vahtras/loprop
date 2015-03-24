@@ -1201,7 +1201,7 @@ class MolFrag:
                 Bm = self.Bm[iw]
                 output_beta(Bm, dip=Dm, fmt=fmt)
 
-    def output_template(self, maxl = 0, pol = 0, hyper = 0, template_full = False, decimal = 4, freqs = None):
+    def output_template(self, maxl = 0, pol = 0, hyper = 0, template_full = False, decimal = 4, full_loc =0, freqs = None):
         l_dict = { 0 : "charge", 1 : "dipole", 2 : "quadrupole",
                 }
 #Upper triangular alpha
@@ -1229,7 +1229,7 @@ class MolFrag:
         if maxl >= 0:
             if template_full:
 # Put point dipole on center of charge
-                line += '["charge"] : [ %s ],\n'%fmt %(self.Z.sum()+ self.Qab.sum())
+                line += "( '%s%d', "%(elem_dict[self.Z[full_loc]] , full_loc + 1) + '"charge") : [ %s ],\n'%fmt %(self.Z.sum()+ self.Qab.sum())
             else:
                 for a in range(self.noa):
                     line += "( '%s%d', "%(elem_dict[self.Z[a]] ,a+1) + '"charge") : [ %s ],\n'%fmt %(self.Z[a] + self.Qab[a, a])
@@ -1238,13 +1238,13 @@ class MolFrag:
                 Dm = self.Da.sum(axis=1).view(full.matrix)
                 Dc = self.Qab.diagonal()*(self.R-self.Rc)
                 DT = Dm+Dc
-                line += '["dipole"] : [ %s, %s, %s ],\n'%tuple([fmt for i in range(3)]) %(tuple(DT))
+                line += "( '%s%d', "%(elem_dict[self.Z[full_loc]] , full_loc + 1) + '"dipole") : [ %s, %s, %s ],\n'%tuple([fmt for i in range(3)]) %(tuple(DT))
             else:
                 for a in range(self.noa):
                     line += "( '%s%d', "%(elem_dict[self.Z[a]] ,a+1) + '"dipole") : [ %s, %s, %s ],\n'%tuple([fmt for i in range(3)]) %(tuple(self.Dab.sum(axis=2)[:, a]))
         if maxl >= 2:
             if template_full:
-                line +='["quadrupole"] : [ %s, %s, %s, %s, %s, %s ],\n'%tuple([fmt for i in range(6)]) %(tuple((self.QUab+self.dQUab).sum(axis=(1,2))[:]))
+                line += "( '%s%d', "%(elem_dict[self.Z[full_loc]] , full_loc + 1) +  '"quadrupole") : [ %s, %s, %s, %s, %s, %s ],\n'%tuple([fmt for i in range(6)]) %(tuple((self.QUab+self.dQUab).sum(axis=(1,2))[:]))
             else:
                 for a in range(self.noa):
                     line +=  "( '%s%d', "%(elem_dict[self.Z[a]] ,a+1) + '"quadrupole") : [ %s, %s, %s, %s, %s, %s ],\n'%tuple([fmt for i in range(6)]) %(tuple((self.QUab+self.dQUab).sum(axis=2)[:, a]))
@@ -1253,7 +1253,7 @@ class MolFrag:
                 Asym = Aab.sum(axis=(3,4))[0, :, :].view(full.matrix)
                 A = Asym.pack().view(full.matrix).copy()
                 A[2], A[3] = A[3], A[2]
-                line += '["alpha"] : [ %s, %s, %s, %s, %s, %s ],\n'%tuple([fmt for i in range(6)]) %(tuple(A))
+                line += "( '%s%d', "%(elem_dict[self.Z[full_loc]] , full_loc + 1) + '"alpha") : [ %s, %s, %s, %s, %s, %s ],\n'%tuple([fmt for i in range(6)]) %(tuple(A))
             else:
                 for a in range(self.noa):
 # Only for one frequency for now, todo, fix later if needed general
@@ -1264,7 +1264,7 @@ class MolFrag:
         if hyper >= 2:
             if template_full:
                 Bsym = symmetrize_first_beta( Bab.sum(axis=(3,4))[0, :, :].view(full.matrix) )
-                line += '["beta"] : [ %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ],\n' %tuple([fmt for i in range(len(Bsym))]) %(tuple(Bsym))
+                line += "( '%s%d', "%(elem_dict[self.Z[full_loc]] , full_loc + 1) + '"beta") : [ %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ],\n' %tuple([fmt for i in range(len(Bsym))]) %(tuple(Bsym))
             else:
                 for a in range(self.noa):
 # Only for one frequency for now, todo, fix later if needed general
@@ -1508,6 +1508,12 @@ if __name__ == "__main__":
           type = int,
           help='Significant digits for template output.',
           )
+    OP.add_option(
+          '--full_loc',
+          default= 0,
+          type = int,
+          help='Significant digits for template output.',
+          )
 
 
     o, a = OP.parse_args(sys.argv[1:])
@@ -1563,6 +1569,7 @@ if __name__ == "__main__":
             template_full = o.template_full,
             decimal = o.decimal,
             freqs = freqs,
+            full_loc = o.full_loc,
             )
         
     if o.verbose:
