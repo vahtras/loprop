@@ -1201,7 +1201,7 @@ class MolFrag:
                 Bm = self.Bm[iw]
                 output_beta(Bm, dip=Dm, fmt=fmt)
 
-    def output_template(self, maxl = 0, pol = 0, hyper = 0, template_full = False, decimal = 4, freqs = None):
+    def output_template(self, maxl = 0, pol = 0, hyper = 0, template_full = False, decimal = 4, full_loc =0, freqs = None):
         l_dict = { 0 : "charge", 1 : "dipole", 2 : "quadrupole",
                 }
 #Upper triangular alpha
@@ -1224,49 +1224,52 @@ class MolFrag:
             print "ERROR: called output_template with wrong argument range"
         if hyper not in b_dict:
             print "ERROR: called output_template with wrong argument range"
+
+        elem_dict = {1:"H", 6:"C", 7: "N", 8 : "O", 16 : "S"}
         if maxl >= 0:
             if template_full:
-                line += '["charge"] : [ %s ],\n'%fmt %(self.Z.sum()+ self.Qab.sum())
+# Put point dipole on center of charge
+                line += "( '%s%d', "%(elem_dict[self.Z[full_loc]] , full_loc + 1) + '"charge") : [ %s ],\n'%fmt %(self.Z.sum()+ self.Qab.sum())
             else:
                 for a in range(self.noa):
-                    line += '["charge"] : [ %s ],\n'%fmt %(self.Z[a] + self.Qab[a, a])
+                    line += "( '%s%d', "%(elem_dict[self.Z[a]] ,a+1) + '"charge") : [ %s ],\n'%fmt %(self.Z[a] + self.Qab[a, a])
         if maxl >= 1:
             if template_full:
                 Dm = self.Da.sum(axis=1).view(full.matrix)
                 Dc = self.Qab.diagonal()*(self.R-self.Rc)
                 DT = Dm+Dc
-                line += '["dipole"] : [ %s, %s, %s ],\n'%tuple([fmt for i in range(3)]) %(tuple(DT))
+                line += "( '%s%d', "%(elem_dict[self.Z[full_loc]] , full_loc + 1) + '"dipole") : [ %s, %s, %s ],\n'%tuple([fmt for i in range(3)]) %(tuple(DT))
             else:
                 for a in range(self.noa):
-                    line += '["dipole"] : [ %s, %s, %s ],\n'%tuple([fmt for i in range(3)]) %(tuple(self.Dab.sum(axis=2)[:, a]))
+                    line += "( '%s%d', "%(elem_dict[self.Z[a]] ,a+1) + '"dipole") : [ %s, %s, %s ],\n'%tuple([fmt for i in range(3)]) %(tuple(self.Dab.sum(axis=2)[:, a]))
         if maxl >= 2:
             if template_full:
-                line += '["quadrupole"] : [ %s, %s, %s, %s, %s, %s ],\n'%tuple([fmt for i in range(6)]) %(tuple((self.QUab+self.dQUab).sum(axis=(1,2))[:]))
+                line += "( '%s%d', "%(elem_dict[self.Z[full_loc]] , full_loc + 1) +  '"quadrupole") : [ %s, %s, %s, %s, %s, %s ],\n'%tuple([fmt for i in range(6)]) %(tuple((self.QUab+self.dQUab).sum(axis=(1,2))[:]))
             else:
                 for a in range(self.noa):
-                    line += '["quadrupole"] : [ %s, %s, %s, %s, %s, %s ],\n'%tuple([fmt for i in range(6)]) %(tuple((self.QUab+self.dQUab).sum(axis=2)[:, a]))
+                    line +=  "( '%s%d', "%(elem_dict[self.Z[a]] ,a+1) + '"quadrupole") : [ %s, %s, %s, %s, %s, %s ],\n'%tuple([fmt for i in range(6)]) %(tuple((self.QUab+self.dQUab).sum(axis=2)[:, a]))
         if pol >= 2:
             if template_full:
                 Asym = Aab.sum(axis=(3,4))[0, :, :].view(full.matrix)
                 A = Asym.pack().view(full.matrix).copy()
                 A[2], A[3] = A[3], A[2]
-                line += '["alpha"] : [ %s, %s, %s, %s, %s, %s ],\n'%tuple([fmt for i in range(6)]) %(tuple(A))
+                line += "( '%s%d', "%(elem_dict[self.Z[full_loc]] , full_loc + 1) + '"alpha") : [ %s, %s, %s, %s, %s, %s ],\n'%tuple([fmt for i in range(6)]) %(tuple(A))
             else:
                 for a in range(self.noa):
 # Only for one frequency for now, todo, fix later if needed general
                     Asym = Aab.sum(axis=4)[0, :, :, a].view(full.matrix)
                     A = Asym.pack().view(full.matrix).copy()
                     A[2], A[3] = A[3], A[2]
-                    line += '["alpha"] : [ %s, %s, %s, %s, %s, %s ],\n'%tuple([fmt for i in range(6)]) %(tuple(A))
+                    line += "( '%s%d', "%(elem_dict[self.Z[a]] ,a+1) +  '"alpha") : [ %s, %s, %s, %s, %s, %s ],\n'%tuple([fmt for i in range(6)]) %(tuple(A))
         if hyper >= 2:
             if template_full:
                 Bsym = symmetrize_first_beta( Bab.sum(axis=(3,4))[0, :, :].view(full.matrix) )
-                line += '["beta"] : [ %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ],\n' %tuple([fmt for i in range(len(Bsym))]) %(tuple(Bsym))
+                line += "( '%s%d', "%(elem_dict[self.Z[full_loc]] , full_loc + 1) + '"beta") : [ %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ],\n' %tuple([fmt for i in range(len(Bsym))]) %(tuple(Bsym))
             else:
                 for a in range(self.noa):
 # Only for one frequency for now, todo, fix later if needed general
                     Bsym = symmetrize_first_beta( Bab.sum(axis=4)[0, :, :, a].view(full.matrix) )
-                    line += '["beta"] : [ %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ],\n' %(tuple([fmt for i in range(len(Bsym))])) %(tuple(Bsym))
+                    line += "( '%s%d', "%(elem_dict[self.Z[a]] ,a+1) +  '"beta") : [ %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ],\n' %(tuple([fmt for i in range(len(Bsym))])) %(tuple(Bsym))
         return line
 
 
@@ -1275,7 +1278,7 @@ class MolFrag:
             self, maxl, pol, hyper, bond_centers=False, angstrom=False, decimal = 3
             ):
         """Output potential file"""
-        fmt = "%10."+"%df" %decimal
+        fmt = "%" + "%d." %(7 + decimal) + "%df" % decimal
         lines = []
         if angstrom: 
             unit = "AA" 
@@ -1335,7 +1338,7 @@ class MolFrag:
                     for iw, w in enumerate(self.freqs):
                         Asym = Aab[iw, :, :, a, a]
                         if pol == 1: line += fmt % (Asym.trace()/3)
-                        if pol == 2: 
+                        if pol %10 == 2: 
                             line += (6*fmt) % tuple(Asym.pack().view(full.matrix))
                 ab += 1
                     
@@ -1352,7 +1355,7 @@ class MolFrag:
                         Asym = Aab.sum(axis=4)[iw, :, :, a].view(full.matrix)
                         if pol == 1: 
                             line += fmt % (Asym.trace()/3*xconv3)
-                        if pol == 2: 
+                        elif pol %10 == 2: 
                             line += (6*fmt) % tuple(Asym.pack().view(full.matrix)*xconv3)
 
                 if hyper > 0:
@@ -1505,6 +1508,12 @@ if __name__ == "__main__":
           type = int,
           help='Significant digits for template output.',
           )
+    OP.add_option(
+          '--full_loc',
+          default= 0,
+          type = int,
+          help='Significant digits for template output.',
+          )
 
 
     o, a = OP.parse_args(sys.argv[1:])
@@ -1560,6 +1569,7 @@ if __name__ == "__main__":
             template_full = o.template_full,
             decimal = o.decimal,
             freqs = freqs,
+            full_loc = o.full_loc,
             )
         
     if o.verbose:
