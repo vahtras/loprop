@@ -1356,8 +1356,9 @@ class MolFrag:
                         if pol == 1: 
                             line += fmt % (Asym.trace()/3*xconv3)
                         elif pol %10 == 2: 
-                            Asym[2:4] = Asym[3:1:-1]
-                            line += (6*fmt) % tuple(Asym.pack().view(full.matrix)*xconv3)
+                            out = Asym.pack().view(full.matrix)
+                            out[2:4] = out[3:1:-1]
+                            line += (6*fmt) % tuple(out*xconv3)
 
                 if hyper > 0:
                     for iw in range(self.nfreqs):
