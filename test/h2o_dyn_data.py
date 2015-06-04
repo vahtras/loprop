@@ -1,4 +1,4 @@
-from daltools.util.full import init
+from ..daltools.util.full import init
 
 Z = [8., 1., 1.]
 Rc = init([0.00000000,  0.00000000,  0.48860959])
