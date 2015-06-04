@@ -1,3 +1,3 @@
 [submodule "daltools"]
 	path = daltools
-	url = http://github.com/vahtras/daltools.git
+	url = https://github.com/vahtras/daltools.git
