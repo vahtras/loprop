@@ -9,7 +9,7 @@ class TemplateTest( unittest.TestCase ):
         self.tmp = os.path.join( os.path.dirname( __file__ ), DIR)
 
     def test_h2o_beta_dir(self):
-        assert os.path.isdir( self.tmp )
+        self.assertTrue(os.path.isdir(self.tmp))
 
     def test_h2o_template(self):
 
@@ -35,7 +35,7 @@ class TemplateTest( unittest.TestCase ):
                 pf = penalty_function(2.0),
                 sf = shift_function,
                 gc = None).output_template(2, 2, 2, decimal =3) 
-        assert string == reference
+        self.assertEqual(string, reference)
 
 
 if __name__ == '__main__':
