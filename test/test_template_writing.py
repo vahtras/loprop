@@ -35,11 +35,13 @@ class TemplateTest( unittest.TestCase ):
                 pf = penalty_function(2.0),
                 sf = shift_function,
                 gc = None).output_template(2, 2, 2, decimal =3) 
-        # Normalize zeros
-        self.assertEqual(
-            string.replace("-0.000", " 0.000"), 
-            reference.replace("-0.000", " 0.000"), 
-            )
+        # Normalize blanks,zeros
+        string = string.replace("-0.000", " 0.000")
+        string = " ".join(string.split())
+        reference = reference.replace("-0.000", " 0.000")
+        reference = " ".join(reference.split())
+        
+        self.assertEqual(string, reference)
 
 
 if __name__ == '__main__':
