@@ -1,5 +1,7 @@
 language: python
 python:
    - "2.7"
-install: "git submodule update --init --recursive"
+install: 
+   - "git submodule update --init --recursive"
+   - "pip install -r requirements.txt"
 script: nosetests
