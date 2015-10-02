@@ -3,6 +3,10 @@
 
 This code is an implementation of the LoProp algorithm based on Gagliardi et al., JCP **121**, 4494 (2004) for postprocessing calculation with Dalton (http://daltonprogram.org)
 
+## How to cite this software
+
+LoProp for Dalton, Olav Vahtras (2014). http://dx.doi.org/10.5281/zenodo.13276
+
 ## Requirements
 
 A python installation with `numpy` and `scipy` libraries
@@ -11,17 +15,13 @@ A python installation with `numpy` and `scipy` libraries
 
 To install the latest version
 
-```
+```bash
 $ git clone https://github.com/vahtras/loprop.git
 $ cd loprop
-$ git submodule init
-$ git submodule update
-$ cd daltools
-$ git submodule init
-$ git submodule update
+$ git submodule update --init --recursive
 ```
 
-There are two levels of git submodules (daltools, daltools/util) which require these steps.
+There are two levels of git submodules (daltools, daltools/util) which will be installed.
 
 
 ## Test
