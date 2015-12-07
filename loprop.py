@@ -21,6 +21,20 @@ rbs = numpy.array([0,
       1.80, 1.50, 1.25, 1.10, 1.00, 1.00, 1.00, 1.00, 
       ])*angtx
 
+bond_co = { ( 1, 1 ) : 1.2, 
+            ( 1, 6 ) : 1.2, 
+            ( 1, 7 ) : 1.2, 
+            ( 1, 8 ) : 1.2, 
+            ( 6, 6 ) : 1.6, 
+            ( 6, 7 ) : 1.6, 
+            ( 6, 8 ) : 1.6, 
+            ( 7, 7 ) : 1.6, 
+            ( 7, 8 ) : 1.6, 
+            ( 8, 8 ) : 1.6, }
+#permute dict items in keypairs
+for key1, key2 in bond_co.keys():
+    bond_co[ ( key2, key1 ) ] = bond_co[ (key1, key2) ]
+
 def symmetrize_first_beta( beta ):
 # naive solution, transforms matrix B[ (x,y,z) ][ (xx, xy, xz, yy, yz, zz) ] into array
 # Symmtrized UT array    B[ (xxx, xxy, xxz, xyy, xyz, xzz, yyy, yyz, yzz, zzz) ]
@@ -1276,7 +1290,6 @@ class MolFrag:
 
     def output_potential_file(
             self, maxl, pol, hyper, bond_centers=False, angstrom=False, decimal = 3,
-            bond_co = 1.5
             ):
         """Output potential file"""
         fmt = "%" + "%d." %(7 + decimal) + "%df" % decimal
@@ -1299,7 +1312,7 @@ class MolFrag:
         for a in range( noa ):
             for b in range( a ):
                 r = numpy.sqrt( (( self.R[a] - self.R[b])**2 ).sum() )
-                if r < bond_co/xtang:
+                if r < bond_co[ (int(self.Z[a]), int(self.Z[b])) ]/xtang:
                     bond_mat[ a, b ] = 1
                     bond_mat[ b, a ] = 1
 
@@ -1330,36 +1343,37 @@ class MolFrag:
             ab = 0
             for a in range(noa):
                 for b in range(a):
-                    line  = ("1" + 3*fmt) % tuple(self.Rab[a, b, :]*xconv)
-                    if maxl >= 0: line += fmt % Qab[a, b]
-                    if maxl >= 1:
-			line += (3*fmt) % tuple( Dab[:,b,a] + Dab[:, a, b] )
-                    if maxl >= 2: line += (6*fmt) % \
-                        tuple(QUab[:, a, b] +QUab[:, b, a])
-                    if pol > 0:
-			Aab = self.Aab + 0.5*self.dAab
-                        for iw, w in enumerate(self.freqs):
-			    Asym = Aab[iw, :, :, a, b] + Aab[iw, :, :, b, a]
-			    if pol == 1: line += fmt % (Asym.trace()*xconv3/3)
-			    if pol == 2: 
-				line += (6*fmt)%tuple(Asym.pack().view(full.matrix)*xconv3)
-		    if hyper > 0:
-			for iw, w in enumerate(self.freqs):
-			    Bsym = Bab[iw, :, :, a, b] + Bab[iw, :, :, b, a]
-			    if hyper == 1:
-				dip = self.Da[:,a]
-				betakk = Bsym[:,0] + Bsym[:, 3] + Bsym[:, 5]
-				line += fmt % ( 0.2 * (betakk & dip) / dip.norm2() )
-			    if hyper == 2:
-				Btotsym = symmetrize_first_beta( Bsym )
-				line += 10*fmt % tuple( Btotsym )
-                    ab += 1
-                    lines.append(line)
+                    if bond_mat[ a, b]:
+                        line  = ("1" + 3*fmt) % tuple(self.Rab[a, b, :])
+                        if maxl >= 0:
+                            line += fmt % Qab[a, b]
+                        if maxl >= 1:
+                            line += (3*fmt) % tuple( Dab[:,b,a] + Dab[:, a, b] )
+                        if maxl >= 2: line += (6*fmt) % \
+                            tuple(QUab[:, a, b] +QUab[:, b, a])
+                        if pol > 0:
+                            Aab = self.Aab + 0.5*self.dAab
+                            for iw, w in enumerate(self.freqs):
+                                Asym = Aab[iw, :, :, a, b] + Aab[iw, :, :, b, a]
+                                if pol == 1: line += fmt % (Asym.trace()*xconv3/3)
+                                elif (pol%10) == 2: 
+                                    out = Asym.pack().view(full.matrix)*xconv3
+                                    out[2:4] = out[3:1:-1]
+                                    line += (6*fmt)%tuple(out )
+                        if hyper > 0:
+                            for iw, w in enumerate(self.freqs):
+                                Bsym = Bab[iw, :, :, a, b] + Bab[iw, :, :, b, a]
+                                #if hyper == 1:
+                                #    dip = self.Da[:,a]
+                                #    betakk = Bsym[:,0] + Bsym[:, 3] + Bsym[:, 5]
+                                #    line += fmt % ( 0.2 * (betakk & dip) / dip.norm2() )
+                                Btotsym = symmetrize_first_beta( Bsym )
+                                line += 10*fmt % tuple( Btotsym )
+                        lines.append(line)
 #For atom a, non_bond_pos holds atoms that are not bonded to a
 #Include only non bonded to atomic prop here 
                 nbond_pos = numpy.where( bond_mat[ a ] == 0 )[0]
 
-                line  = ("1" + 3*fmt) % tuple(self.Rab[a, a, :])
                 line  = ("1" + 3*fmt) % tuple(self.Rab[a, a, :])
                 if maxl >= 0:
                     line += fmt % (self.Z[a]+Qab[a, a])
@@ -1368,28 +1382,25 @@ class MolFrag:
                 if maxl >= 2:
                     print "Bond quadrupoles not supported yet"
                     raise SystemExit
-                    line += (6*fmt) % tuple(QUab[:, a, a])
                 if pol > 0:
                     for iw, w in enumerate(self.freqs):
                         if pol %10 == 2:
                             out = reduce( lambda x,y: x + Aab[iw, :, :, a, y], nbond_pos, 0.0 ).pack().view(full.matrix)*xconv3
                             out[2:4] = out[3:1:-1]
                             line += (6*fmt) % tuple(out)
-                        if pol == 1:
+                        elif pol == 1:
                             out = reduce( lambda x,y: x + Aab[iw, :, :, a, y],nbond_pos, 0.0 ).view(full.matrix).trace()/3.0 * xconv3
                             line += fmt % out
                 if hyper > 0:
                     for iw, w in enumerate(self.freqs):
                         Bsym = reduce( lambda x,y: x + Bab[iw, :, :, a, y], nbond_pos, 0.0 ).view(full.matrix)
-                        if hyper == 1:
-                            dip = self.Da[:,a]
-                            betakk = Bsym[:,0] + Bsym[:, 3] + Bsym[:, 5]
-                            line += fmt % ( 0.2 * (betakk & dip) / dip.norm2() )
-                        if hyper == 2:
-                            Btotsym = symmetrize_first_beta( Bsym )
-                            line += 10*fmt % tuple( Btotsym )
+                        #if hyper == 1:
+                        #    dip = self.Da[:,a]
+                        #    betakk = Bsym[:,0] + Bsym[:, 3] + Bsym[:, 5]
+                        #    line += fmt % ( 0.2 * (betakk & dip) / dip.norm2() )
+                        Btotsym = symmetrize_first_beta( Bsym )
+                        line += 10*fmt % tuple( Btotsym )
                 ab += 1
-                    
                 lines.append(line)
         else:
             for a in range(noa):
