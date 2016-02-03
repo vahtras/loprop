@@ -1,4 +1,7 @@
+*egg*
 build
+dist
+
 
 *.pyc
 *.swp
