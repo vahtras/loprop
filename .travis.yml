@@ -4,7 +4,8 @@ python:
 virtualenv:
    system_site_packages: true
 before_install:
-   - "sudo apt-get install -qq python-numpy python-scipy"
-install: 
-   - "git submodule update --init --recursive"
+   - sudo apt-get update -qq
+   - install -qq python-numpy python-scipy
+   - git submodule update --init --recursive
+
 script: nosetests
