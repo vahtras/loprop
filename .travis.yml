@@ -13,4 +13,6 @@ before_install:
    - sudo apt-get install python-numpy python-scipy
    - git submodule update --init --recursive
 
+install: pip install --use-wheel -r requirements.txt
+
 script: nosetests
