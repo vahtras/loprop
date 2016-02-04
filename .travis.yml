@@ -10,7 +10,7 @@ virtualenv:
 
 before_install:
    - sudo apt-get update -qq
-   - sudo apt-get install python-numpy libblas-dev liblapack-dev
+   - sudo apt-get install python-numpy libblas-dev liblapack-dev libatlas-base-dev gfortran
    - git submodule update --init --recursive
 
 install: pip install --use-wheel -r requirements.txt
