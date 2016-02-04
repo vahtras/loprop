@@ -10,7 +10,7 @@ virtualenv:
 
 before_install:
    - sudo apt-get update -qq
-   - sudo apt-get install python-numpy python-scipy
+   - sudo apt-get install python-numpy
    - git submodule update --init --recursive
 
 install: pip install --use-wheel -r requirements.txt
