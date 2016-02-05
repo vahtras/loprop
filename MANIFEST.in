@@ -1,2 +1,4 @@
-include LICENSE
-recursive-include test AO* DALTON.BAS SIRIFC RSPVEC
+include LICENSE 
+include README.md
+include CITATION
+

@@ -36,4 +36,5 @@ setup(name="LoProp",
     author="Olav Vahtras",
     author_email="vahtras@kth.se",
     install_requires = reqs,
+    description = 'LoProp implementation for Dalton',
     )
