@@ -13,6 +13,8 @@ A python installation with `numpy` and `scipy` libraries
 
 ## Installation
 
+### 1)
+
 To install the latest version
 
 ```bash
@@ -23,6 +25,22 @@ $ git submodule update --init --recursive
 
 There are two levels of git submodules (daltools, daltools/util) which will be installed.
 
+### 2) Via setuptools
+
+This will automatically put loprop into your path.  
+Works with virtual env and anaconda.
+
+```bash
+$ git clone https://github.com/vahtras/loprop.git
+$ cd loprop
+$ python setup.py install
+```
+
+If you don't have Anaconda and lack superuser privilege:
+
+```bash
+$ python setup.py install --user
+```
 
 ## Test
 
