@@ -15,8 +15,10 @@ reqs = ['argparse>=1.2.1',
         'wsgiref>=0.1.2' ]
 
 setup(name="LoProp",
-    version="0.1.2",
-    packages = find_packages(),
+    version="0.1.6",
+    packages = find_packages( 'loprop'),
+    package_dir = { '' : 'loprop' },
+    scripts = ['loprop/loprop.py'],
     package_data = { 'loprop.test' : [ '*/tmp/RSPVEC',
                                        '*/tmp/DALTON.BAS',
                                        '*/tmp/AOONEINT',
