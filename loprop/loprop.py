@@ -108,7 +108,8 @@ class MolFrag:
     data from a Dalton runtime scratch directory"""
 
     def __init__(
-        self, tmpdir, max_l=0, pol=0, freqs=None, pf=penalty_function, sf=shift_function, gc=None
+        self, tmpdir, max_l=0, pol=0, freqs=None, pf=penalty_function, sf=shift_function, gc=None,
+        damping=False, real_pol=False, imag_pol=False
         ):
         """Constructur of MolFrac class objects
         input: tmpdir, scratch directory of Dalton calculation
@@ -123,6 +124,9 @@ class MolFrag:
             self.freqs = freqs
             self.nfreqs = len(freqs)
         self.rfreqs = range(self.nfreqs)
+        self.damping = damping
+        self._real_pol = real_pol
+        self._imag_pol = imag_pol
 
         self.pf = pf
         self.sf = sf
@@ -169,6 +173,23 @@ class MolFrag:
         #if maxl >= 1: self.dipole()
         #if maxl >= 2: self.quadrupole()
         #if pol: self.pol()
+
+    @property
+    def real_pol(self):
+        return self._real_pol
+
+    @property
+    def imag_pol(self):
+        return self._imag_pol
+
+    def set_real_pol(self):
+        self._real_pol = True
+        self._imag_pol = False
+
+    def set_imag_pol(self):
+        self._real_pol = False
+        self._imag_pol = True
+
 
     def get_basis_info(self, debug=False):
         """ Obtain basis set info from DALTON.BAS """
@@ -728,8 +749,17 @@ class MolFrag:
         T = self.T
         cpa = self.cpa
 
-        Dkao = lr.Dk(*lab, freqs=self.freqs, tmpdir=self.tmpdir)
-        _Dk = {lw:(T.I*Dkao[lw]*T.I.T).subblocked(cpa, cpa) for lw in Dkao}
+        Dkao = lr.Dk(*lab, freqs=self.freqs, tmpdir=self.tmpdir, absorption=self.damping, lr_vecs=True)
+        if self.damping:
+            Re_Dkao, Im_Dkao = Dkao
+            if self.real_pol:
+                _Dk = {lw:(T.I*Re_Dkao[lw]*T.I.T).subblocked(cpa, cpa) for lw in Re_Dkao}
+            elif self.imag_pol:
+                _Dk = {lw:(T.I*Im_Dkao[lw]*T.I.T).subblocked(cpa, cpa) for lw in Im_Dkao}
+            else:
+                raise ValueError
+        else:
+            _Dk = {lw:(T.I*Dkao[lw]*T.I.T).subblocked(cpa, cpa) for lw in Dkao}
 
         self._Dk = _Dk
         return self._Dk
