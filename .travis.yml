@@ -1,18 +1,26 @@
+sudo: false
 language: python
-
-sudo: true
-
 python:
-   - "2.7"
-
-virtualenv:
-   system_site_packages: true
+  - "2.7"
+  - "3.5"
+cache: apt
+addons:
+   apt:
+      packages:
+      - libatlas-dev
+      - libatlas-base-dev
+      - liblapack-dev
+      - gfortran
 
 before_install:
-   - sudo apt-get update -qq
-   - sudo apt-get install libblas-dev liblapack-dev libatlas-base-dev gfortran
-   - git submodule update --init --recursive
-
-install: python setup.py install
-
-script: nosetests
+  - wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - conda update --yes conda
+install:
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy scipy nose mock
+  - pip install pep8 python-coveralls
+script:
+  - nosetests --with-coverage --cover-package .
+after_success:
+  - coveralls
