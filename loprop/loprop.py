@@ -87,21 +87,21 @@ def shift_function(*args):
 def header(string):
     """Pretty print header"""
     border = '-'*len(string)
-    print "\n%s\n%s\n%s" % (border, string, border)
+    print("\n%s\n%s\n%s" % (border, string, border))
 
 def output_beta(beta, dip=None, fmt="%12.6f"):
     """Repeated output format for b(x; yz)"""
-    print "Hyperpolarizability"
-    print "beta(:, xx xy xz yy yz zz)"
-    print "--------------------------"
-    print "beta(x, *) " + (6*fmt) % tuple(beta[0,:])
-    print "beta(y, *) " + (6*fmt) % tuple(beta[1,:])
-    print "beta(z, *) " + (6*fmt) % tuple(beta[2,:])
+    print("Hyperpolarizability")
+    print("beta(:, xx xy xz yy yz zz)")
+    print("--------------------------")
+    print("beta(x, *) " + (6*fmt) % tuple(beta[0,:]))
+    print("beta(y, *) " + (6*fmt) % tuple(beta[1,:]))
+    print("beta(z, *) " + (6*fmt) % tuple(beta[2,:]))
     betakk = beta[:,0] + beta[:, 3] + beta[:, 5]
-    print "beta(:, kk)" + (3*fmt) % tuple(betakk)
+    print("beta(:, kk)" + (3*fmt) % tuple(betakk))
     if dip is not  None:
         betapar = 0.2*(betakk & dip)/dip.norm2()
-        print "beta//dip  " + (fmt) % betapar
+        print("beta//dip  " + (fmt) % betapar)
 
 class MolFrag:
     """An instance of the MolFrag class is created and populated with
@@ -207,8 +207,8 @@ class MolFrag:
             self.noc += len(o)
 
         if debug:
-            print "Orbitals/atom", self.cpa, "\nTotal", self.nbf
-            print "Occupied/atom", self.opa, "\nTotal", self.noc
+            print("Orbitals/atom", self.cpa, "\nTotal", self.nbf)
+            print("Occupied/atom", self.opa, "\nTotal", self.noc)
 
     def S(self):
         """
@@ -304,7 +304,7 @@ class MolFrag:
     #
         #t1=timing("step 1")
         if debug:
-            print "Initial S", S
+            print("Initial S", S)
         nbf = S.shape[0]
         #
         # obtain atomic blocking
@@ -315,11 +315,11 @@ class MolFrag:
         for at in range(noa):
             nocc += len(opa[at])
         if debug:
-            print "nocc", nocc
+            print("nocc", nocc)
         Satom = S.block(cpa, cpa)
         Ubl = full.unit(nbf).subblocked((nbf,), cpa)
         if debug:
-            print "Ubl", Ubl
+            print("Ubl", Ubl)
         #
         # Diagonalize atomwise
         #
@@ -329,19 +329,19 @@ class MolFrag:
             for at in range(noa):
                 T1.subblock[at] = Ubl.subblock[0][at].GST(S)
             if debug:
-                print "T1", T1
+                print("T1", T1)
             T1 = T1.unblock()
         else:
             u, v = Satom.eigvec()
             T1 = v.unblock()
         if debug:
-            print "T1", T1
+            print("T1", T1)
         #
         # Full transformration
         #
         S1 = T1.T * S * T1
         if debug:
-            print "Overlap after step 1", S1
+            print("Overlap after step 1", S1)
         #t1.stop()
        
         # 2. a) Lowdin orthogonalize occupied subspace
@@ -356,19 +356,19 @@ class MolFrag:
             adim.append(len(opa[at]))
             adim.append(vpa[at])
         if debug:
-            print "Blocking: Ao Av Bo Bv...", adim
+            print("Blocking: Ao Av Bo Bv...", adim)
         #
         # dimensions for permuted basis
         #
         pdim = []
         if debug:
-            print "opa", opa
+            print("opa", opa)
         for at in range(noa):
             pdim.append(len(opa[at]))
         for at in range(noa):
             pdim.append(vpa[at])
         if debug:
-            print "Blocking: Ao Bo... Av Bv...", pdim
+            print("Blocking: Ao Bo... Av Bv...", pdim)
         #
         # within atom permute occupied first
         #
@@ -377,7 +377,7 @@ class MolFrag:
             P1.subblock[at][at][:, :] = full.permute(opa[at], cpa[at])
         n = len(adim)
         if debug:
-            print "P1", P1
+            print("P1", P1)
         P1 = P1.unblock()
        
        
@@ -387,7 +387,7 @@ class MolFrag:
         for i in range(1, len(adim), 2):
             P2.subblock[i][noa+(i-1)/2] = full.unit(adim[i])
         if debug:
-            print "P2", P2
+            print("P2", P2)
         P2 = P2.unblock()
        
         #
@@ -396,15 +396,15 @@ class MolFrag:
        
         P = P1*P2
         if debug:
-            print "P", P
+            print("P", P)
             if not numpy.allclose(P.inv(), P.T):
-                print "P not unitary"
+                print("P not unitary")
                 sys.exit(1)
        
        
         S1P = P.T*S1*P
         if debug:
-            print "Overlap in permuted basis", S1P
+            print("Overlap in permuted basis", S1P)
        
        
         #invsq=lambda x: 1.0/math.sqrt(x)
@@ -418,7 +418,7 @@ class MolFrag:
        
         S2 = T2.T*S1P*T2
         if debug:
-            print "Overlap after step 2", S2
+            print("Overlap after step 2", S2)
         #t2.stop()
        
         #
@@ -435,8 +435,8 @@ class MolFrag:
         S3 = T3.T*S2*T3
         #
         if debug:
-            print "T3", T3
-            print "Overlap after step 3", S3
+            print("T3", T3)
+            print("Overlap after step 3", S3)
         #t3.stop()
         #
         # 4. Lowdin orthogonalize virtual 
@@ -445,16 +445,16 @@ class MolFrag:
         T4b = blocked.unit(occdim)
         S3b = S3.block(occdim, occdim)
         if debug:
-            print "S3b", S3b
-            print "T4b", T4b
+            print("S3b", S3b)
+            print("T4b", T4b)
         ### SYM ### S3b += S3b.T; S3b *= 0.5 ###SYM###
         T4b.subblock[1] = S3b.subblock[1].invsqrt()
         T4 = T4b.unblock()
         S4 = T4.T*S3*T4
         #S4=S3
         if debug:
-            print "T4", T4
-            print "Overlap after step 4", S4
+            print("T4", T4)
+            print("Overlap after step 4", S4)
         #t4.stop()
        
         #
@@ -462,7 +462,7 @@ class MolFrag:
         #
         S4 = P*S4*P.T
         if debug:
-            print "Final overlap ", S4
+            print("Final overlap ", S4)
        
         #
         # Return total transformation
@@ -472,8 +472,8 @@ class MolFrag:
         # Test
         #
         if debug:
-            print "Transformation determinant", T.det()
-            print "original S", S, "final", T.T*S*T
+            print("Transformation determinant", T.det())
+            print("original S", S, "final", T.T*S*T)
         self._T = T
         return self._T
 
@@ -778,7 +778,7 @@ class MolFrag:
         cpa = self.cpa
 
         Dkao = qr.D2k(*qrlab, freqs=self.freqs, tmpdir=self.tmpdir)
-        #print "Dkao.keys", Dkao.keys()
+        #print("Dkao.keys", Dkao.keys())
         _D2k = {lw:(T.I*Dkao[lw]*T.I.T).subblocked(cpa, cpa) for lw in Dkao}
 
         self._D2k = _D2k
@@ -1019,7 +1019,7 @@ class MolFrag:
         #correction term for shifting origin from O to Rab
         for i, li in enumerate(labs):
             for jk,ljk in enumerate(qlabs):
-                #print i,jk, li, ljk
+                #print(i,jk, li, ljk)
                 for a in range(noa):
                     for b in range(noa):
                         for iw, w in enumerate(self.freqs):
@@ -1122,26 +1122,28 @@ class MolFrag:
             for a in range(noa):
                 for b in range(a):
                     header("Bond    %d %d" % (a+1, b+1))
-                    print "Bond center:       " + \
+                    print("Bond center:       " + \
                         (3*fmt) % tuple(0.5*(R[a, :]+R[b, :])*xconv)
-                    print "Electronic charge:   "+fmt % Qab[a, b]
-                    print "Total charge:        "+fmt % Qab[a, b]
+                        )
+                    print("Electronic charge:   "+fmt % Qab[a, b])
+                    print("Total charge:        "+fmt % Qab[a, b])
                     if self._Dab is not None:
-                        print "Electronic dipole    " + \
-                            (3*fmt) % tuple(Dab[:, a, b]+Dab[:, b, a])
-                        print "Electronic dipole norm" + \
+                        print("Electronic dipole    " + \
+                            (3*fmt) % tuple(Dab[:, a, b]+Dab[:, b, a]))
+                        print("Electronic dipole norm" + \
                             fmt % (Dab[:, a, b]+Dab[:, b, a]).norm2()
+                            )
                     if self._QUab is not None:
-                        print "Electronic quadrupole" + \
-                            (6*fmt) % tuple(QUab[:, a, b]+QUab[:, b, a])
+                        print("Electronic quadrupole" + \
+                            (6*fmt) % tuple(QUab[:, a, b]+QUab[:, b, a]))
                     if self._Aab is not None:
                         for iw, w in enumerate(self.freqs):
                             Asym = Aab[iw, :, :, a, b] + Aab[iw, :, :, b, a]
                             if pol > 0:
-                                print "Isotropic polarizability (%g)" % w, fmt % (Asym.trace()/3*xconv3)
+                                print("Isotropic polarizability (%g)" % w, fmt % (Asym.trace()/3*xconv3))
                             if pol > 1:
-                                print "Polarizability (%g)      " % w, 
-                                print (6*fmt) % tuple(Asym.pack().view(full.matrix)*xconv3)
+                                print("Polarizability (%g)      " % w, )
+                                print((6*fmt) % tuple(Asym.pack().view(full.matrix)*xconv3))
 
                     if self._Bab is not None:
                         for iw, w in enumerate(self.freqs):
@@ -1149,26 +1151,26 @@ class MolFrag:
                             output_beta(Bsym, self.Da[:, a])
 
                 header("Atom    %d"%(a+1))
-                print "Atom center:       " + \
-                    (3*fmt) % tuple(R[a,:]*xconv)
-                print "Nuclear charge:    "+fmt % Z[a]
-                print "Electronic charge:   "+fmt % Qab[a, a]
-                print "Total charge:        "+fmt % (Z[a]+Qab[a, a])
+                print("Atom center:       " + \
+                    (3*fmt) % tuple(R[a,:]*xconv))
+                print("Nuclear charge:    "+fmt % Z[a])
+                print("Electronic charge:   "+fmt % Qab[a, a])
+                print("Total charge:        "+fmt % (Z[a]+Qab[a, a]))
                 if self._Dab is not None:
-                    print "Electronic dipole    " + \
-                        (3*fmt) % tuple(Dab[:, a, a])
-                    print "Electronic dipole norm" + \
-                        fmt % Dab[:, a, a].norm2()
+                    print("Electronic dipole    " + \
+                        (3*fmt) % tuple(Dab[:, a, a]))
+                    print("Electronic dipole norm" + \
+                        fmt % Dab[:, a, a].norm2())
                 if self._QUab is not None:
-                    print "Electronic quadrupole" + \
-                        (6*fmt) % tuple(QUab[:, a, a])
+                    print("Electronic quadrupole" + \
+                        (6*fmt) % tuple(QUab[:, a, a]))
                 if self._Aab is not None:
                     for iw, w in enumerate(self.freqs):
                         Asym = Aab[iw, :, :, a, a] 
                         if pol > 0:
-                            print "Isotropic polarizability (%g)" % w, fmt % (Asym.trace()/3*xconv3)
+                            print("Isotropic polarizability (%g)" % w, fmt % (Asym.trace()/3*xconv3))
                         if pol > 1:
-                            print "Polarizability (%g)      " % w, (6*fmt) % tuple(Asym.pack().view(full.matrix)*xconv3)
+                            print("Polarizability (%g)      " % w, (6*fmt) % tuple(Asym.pack().view(full.matrix)*xconv3))
                 if self._Bab is not None:
                     for iw, w in enumerate(self.freqs):
                         Bsym = Bab[iw, :, :, a, a] 
@@ -1177,25 +1179,25 @@ class MolFrag:
         else:
             for a in range(noa):
                 header("Atomic domain %d" % (a+1))
-                print "Domain center:       "+(3*fmt) % tuple(R[a, :]*xconv)
+                print("Domain center:       "+(3*fmt) % tuple(R[a, :]*xconv))
                 line = " 0"
                 line += (3*"%17.10f") % tuple(xtang*R[a, :])
-                print "Nuclear charge:      "+fmt % Z[a]
+                print("Nuclear charge:      "+fmt % Z[a])
                 if self.max_l >= 0:
-                    print "Electronic charge:   "+fmt % Qa[a]
-                    print "Total charge:        "+fmt % (Z[a]+Qa[a])
+                    print("Electronic charge:   "+fmt % Qa[a])
+                    print("Total charge:        "+fmt % (Z[a]+Qa[a]))
                 if self._Dab is not None:
-                    print "Electronic dipole    "+(3*fmt) % tuple(self.Da[:, a])
-                    print "Electronic dipole norm"+(fmt) % self.Da[:, a].view(full.matrix).norm2()
+                    print("Electronic dipole    "+(3*fmt) % tuple(self.Da[:, a]))
+                    print("Electronic dipole norm"+(fmt) % self.Da[:, a].view(full.matrix).norm2())
                 if self._QUab is not None:
-                    #print "QUab", QUab
-                    print "Electronic quadrupole"+(6*fmt) % tuple(QUa[:, a])
+                    #print("QUab", QUab)
+                    print("Electronic quadrupole"+(6*fmt) % tuple(QUa[:, a]))
                 if self._Aab is not None:
                     for iw, w in enumerate(self.freqs):
                         Asym = Aa[iw, :, :, a].view(full.matrix)
-                        print "Isotropic polarizablity (w=%g)" % w + fmt % (Aa[iw, :, :, a].trace()/3*xconv3)
-                        print "Electronic polarizability (w=%g)" % w + \
-                            (6*fmt) % tuple(Asym.pack().view(full.matrix)*xconv3)
+                        print("Isotropic polarizablity (w=%g)" % w + fmt % (Aa[iw, :, :, a].trace()/3*xconv3))
+                        print("Electronic polarizability (w=%g)" % w + \
+                            (6*fmt) % tuple(Asym.pack().view(full.matrix)*xconv3))
                 if self._Bab is not None:
                     for iw, w in enumerate(self.freqs):
                         Bsym = Ba[iw, :, :, a].view(full.matrix)
@@ -1217,28 +1219,28 @@ class MolFrag:
             Dm = self.Da.sum(axis=1).view(full.matrix)
 
         header("Molecular")
-        print "Domain center:       "+(3*fmt) % tuple(Rc*xconv)
-        print "Nuclear charge:      "+fmt % Ztot
+        print("Domain center:       "+(3*fmt) % tuple(Rc*xconv))
+        print("Nuclear charge:      "+fmt % Ztot)
 
         if self.max_l >= 0:
-            print "Electronic charge:   "+fmt % Qtot
-            print "Total charge:        "+fmt % (Ztot+Qtot)
+            print("Electronic charge:   "+fmt % Qtot)
+            print("Total charge:        "+fmt % (Ztot+Qtot))
 
         if self.max_l >= 1:
-            print "Electronic dipole    "+(3*fmt) % tuple(Dm)
-            print "Gauge   dipole       "+(3*fmt) % tuple(Dc)
-            print "Total   dipole       "+(3*fmt) % tuple(DT)
+            print("Electronic dipole    "+(3*fmt) % tuple(Dm))
+            print("Gauge   dipole       "+(3*fmt) % tuple(Dc))
+            print("Total   dipole       "+(3*fmt) % tuple(DT))
 
         if self._QUab is not None:
-            print "Electronic quadrupole"+(6*fmt) % tuple(QUm)
-            print "Nuclear    quadrupole"+(6*fmt) % tuple(QUN)
-            print "Total      quadrupole"+(6*fmt) % tuple(QUT)
+            print("Electronic quadrupole"+(6*fmt) % tuple(QUm))
+            print("Nuclear    quadrupole"+(6*fmt) % tuple(QUN))
+            print("Total      quadrupole"+(6*fmt) % tuple(QUT))
 
         if self._Aab is not None:
             for iw, w in enumerate(self.freqs):
                 Am = self.Am[iw]
-                print "Polarizability av (%g)   " % w, fmt % (Am.trace()/3*xconv3)
-                print "Polarizability (%g)      " % w, (6*fmt) % tuple(Am.pack().view(full.matrix)*xconv3)
+                print("Polarizability av (%g)   " % w, fmt % (Am.trace()/3*xconv3))
+                print("Polarizability (%g)      " % w, (6*fmt) % tuple(Am.pack().view(full.matrix)*xconv3))
 
         if self._Bab is not None:
             for iw, w in enumerate(self.freqs):
@@ -1263,11 +1265,11 @@ class MolFrag:
 
 
         if maxl not in l_dict:
-            print "ERROR: called output_template with wrong argument range"
+            print("ERROR: called output_template with wrong argument range")
         if pol not in a_dict:
-            print "ERROR: called output_template with wrong argument range"
+            print("ERROR: called output_template with wrong argument range")
         if hyper not in b_dict:
-            print "ERROR: called output_template with wrong argument range"
+            print("ERROR: called output_template with wrong argument range")
 
         elem_dict = {1:"H", 6:"C", 7: "N", 8 : "O", 16 : "S"}
         if maxl >= 0:
@@ -1410,7 +1412,7 @@ class MolFrag:
                 if maxl >= 1:
                     line += (3*fmt) % tuple( reduce(lambda x,y: x+ Dab[:, a, y], nbond_pos, 0.0 ))
                 if maxl >= 2:
-                    print "Bond quadrupoles not supported yet"
+                    print("Bond quadrupoles not supported yet")
                     raise SystemExit
                 if pol > 0:
                     for iw, w in enumerate(self.freqs):
@@ -1475,7 +1477,7 @@ Atomic domain %d
 ---------------
 Domain center:       """  % (n+1,) + (3*fmt+"\n") % tuple(self.Rab[n, n, :]*xconv)
 
-        print "self.max_l", self.max_l
+        print("self.max_l", self.max_l)
         if self.max_l >= 0:
             retstr += ("Nuclear charge:      " + fmt + "\n") % self.Z[n]
             retstr += ("Electronic charge:   " + fmt + "\n") % self.Qab[n, n]
@@ -1510,12 +1512,12 @@ if __name__ == "__main__":
     OP.add_option(
           '-d', '--debug',
           dest='debug', action='store_true', default=False,
-          help='print for debugging [False]'
+          help='print(for debugging [False]'
           )
     OP.add_option(
           '-v', '--verbose',
           dest='verbose', action='store_true', default=False,
-          help='print details [False]'
+          help='print(details [False]'
           )
     OP.add_option(
           '-t','--tmpdir',
@@ -1613,7 +1615,7 @@ if __name__ == "__main__":
     # Check consistency: present Dalton files
     #
     if not os.path.isdir(o.tmpdir):
-        print "%s: Directory not found: %s" % (sys.argv[0], o.tmpdir)
+        print("%s: Directory not found: %s" % (sys.argv[0], o.tmpdir))
         raise SystemExit
 
     import tarfile
@@ -1630,9 +1632,9 @@ if __name__ == "__main__":
     for file_ in needed_files:
         df = os.path.join(o.tmpdir, file_)
         if not os.path.isfile(df):
-            print "%s: %s does not exists" % (sys.argv[0], df)
-            print "Needed Dalton files to run loprop.py:"
-            print "\n".join(needed_files)
+            print("%s: %s does not exists" % (sys.argv[0], df))
+            print("Needed Dalton files to run loprop.py:")
+            print("\n".join(needed_files))
             raise SystemExit
 
     if o.gc is not None: 
@@ -1651,20 +1653,20 @@ if __name__ == "__main__":
     molfrag = MolFrag(
         o.tmpdir, o.max_l, pf=penalty_function(o.alpha), gc=gc, freqs=freqs
         )
-    print molfrag.output_potential_file(
+    print(molfrag.output_potential_file(
         o.max_l, o.pol, o.beta, o.bc, o.angstrom, decimal = o.decimal
-        )
+        ))
     if o.template:
-        print molfrag.output_template(
+        print(molfrag.output_template(
             o.max_l, o.pol, o.beta,
             template_full = o.template_full,
             decimal = o.decimal,
             freqs = freqs,
             full_loc = o.full_loc,
-            )
+            ))
         
     if o.verbose:
         molfrag.output_by_atom(fmt="%12.5f", max_l=o.max_l, pol=o.pol, hyperpol=o.beta, bond_centers=o.bc, angstrom=o.angstrom)
 
-    print t
+    print(t)
      
