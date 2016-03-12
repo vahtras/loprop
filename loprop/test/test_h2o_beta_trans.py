@@ -6,19 +6,19 @@ import re
 thisdir  = os.path.dirname(__file__)
 case = "h2o_beta"
 tmpdir=os.path.join(thisdir, case, 'tmp')
-exec('import %s_data as ref'%case)
+exec('from . import %s_data as ref'%case)
 
 from ..loprop import penalty_function, xtang, pairs, MolFrag
 
 def assert_(this, ref, atol=1e-5, text=None):
-    if text: print text,
-    print this, ref
-    print "Max deviation", np.amax(this - ref)
+    if text: print(text)
+    print(this, ref)
+    print("Max deviation", np.amax(this - ref))
     assert np.allclose(this, ref, atol=atol)
 
 def assert_str(this, ref, text=None):
-    if text: print text,
-    print this, ref
+    if text: print(text)
+    print(this, ref)
     # allow string inequality from round-off errors
     assert this.replace("-0.000", " 0.000") == ref.replace("-0.000", " 0.000")
 

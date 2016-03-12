@@ -7,25 +7,25 @@ import re
 thisdir  = os.path.dirname(__file__)
 case = "h2o"
 tmpdir=os.path.join(thisdir, case, 'tmp')
-exec('import %s_data as ref'%case)
+exec('from . import %s_data as ref'%case)
 
 from ..loprop import penalty_function, xtang, pairs
 
 def assert_(this, ref, atol=1e-5, text=None):
-    if text: print text,
-    print this, ref
-    print "Max deviation", np.amax(this - ref)
+    if text: print(text)
+    print(this, ref)
+    print("Max deviation", np.amax(this - ref))
     assert np.allclose(this, ref, atol=atol)
 
 def assert_str(this, ref, text=None):
     def stripm0(numstr):
         # allow string inequality from round-off errors
         return numstr.replace("-0.000", " 0.000")
-    if text: print text,
+    if text: print(text)
     thism0 = stripm0(this)
     refm0 = stripm0(ref)
-    print thism0, refm0
-    print len(thism0), len(refm0)
+    print(thism0, refm0)
+    print(len(thism0), len(refm0))
     assert thism0 == refm0
 
 

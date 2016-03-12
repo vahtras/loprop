@@ -8,7 +8,7 @@ import re
 thisdir  = os.path.dirname(__file__)
 case = "ch4_absorption"
 tmpdir=os.path.join(thisdir, case, 'tmp')
-exec('import %s_data as ref'%case)
+exec('from . import %s_data as ref'%case)
 
 from ..loprop import penalty_function, xtang, pairs
 

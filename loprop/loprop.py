@@ -6,8 +6,8 @@ import os
 import sys
 import math
 import numpy
-from daltools import one, mol, dens, prop, lr, qr, sirifc
-from daltools.util import full, blocked, subblocked, timing
+from .daltools import one, mol, dens, prop, lr, qr, sirifc
+from .daltools.util import full, blocked, subblocked, timing
 
 #full.matrix.fmt = "%14.6f"
 xtang = 0.5291772108
@@ -23,17 +23,23 @@ rbs = numpy.array([0,
 
 bond_co = { ( 1, 1 ) : 1.2, 
             ( 1, 6 ) : 1.2, 
+            ( 6, 1 ) : 1.2, 
             ( 1, 7 ) : 1.2, 
+            ( 7, 1 ) : 1.2, 
             ( 1, 8 ) : 1.2, 
+            ( 8, 1 ) : 1.2, 
             ( 6, 6 ) : 1.6, 
             ( 6, 7 ) : 1.6, 
+            ( 7, 6 ) : 1.6, 
             ( 6, 8 ) : 1.6, 
+            ( 8, 6 ) : 1.6, 
             ( 7, 7 ) : 1.6, 
             ( 7, 8 ) : 1.6, 
+            ( 8, 7 ) : 1.6, 
             ( 8, 8 ) : 1.6, }
 #permute dict items in keypairs
-for key1, key2 in bond_co.keys():
-    bond_co[ ( key2, key1 ) ] = bond_co[ (key1, key2) ]
+#for key1, key2 in bond_co.keys():
+    #bond_co[ ( key2, key1 ) ] = bond_co[ (key1, key2) ]
 
 def symmetrize_first_beta( beta ):
 # naive solution, transforms matrix B[ (x,y,z) ][ (xx, xy, xz, yy, yz, zz) ] into array
@@ -383,9 +389,9 @@ class MolFrag:
        
         P2 = subblocked.matrix(adim, pdim)
         for i in range(0, len(adim), 2):
-            P2.subblock[i][i/2] = full.unit(adim[i])
+            P2.subblock[i][i//2] = full.unit(adim[i])
         for i in range(1, len(adim), 2):
-            P2.subblock[i][noa+(i-1)/2] = full.unit(adim[i])
+            P2.subblock[i][noa+(i-1)//2] = full.unit(adim[i])
         if debug:
             print("P2", P2)
         P2 = P2.unblock()

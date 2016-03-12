@@ -7,18 +7,18 @@ import re
 thisdir  = os.path.dirname(__file__)
 case = "h2o_rot"
 tmpdir=os.path.join(thisdir, case, 'tmp')
-exec('import %s_data as ref'%case)
+exec('from . import %s_data as ref'%case)
 
 
 def assert_(this, ref, atol=1e-5, text=None):
-    if text: print text,
-    print this, ref
-    print "Max deviation", np.amax(this - ref)
+    if text: print(text)
+    print(this, ref)
+    print("Max deviation", np.amax(this - ref))
     assert np.allclose(this, ref, atol=atol)
 
 def assert_str(this, ref, text=None):
-    if text: print text,
-    print this, ref
+    if text: print(text)
+    print(this, ref)
     assert this == ref
 
 
