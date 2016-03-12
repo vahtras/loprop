@@ -71,7 +71,6 @@ class NewTest(unittest.TestCase):
             [0.000000, 1.228335, 0.000000],    
             [0.000000, 0.000000, 1.228333]])
         Am = self.m.Am[0]
-        print Am - ref_Am
         np.testing.assert_allclose(Am, ref_Am, rtol=1e-6, atol=1e-6)
 
 if __name__ == "__main__":
