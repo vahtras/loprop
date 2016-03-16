@@ -83,8 +83,7 @@ $ dalton -get "AOONEINT AOPROPER" hf h2o
 
 A sample run with charges and isotropic polarizabilities is
 ```
-$ loprop.py -f hf_h2o.tar.gz -l 0 -a 1
-loprop.py -t tmp -l 0 -a 1
+$ loprop -f hf_h2o.tar.gz -l 0 -a 1
 AU
 3 0 1 1
 1     0.000     0.000     0.698    -0.703     3.466

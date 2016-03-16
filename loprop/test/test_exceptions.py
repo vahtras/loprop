@@ -1,7 +1,7 @@
 import unittest
 import os
 from ..daltools import sirifc
-from ..loprop import MolFrag
+from ..core import MolFrag
 
 class TestException(unittest.TestCase):
 

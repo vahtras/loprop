@@ -1,5 +1,5 @@
 import unittest, os
-from ..loprop import MolFrag, penalty_function, shift_function
+from ..core import MolFrag, penalty_function, shift_function
 
 DIR = "h2o_beta/tmp"
 

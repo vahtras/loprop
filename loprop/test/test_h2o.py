@@ -1,6 +1,6 @@
 import os 
 import numpy as np
-from .. import loprop
+from ..core import MolFrag
 from ..daltools.util import full
 
 import re
@@ -9,7 +9,7 @@ case = "h2o"
 tmpdir=os.path.join(thisdir, case, 'tmp')
 exec('from . import %s_data as ref'%case)
 
-from ..loprop import penalty_function, xtang, pairs
+from ..core import penalty_function, xtang, pairs
 
 def assert_(this, ref, atol=1e-5, text=None):
     if text: print(text)
@@ -33,7 +33,7 @@ def setup():
     global m
     global ff
 # modify Gagliardi penalty function to include unit conversion bug
-    m = loprop.MolFrag(tmpdir, freqs=(0, ), pf=penalty_function(2.0/xtang**2))
+    m = MolFrag(tmpdir, freqs=(0, ), pf=penalty_function(2.0/xtang**2))
     ff = ref.ff
 
 def test_nuclear_charge():

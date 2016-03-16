@@ -8,7 +8,7 @@ case = "h2o_beta"
 tmpdir=os.path.join(thisdir, case, 'tmp')
 exec('from . import %s_data as ref'%case)
 
-from ..loprop import penalty_function, xtang, pairs, MolFrag
+from ..core import penalty_function, xtang, pairs, MolFrag
 
 def assert_(this, ref, atol=1e-5, text=None):
     if text: print(text)

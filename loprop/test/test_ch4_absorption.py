@@ -1,7 +1,7 @@
 import unittest
 import os 
 import numpy as np
-from .. import loprop
+from ..core import penalty_function, xtang, pairs, MolFrag
 from ..daltools.util import full
 
 import re
@@ -10,7 +10,6 @@ case = "ch4_absorption"
 tmpdir=os.path.join(thisdir, case, 'tmp')
 exec('from . import %s_data as ref'%case)
 
-from ..loprop import penalty_function, xtang, pairs
 
 import unittest
 
@@ -19,7 +18,7 @@ class NewTest(unittest.TestCase):
 
     def setUp(self):
     # modify Gagliardi penalty function to include unit conversion bug
-        self.m = loprop.MolFrag(tmpdir, freqs=(0.4425,), damping=0.004556, pf=penalty_function(2.0/xtang**2))
+        self.m = MolFrag(tmpdir, freqs=(0.4425,), damping=0.004556, pf=penalty_function(2.0/xtang**2))
 
     def tearDown(self):
         pass

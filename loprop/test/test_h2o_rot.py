@@ -1,6 +1,6 @@
 import os 
 import numpy as np
-from ..loprop import MolFrag, penalty_function, xtang, pairs
+from ..core import MolFrag, penalty_function, xtang, pairs
 from ..daltools.util import full
 
 import re
