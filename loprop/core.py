@@ -330,17 +330,10 @@ class MolFrag:
         #
         # Diagonalize atomwise
         #
-        GS = 1
-        if GS:
-            T1 = blocked.BlockDiagonalMatrix(cpa, cpa)
-            for at in range(noa):
-                T1.subblock[at] = Ubl.subblock[0][at].GST(S)
-            if self.debug:#pragma: no cover
-                print("T1", T1)
-            T1 = T1.unblock()
-        else:
-            u, v = Satom.eigvec()
-            T1 = v.unblock()
+        T1 = blocked.BlockDiagonalMatrix(cpa, cpa)
+        for at in range(noa):
+            T1.subblock[at] = Ubl.subblock[0][at].GST(S)
+        T1 = T1.unblock()
         if self.debug:#pragma: no cover
             print("T1", T1)
         #
