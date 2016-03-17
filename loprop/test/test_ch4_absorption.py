@@ -72,5 +72,11 @@ class NewTest(unittest.TestCase):
         Am = self.m.Am[0]
         np.testing.assert_allclose(Am, ref_Am, rtol=1e-6, atol=1e-6)
 
+    def test_capture_error_setup(self):
+        self.m._real_pol = False
+        self.m._imag_pol = False
+        with self.assertRaises(ValueError):
+            Dk = self.m.Dk
+
 if __name__ == "__main__":
     unittest.main()
