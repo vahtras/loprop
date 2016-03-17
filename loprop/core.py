@@ -1241,8 +1241,8 @@ class MolFrag:
         if self._Aab is not None:
             for iw, w in enumerate(self.freqs):
                 Am = self.Am[iw]
-                print("Polarizability av (%g)   " % w, fmt % (Am.trace()/3*xconv3))
-                print("Polarizability (%g)      " % w, (6*fmt) % tuple(Am.pack().view(full.matrix)*xconv3))
+                print("Polarizability av (%g)   " % w + fmt % (Am.trace()/3*xconv3))
+                print("Polarizability (%g)      " % w + (6*fmt) % tuple(Am.pack().view(full.matrix)*xconv3))
 
         if self._Bab is not None:
             for iw, w in enumerate(self.freqs):

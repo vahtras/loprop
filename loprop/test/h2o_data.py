@@ -229,3 +229,194 @@ Isotropic polarizablity (w=0)  3.46639
 OUTPUT_02_1 = OUTPUT_00_1 + """\
 Electronic polarizability (w=0)  3.87468 -0.00000  3.00027 -0.00000 -0.00000  3.52422
 """
+
+OUTPUT_BY_ATOM_n0 = """\
+---------------
+Atomic domain 1
+---------------
+Domain center:            0.00000     0.00000     0.69801
+Nuclear charge:           8.00000
+
+---------------
+Atomic domain 2
+---------------
+Domain center:           -1.48150     0.00000    -0.34901
+Nuclear charge:           1.00000
+
+---------------
+Atomic domain 3
+---------------
+Domain center:            1.48150     0.00000    -0.34901
+Nuclear charge:           1.00000
+
+---------
+Molecular
+---------
+Domain center:            0.00000     0.00000     0.48861
+Nuclear charge:          10.00000"""
+
+OUTPUT_BY_ATOM_00 = """\
+---------------
+Atomic domain 1
+---------------
+Domain center:            0.00000     0.00000     0.69801
+Nuclear charge:           8.00000
+Electronic charge:       -8.70344
+Total charge:            -0.70344
+
+---------------
+Atomic domain 2
+---------------
+Domain center:           -1.48150     0.00000    -0.34901
+Nuclear charge:           1.00000
+Electronic charge:       -0.64828
+Total charge:             0.35172
+
+---------------
+Atomic domain 3
+---------------
+Domain center:            1.48150     0.00000    -0.34901
+Nuclear charge:           1.00000
+Electronic charge:       -0.64828
+Total charge:             0.35172
+
+---------
+Molecular
+---------
+Domain center:            0.00000     0.00000     0.48861
+Nuclear charge:          10.00000
+Electronic charge:      -10.00000
+Total charge:             0.00000"""
+
+OUTPUT_BY_ATOM_10 = """\
+---------------
+Atomic domain 1
+---------------
+Domain center:            0.00000     0.00000     0.69801
+Nuclear charge:           8.00000
+Electronic charge:       -8.70344
+Total charge:            -0.70344
+Electronic dipole        -0.00000     0.00000    -0.28357
+Electronic dipole norm     0.28357
+
+---------------
+Atomic domain 2
+---------------
+Domain center:           -1.48150     0.00000    -0.34901
+Nuclear charge:           1.00000
+Electronic charge:       -0.64828
+Total charge:             0.35172
+Electronic dipole         0.15343     0.00000     0.12735
+Electronic dipole norm     0.19939
+
+---------------
+Atomic domain 3
+---------------
+Domain center:            1.48150     0.00000    -0.34901
+Nuclear charge:           1.00000
+Electronic charge:       -0.64828
+Total charge:             0.35172
+Electronic dipole        -0.15343     0.00000     0.12735
+Electronic dipole norm     0.19939
+
+---------
+Molecular
+---------
+Domain center:            0.00000     0.00000     0.48861
+Nuclear charge:          10.00000
+Electronic charge:      -10.00000
+Total charge:             0.00000
+Electronic dipole        -0.00000     0.00000    -0.02888
+Gauge   dipole            0.00000    -0.00000    -0.73651
+Total   dipole           -0.00000     0.00000    -0.76539"""
+
+
+OUTPUT_BY_ATOM_20 = """\
+---------------
+Atomic domain 1
+---------------
+Domain center:            0.00000     0.00000     0.69801
+Nuclear charge:           8.00000
+Electronic charge:       -8.70344
+Total charge:            -0.70344
+Electronic dipole        -0.00000     0.00000    -0.28357
+Electronic dipole norm     0.28357
+Electronic quadrupole    -3.29254    -0.00000    -0.00000    -4.54317    -0.00000    -4.00466
+
+---------------
+Atomic domain 2
+---------------
+Domain center:           -1.48150     0.00000    -0.34901
+Nuclear charge:           1.00000
+Electronic charge:       -0.64828
+Total charge:             0.35172
+Electronic dipole         0.15343     0.00000     0.12735
+Electronic dipole norm     0.19939
+Electronic quadrupole    -0.13214     0.00000     0.24981    -0.44463     0.00000    -0.26059
+
+---------------
+Atomic domain 3
+---------------
+Domain center:            1.48150     0.00000    -0.34901
+Nuclear charge:           1.00000
+Electronic charge:       -0.64828
+Total charge:             0.35172
+Electronic dipole        -0.15343     0.00000     0.12735
+Electronic dipole norm     0.19939
+Electronic quadrupole    -0.13214    -0.00000    -0.24981    -0.44463     0.00000    -0.26059
+
+---------
+Molecular
+---------
+Domain center:            0.00000     0.00000     0.48861
+Nuclear charge:          10.00000
+Electronic charge:      -10.00000
+Total charge:             0.00000
+Electronic dipole        -0.00000     0.00000    -0.02888
+Gauge   dipole            0.00000    -0.00000    -0.73651
+Total   dipole           -0.00000     0.00000    -0.76539
+Electronic quadrupole    -7.31176    -0.00000    -0.00000    -5.43243    -0.00000    -6.36259
+Nuclear    quadrupole     4.38968     0.00000     0.00000     0.00000     0.00000     1.75400
+Total      quadrupole    -2.92208    -0.00000    -0.00000    -5.43243    -0.00000    -4.60859"""
+
+
+OUTPUT_BY_ATOM_01 = """\
+---------------
+Atomic domain 1
+---------------
+Domain center:            0.00000     0.00000     0.69801
+Nuclear charge:           8.00000
+Electronic charge:       -8.70344
+Total charge:            -0.70344
+Isotropic polarizablity (w=0)     3.46639
+Electronic polarizability (w=0)     3.87468    -0.00000     3.00027    -0.00000    -0.00000     3.52422
+
+---------------
+Atomic domain 2
+---------------
+Domain center:           -1.48150     0.00000    -0.34901
+Nuclear charge:           1.00000
+Electronic charge:       -0.64828
+Total charge:             0.35172
+Isotropic polarizablity (w=0)     1.57591
+Electronic polarizability (w=0)     2.15604    -0.00000     1.05124     1.10564    -0.00000     1.52045
+
+---------------
+Atomic domain 3
+---------------
+Domain center:            1.48150     0.00000    -0.34901
+Nuclear charge:           1.00000
+Electronic charge:       -0.64828
+Total charge:             0.35172
+Isotropic polarizablity (w=0)     1.57591
+Electronic polarizability (w=0)     2.15604    -0.00000     1.05124    -1.10564    -0.00000     1.52045
+
+---------
+Molecular
+---------
+Domain center:            0.00000     0.00000     0.48861
+Nuclear charge:          10.00000
+Electronic charge:      -10.00000
+Total charge:             0.00000
+Polarizability av (0)        6.61822
+Polarizability (0)           8.18677    -0.00000     5.10275    -0.00000    -0.00000     6.56513"""

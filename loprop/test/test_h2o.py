@@ -1,4 +1,6 @@
+import unittest
 import os 
+import sys
 import numpy as np
 from ..core import MolFrag
 from ..daltools.util import full
@@ -11,31 +13,6 @@ exec('from . import %s_data as ref'%case)
 
 from ..core import penalty_function, xtang, pairs
 
-def assert_(this, ref, atol=1e-5, text=None):
-    if text: print(text)
-    print(this, ref)
-    print("Max deviation", np.amax(this - ref))
-    assert np.allclose(this, ref, atol=atol)
-
-def assert_str(this, ref, text=None):
-    def stripm0(numstr):
-        # allow string inequality from round-off errors
-        return numstr.replace("-0.000", " 0.000")
-    if text: print(text)
-    thism0 = stripm0(this)
-    refm0 = stripm0(ref)
-    print(thism0, refm0)
-    print(len(thism0), len(refm0))
-    assert thism0 == refm0
-
-
-def setup():
-    global ff
-# modify Gagliardi penalty function to include unit conversion bug
-    ff = ref.ff
-
-import unittest
-
 
 class NewTest(unittest.TestCase):
 
@@ -44,6 +21,15 @@ class NewTest(unittest.TestCase):
 
     def tearDown(self):
         pass
+
+    def assert_str(self, this, ref):
+        def stripm0(numstr):
+            # allow string inequality from round-off errors
+            return numstr.replace("-0.000", " 0.000")
+        thism0 = stripm0(this)
+        refm0 = stripm0(ref)
+        self.assertEqual(thism0, refm0)
+
 
     def assert_allclose(self, *args, **kwargs):
         kwargs['atol'] = kwargs.get('atol', 1e-5)
@@ -129,14 +115,14 @@ class NewTest(unittest.TestCase):
 
     def test_atomic_charge_shift(self):
         dQa = self.m.dQa[0]
-        dQaref = (ref.dQa[:, 1::2] - ref.dQa[:, 2::2])/(2*ff)
+        dQaref = (ref.dQa[:, 1::2] - ref.dQa[:, 2::2])/(2*ref.ff)
 
         self.assert_allclose(dQa, dQaref, atol=.006)
 
     def test_lagrangian(self):
     # values per "perturbation" as in atomic_charge_shift below
         la = self.m.la[0]
-        laref = (ref.la[:,0:6:2] - ref.la[:,1:6:2])/(2*ff)
+        laref = (ref.la[:,0:6:2] - ref.la[:,1:6:2])/(2*ref.ff)
     # The sign difference is because mocas sets up rhs with opposite sign
         self.assert_allclose(-laref, la, atol=100)
 
@@ -145,7 +131,7 @@ class NewTest(unittest.TestCase):
         noa = self.m.noa
 
 
-        dQabref = (ref.dQab[:, 1:7:2] - ref.dQab[:, 2:7:2])/(2*ff)
+        dQabref = (ref.dQab[:, 1:7:2] - ref.dQab[:, 2:7:2])/(2*ref.ff)
         dQabcmp = full.matrix((3, 3))
         ab = 0
         for a in range(noa):
@@ -189,7 +175,7 @@ class NewTest(unittest.TestCase):
         RH2x, RH2y, RH2z = RH2
         
 
-        ihff = 1/(2*ff)
+        ihff = 1/(2*ref.ff)
 
         q, x, y, z = range(4)
         dx1, dx2, dy1, dy2, dz1, dz2 = 1, 2, 3, 4, 5, 6
@@ -343,9 +329,9 @@ class NewTest(unittest.TestCase):
                 i1, i2 = diff[i]
                 j1, j2 = diff[j]
                 pol[ij, ab] += (rMP[i+1, j1, ab] - rMP[i+1, j2, ab]
-                            +   rMP[j+1, i1, ab] - rMP[j+1, i2, ab])/(4*ff)
+                            +   rMP[j+1, i1, ab] - rMP[j+1, i2, ab])/(4*ref.ff)
                 if ab in bonds:
-                    pol[ij, ab] -= (R[a][i]-R[b][i])*(rMP[0, j1, ab] - rMP[0, j2, ab])/(2*ff)
+                    pol[ij, ab] -= (R[a][i]-R[b][i])*(rMP[0, j1, ab] - rMP[0, j2, ab])/(2*ref.ff)
                 self.assert_allclose(ref.Aab[ij, ab], pol[ij, ab], text="%s%s"%(ablab[ab], ijlab[ij]))
 
     def test_polarizability_allbonds_atoms(self):
@@ -404,54 +390,88 @@ class NewTest(unittest.TestCase):
 
     def test_potfile_PAn0(self):
         PAn0 = self.m.output_potential_file(maxl=-1, pol=0, hyper=0)
-        assert_str(PAn0, ref.PAn0)
+        self.assert_str(PAn0, ref.PAn0)
 
     def test_potfile_PA00(self):
         PA00 = self.m.output_potential_file(maxl=0, pol=0, hyper=0)
-        assert_str(PA00, ref.PA00)
+        self.assert_str(PA00, ref.PA00)
 
     def test_potfile_PA10(self):
         PA10 = self.m.output_potential_file(maxl=1, pol=0, hyper=0)
-        assert_str(PA10, ref.PA10)
+        self.assert_str(PA10, ref.PA10)
 
     def test_potfile_PA20(self):
         PA20 = self.m.output_potential_file(maxl=2, pol=0, hyper=0)
-        assert_str(PA20, ref.PA20)
+        self.assert_str(PA20, ref.PA20)
 
     def test_potfile_PA21(self):
         PA21 = self.m.output_potential_file(maxl=2, pol=1, hyper=0)
-        assert_str(PA21, ref.PA21)
+        self.assert_str(PA21, ref.PA21)
 
     def test_potfile_PA22(self):
         PA22 = self.m.output_potential_file(maxl=2, pol=2, hyper=0)
-        assert_str(PA22, ref.PA22)
+        self.assert_str(PA22, ref.PA22)
 
     def test_outfile_PAn0_atom_domain(self):
         self.m.max_l = -1
-        assert_str(self.m.print_atom_domain(0), ref.OUTPUT_n0_1)
+        self.assert_str(self.m.print_atom_domain(0), ref.OUTPUT_n0_1)
+
 
     def test_outfile_PA00_atom_domain(self):
         self.m.max_l = 0
-        assert_str(self.m.print_atom_domain(0), ref.OUTPUT_00_1)
+        self.assert_str(self.m.print_atom_domain(0), ref.OUTPUT_00_1)
 
     def test_outfile_PA10_atom_domain(self):
         self.m.max_l = 1
-        assert_str(self.m.print_atom_domain(0), ref.OUTPUT_10_1)
+        self.assert_str(self.m.print_atom_domain(0), ref.OUTPUT_10_1)
 
     def test_outfile_PA20_atom_domain(self):
         self.m.max_l = 2
-        assert_str(self.m.print_atom_domain(0), ref.OUTPUT_20_1)
+        self.assert_str(self.m.print_atom_domain(0), ref.OUTPUT_20_1)
 
     def test_outfile_PA01_atom_domain(self):
         self.m.max_l = 0
         self.m.pol = 1
-        assert_str(self.m.print_atom_domain(0), ref.OUTPUT_01_1)
+        self.assert_str(self.m.print_atom_domain(0), ref.OUTPUT_01_1)
 
     def test_outfile_PA02_atom_domain(self):
         self.m.max_l = 0
         self.m.pol = 2
-        assert_str(self.m.print_atom_domain(0), ref.OUTPUT_02_1)
+        self.assert_str(self.m.print_atom_domain(0), ref.OUTPUT_02_1)
+
+    def test_outfile_PAn0_by_atom(self):
+        self.m.max_l = -1
+        self.m.output_by_atom(fmt="%12.5f")
+        print_output = sys.stdout.getvalue().strip()
+        self.maxDiff = None
+        self.assertEqual(print_output, ref.OUTPUT_BY_ATOM_n0)
+
+    def test_outfile_PA00_by_atom(self):
+        self.m.output_by_atom(fmt="%12.5f", max_l=0)
+        print_output = sys.stdout.getvalue().strip()
+        self.maxDiff = None
+        self.assertEqual(print_output, ref.OUTPUT_BY_ATOM_00)
+
+    def test_outfile_PA10_by_atom(self):
+        self.m.max_l = 1
+        self.m.output_by_atom(fmt="%12.5f", max_l=1)
+        print_output = sys.stdout.getvalue().strip()
+        self.maxDiff = None
+        self.assertEqual(print_output, ref.OUTPUT_BY_ATOM_10)
+
+    def test_outfile_PA20_by_atom(self):
+        self.m.max_l = 2
+        self.m.output_by_atom(fmt="%12.5f", max_l=2)
+        print_output = sys.stdout.getvalue().strip()
+        self.maxDiff = None
+        self.assertEqual(print_output, ref.OUTPUT_BY_ATOM_20)
+
+    def test_outfile_PA01_by_atom(self):
+        self.m.max_l = 0
+        self.m.output_by_atom(fmt="%12.5f", max_l=0, pol=1)
+        print_output = sys.stdout.getvalue().strip()
+        self.maxDiff = None
+        self.assertEqual(print_output, ref.OUTPUT_BY_ATOM_01)
 
 if __name__ == "__main__":
-    setup()
-    test_dipole_allbonds_sym()
+    pass
