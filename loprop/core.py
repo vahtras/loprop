@@ -6,6 +6,7 @@ import os
 import sys
 import math
 import numpy
+from functools import reduce
 from .daltools import one, mol, dens, prop, lr, qr, sirifc
 from .daltools.util import full, blocked, subblocked, timing
 
