@@ -115,7 +115,7 @@ class MolFrag:
 
     def __init__(
         self, tmpdir, max_l=0, pol=0, freqs=None, pf=penalty_function, sf=shift_function, gc=None,
-        damping=False, real_pol=False, imag_pol=False
+        damping=False, real_pol=False, imag_pol=False, debug=False
         ):
         """Constructur of MolFrac class objects
         input: tmpdir, scratch directory of Dalton calculation
@@ -137,6 +137,7 @@ class MolFrag:
         self.pf = pf
         self.sf = sf
         self.gc = gc
+        self.debug = debug
         #
         # Dalton files
         #
@@ -197,7 +198,7 @@ class MolFrag:
         self._imag_pol = True
 
 
-    def get_basis_info(self, debug=False):
+    def get_basis_info(self):
         """ Obtain basis set info from DALTON.BAS """
         molecule = mol.readin(self.dalton_bas)
         self.cpa = mol.contracted_per_atom(molecule)
@@ -212,7 +213,7 @@ class MolFrag:
         for o in self.opa:
             self.noc += len(o)
 
-        if debug:
+        if self.debug:#pragma: no cover
             print("Orbitals/atom", self.cpa, "\nTotal", self.nbf)
             print("Occupied/atom", self.opa, "\nTotal", self.noc)
 
@@ -270,7 +271,7 @@ class MolFrag:
                 self.dRab[a, b, :] = (self.R[a, :] - self.R[b, :])/2
 
     @property
-    def D(self, debug=False):
+    def D(self):
         """ 
         Density from SIRIFC in blocked loprop basis
         """
@@ -284,7 +285,7 @@ class MolFrag:
         return self._D
 
     @property
-    def T(self, debug=False):
+    def T(self):
         """
         Generate loprop transformation matrix according to the
         following steps 
@@ -309,7 +310,7 @@ class MolFrag:
     # 1. orthogonalize in each atomic block
     #
         #t1=timing("step 1")
-        if debug:
+        if self.debug:#pragma: no cover
             print("Initial S", S)
         nbf = S.shape[0]
         #
@@ -320,11 +321,11 @@ class MolFrag:
         nocc = 0
         for at in range(noa):
             nocc += len(opa[at])
-        if debug:
+        if self.debug:#pragma: no cover
             print("nocc", nocc)
         Satom = S.block(cpa, cpa)
         Ubl = full.unit(nbf).subblocked((nbf,), cpa)
-        if debug:
+        if self.debug:#pragma: no cover
             print("Ubl", Ubl)
         #
         # Diagonalize atomwise
@@ -334,19 +335,19 @@ class MolFrag:
             T1 = blocked.BlockDiagonalMatrix(cpa, cpa)
             for at in range(noa):
                 T1.subblock[at] = Ubl.subblock[0][at].GST(S)
-            if debug:
+            if self.debug:#pragma: no cover
                 print("T1", T1)
             T1 = T1.unblock()
         else:
             u, v = Satom.eigvec()
             T1 = v.unblock()
-        if debug:
+        if self.debug:#pragma: no cover
             print("T1", T1)
         #
         # Full transformration
         #
         S1 = T1.T * S * T1
-        if debug:
+        if self.debug:#pragma: no cover
             print("Overlap after step 1", S1)
         #t1.stop()
        
@@ -361,19 +362,19 @@ class MolFrag:
             vpa.append(cpa[at]-len(opa[at]))
             adim.append(len(opa[at]))
             adim.append(vpa[at])
-        if debug:
+        if self.debug:#pragma: no cover
             print("Blocking: Ao Av Bo Bv...", adim)
         #
         # dimensions for permuted basis
         #
         pdim = []
-        if debug:
+        if self.debug:#pragma: no cover
             print("opa", opa)
         for at in range(noa):
             pdim.append(len(opa[at]))
         for at in range(noa):
             pdim.append(vpa[at])
-        if debug:
+        if self.debug:#pragma: no cover
             print("Blocking: Ao Bo... Av Bv...", pdim)
         #
         # within atom permute occupied first
@@ -382,7 +383,7 @@ class MolFrag:
         for at in range(noa):
             P1.subblock[at][at][:, :] = full.permute(opa[at], cpa[at])
         n = len(adim)
-        if debug:
+        if self.debug:#pragma: no cover
             print("P1", P1)
         P1 = P1.unblock()
        
@@ -392,7 +393,7 @@ class MolFrag:
             P2.subblock[i][i//2] = full.unit(adim[i])
         for i in range(1, len(adim), 2):
             P2.subblock[i][noa+(i-1)//2] = full.unit(adim[i])
-        if debug:
+        if self.debug:#pragma: no cover
             print("P2", P2)
         P2 = P2.unblock()
        
@@ -401,7 +402,7 @@ class MolFrag:
         #
        
         P = P1*P2
-        if debug:
+        if self.debug:#pragma: no cover
             print("P", P)
             if not numpy.allclose(P.inv(), P.T):
                 print("P not unitary")
@@ -409,7 +410,7 @@ class MolFrag:
        
        
         S1P = P.T*S1*P
-        if debug:
+        if self.debug:#pragma: no cover
             print("Overlap in permuted basis", S1P)
        
        
@@ -423,7 +424,7 @@ class MolFrag:
        
        
         S2 = T2.T*S1P*T2
-        if debug:
+        if self.debug:#pragma: no cover
             print("Overlap after step 2", S2)
         #t2.stop()
        
@@ -440,7 +441,7 @@ class MolFrag:
             T3 = T3sb.unblock()
         S3 = T3.T*S2*T3
         #
-        if debug:
+        if self.debug:#pragma: no cover
             print("T3", T3)
             print("Overlap after step 3", S3)
         #t3.stop()
@@ -450,7 +451,7 @@ class MolFrag:
         #t4=timing("step 4")
         T4b = blocked.unit(occdim)
         S3b = S3.block(occdim, occdim)
-        if debug:
+        if self.debug:#pragma: no cover
             print("S3b", S3b)
             print("T4b", T4b)
         ### SYM ### S3b += S3b.T; S3b *= 0.5 ###SYM###
@@ -458,7 +459,7 @@ class MolFrag:
         T4 = T4b.unblock()
         S4 = T4.T*S3*T4
         #S4=S3
-        if debug:
+        if self.debug:#pragma: no cover
             print("T4", T4)
             print("Overlap after step 4", S4)
         #t4.stop()
@@ -467,7 +468,7 @@ class MolFrag:
         # permute back to original basis
         #
         S4 = P*S4*P.T
-        if debug:
+        if self.debug:#pragma: no cover
             print("Final overlap ", S4)
        
         #
@@ -477,17 +478,14 @@ class MolFrag:
         #
         # Test
         #
-        if debug:
+        if self.debug:#pragma: no cover
             print("Transformation determinant", T.det())
             print("original S", S, "final", T.T*S*T)
         self._T = T
         return self._T
 
-    #T = property(fget=transformation)
-
-    #def charge(self, debug=False):
     @property
-    def Qab(self, debug=False):
+    def Qab(self):
         """ set charge/atom property"""
         if self._Qab is not None: return self._Qab
 
@@ -507,7 +505,7 @@ class MolFrag:
         return self.Qab.diagonal()
 
     @property
-    def Dab(self, debug=False):
+    def Dab(self):
         """Set dipole property"""
 
         if self._Dab is not None: return self._Dab
@@ -565,7 +563,7 @@ class MolFrag:
         return _Dtot
 
     @property
-    def QUab(self, debug=False):
+    def QUab(self):
         """Quadrupole moment"""
         if self._QUab is not None: return self._QUab
 
@@ -1509,170 +1507,3 @@ Domain center:       """  % (n+1,) + (3*fmt+"\n") % tuple(self.Rab[n, n, :]*xcon
 
 
         return retstr
-
-
-if __name__ == "__main__":
-    import optparse
-
-    OP = optparse.OptionParser()
-    OP.add_option(
-          '-d', '--debug',
-          dest='debug', action='store_true', default=False,
-          help='print(for debugging [False]'
-          )
-    OP.add_option(
-          '-v', '--verbose',
-          dest='verbose', action='store_true', default=False,
-          help='print(details [False]'
-          )
-    OP.add_option(
-          '-t','--tmpdir',
-          dest='tmpdir', default='/tmp',
-          help='scratch directory [/tmp]'
-          )
-    OP.add_option(
-          '-f','--daltgz',
-          dest='daltgz', default=None,
-          help='Dalton restart tar ball [None]'
-          )
-    OP.add_option(
-          '-p', '--potfile',
-          dest='potfile', default='LOPROP.POT',
-          help='Potential input file [LOPROP.POT]'
-          )
-    OP.add_option(
-          '-b','--bond',
-          dest='bc', action='store_true',default=False,
-          help='include bond centers [False]'
-          )
-    OP.add_option(
-          '-g','--gauge-center',
-          dest='gc', default=None,
-          help='gauge center'
-          )
-
-    OP.add_option(
-          '-l', '--angular-momentum',
-          dest='max_l', type='int', default=2,
-          help='Max angular momentum [2]'
-          )
-
-    OP.add_option(
-          '-A', '--Anstrom',
-          dest='angstrom', action='store_true', default=False,
-          help="Output in Angstrom"
-          )
-
-    OP.add_option(
-          '-w','--frequencies',
-          dest='freqs', default=None,
-          help='Dynamic polarizabilities (0.)'
-          )
-
-    OP.add_option(
-          '-a','--polarizabilities',
-          dest='pol', type='int', default=0,
-          help='Localized polarizabilities (1=isotropic, 2=full)'
-          )
-
-    OP.add_option(
-          '-B','--hyperpolarizabilities',
-          dest='beta', type='int', default=0,
-          help='Localized hyperpolarizabilities (1=isotropic, 2=full)'
-          )
-
-    OP.add_option(
-          '-s','--screening (alpha)',
-          dest='alpha', type='float', default=2.0,
-          help='Screening parameter for penalty function'
-          )
-    
-    OP.add_option(
-          '--template',
-          action = 'store_true',
-          default= False,
-          help='Write atomic properties in templated format',
-          )
- 
-    OP.add_option(
-          '--template_full',
-          action = 'store_true',
-          default= False,
-          help='Write atomic properties in templated format, centered on first atom',
-          )
-
-    OP.add_option(
-          '--decimal',
-          default= 3,
-          type = int,
-          help='Significant digits for template output.',
-          )
-    OP.add_option(
-          '--full_loc',
-          default= 0,
-          type = int,
-          help='Significant digits for template output.',
-          )
-
-
-    o, a = OP.parse_args(sys.argv[1:])
-
-    #
-    # Check consistency: present Dalton files
-    #
-    if not os.path.isdir(o.tmpdir):
-        print("%s: Directory not found: %s" % (sys.argv[0], o.tmpdir))
-        raise SystemExit
-
-    import tarfile
-    if o.daltgz:
-        tgz = tarfile.open(o.daltgz, 'r:gz')
-        tgz.extractall(path=o.tmpdir)
-    
-    if o.freqs:
-        freqs = map(float, o.freqs.split())
-    else:
-        freqs = (0.0, )
-        
-    needed_files = ["AOONEINT", "DALTON.BAS", "SIRIFC", "AOPROPER", "RSPVEC"]
-    for file_ in needed_files:
-        df = os.path.join(o.tmpdir, file_)
-        if not os.path.isfile(df):
-            print("%s: %s does not exists" % (sys.argv[0], df))
-            print("Needed Dalton files to run loprop.py:")
-            print("\n".join(needed_files))
-            raise SystemExit
-
-    if o.gc is not None: 
-        #Gauge center
-        try:
-            #gc = map(float, o.gc.split())
-            gc = [float(i) for i in o.gc.split()]
-        except(ValueError):
-            sys.stderr.write("Gauge center incorrect:%s\n" % o.gc)
-            sys.exit(1)
-    else:
-        gc = None
-
-
-    t = timing.timing('Loprop')
-    molfrag = MolFrag(
-        o.tmpdir, o.max_l, pf=penalty_function(o.alpha), gc=gc, freqs=freqs
-        )
-    print(molfrag.output_potential_file(
-        o.max_l, o.pol, o.beta, o.bc, o.angstrom, decimal = o.decimal
-        ))
-    if o.template:
-        print(molfrag.output_template(
-            o.max_l, o.pol, o.beta,
-            template_full = o.template_full,
-            decimal = o.decimal,
-            freqs = freqs,
-            full_loc = o.full_loc,
-            ))
-        
-    if o.verbose:
-        molfrag.output_by_atom(fmt="%12.5f", max_l=o.max_l, pol=o.pol, hyperpol=o.beta, bond_centers=o.bc, angstrom=o.angstrom)
-
-    print(t)
-     
