@@ -444,41 +444,41 @@ class NewTest(unittest.TestCase):
         self.m.output_by_atom(fmt="%12.5f")
         print_output = sys.stdout.getvalue().strip()
         self.maxDiff = None
-        self.assertEqual(print_output, ref.OUTPUT_BY_ATOM_n0)
+        self.assert_str(print_output, ref.OUTPUT_BY_ATOM_n0)
 
     def test_outfile_PAn0_by_atom_Angstrom(self):
         self.m.max_l = -1
         self.m.output_by_atom(fmt="%12.5f", angstrom=True)
         print_output = sys.stdout.getvalue().strip()
         self.maxDiff = None
-        self.assertEqual(print_output, ref.OUTPUT_BY_ATOM_n0_ANGSTROM)
+        self.assert_str(print_output, ref.OUTPUT_BY_ATOM_n0_ANGSTROM)
 
     def test_outfile_PA00_by_atom(self):
         self.m.output_by_atom(fmt="%12.5f", max_l=0)
         print_output = sys.stdout.getvalue().strip()
         self.maxDiff = None
-        self.assertEqual(print_output, ref.OUTPUT_BY_ATOM_00)
+        self.assert_str(print_output, ref.OUTPUT_BY_ATOM_00)
 
     def test_outfile_PA10_by_atom(self):
         self.m.max_l = 1
         self.m.output_by_atom(fmt="%12.5f", max_l=1)
         print_output = sys.stdout.getvalue().strip()
         self.maxDiff = None
-        self.assertEqual(print_output, ref.OUTPUT_BY_ATOM_10)
+        self.assert_str(print_output, ref.OUTPUT_BY_ATOM_10)
 
     def test_outfile_PA20_by_atom(self):
         self.m.max_l = 2
         self.m.output_by_atom(fmt="%12.5f", max_l=2)
         print_output = sys.stdout.getvalue().strip()
         self.maxDiff = None
-        self.assertEqual(print_output, ref.OUTPUT_BY_ATOM_20)
+        self.assert_str(print_output, ref.OUTPUT_BY_ATOM_20)
 
     def test_outfile_PA01_by_atom(self):
         self.m.max_l = 0
         self.m.output_by_atom(fmt="%12.5f", max_l=0, pol=1)
         print_output = sys.stdout.getvalue().strip()
         self.maxDiff = None
-        self.assertEqual(print_output, ref.OUTPUT_BY_ATOM_01)
+        self.assert_str(print_output, ref.OUTPUT_BY_ATOM_01)
 
 if __name__ == "__main__":
     pass
