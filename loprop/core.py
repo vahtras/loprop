@@ -154,6 +154,7 @@ class MolFrag:
         self.get_isordk()
         self._x = None
 
+        self._Rc = None
         self._Qab = None
         self._Da = None
         self._Dab = None
@@ -252,13 +253,6 @@ class MolFrag:
         R = full.matrix((mxcent*3,))
         R[:] = isordk["cooo"][:]
         self.R = R.reshape((mxcent, 3), order='F')[:N, :]
-#
-# Form Rc  molecular gauge origin, default nuclear center of charge
-#
-        if self.gc is None:
-            self.Rc = self.Z*self.R/self.Z.sum()
-        else: 
-            self.Rc = numpy.array(self.gc).view(full.matrix)
        #
        # Bond center matrix and half bond vector
        #
@@ -269,6 +263,20 @@ class MolFrag:
             for b in range(noa):
                 self.Rab[a, b, :] = (self.R[a, :] + self.R[b, :])/2
                 self.dRab[a, b, :] = (self.R[a, :] - self.R[b, :])/2
+
+    @property
+    def Rc(self):
+#
+# Form Rc  molecular gauge origin, default nuclear center of charge
+#
+        if self._Rc is not None:
+            return self._Rc
+        if self.gc is None:
+            self._Rc = self.Z*self.R/self.Z.sum()
+        else: 
+            self._Rc = numpy.array(self.gc).view(full.matrix)
+        return self._Rc
+
 
     @property
     def D(self):
