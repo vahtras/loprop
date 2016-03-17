@@ -111,8 +111,7 @@ class NewTest(unittest.TestCase):
         self.assert_allclose(QUsym, ref.QU)
 
     def test_quadrupole_nobonds(self):
-        QUaa = (self.m.QUab + self.m.dQUab).sum(axis=2).view(full.matrix)
-        self.assert_allclose(QUaa, ref.QUaa)
+        self.assert_allclose(self.m.QUa, ref.QUaa)
 
     def test_Fab(self):
         Fab = self.m.Fab
