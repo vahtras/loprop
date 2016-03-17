@@ -255,6 +255,32 @@ Molecular
 Domain center:            0.00000     0.00000     0.48861
 Nuclear charge:          10.00000"""
 
+OUTPUT_BY_ATOM_n0_ANGSTROM = """\
+---------------
+Atomic domain 1
+---------------
+Domain center:            0.00000     0.00000     0.36937
+Nuclear charge:           8.00000
+
+---------------
+Atomic domain 2
+---------------
+Domain center:           -0.78398     0.00000    -0.18469
+Nuclear charge:           1.00000
+
+---------------
+Atomic domain 3
+---------------
+Domain center:            0.78398     0.00000    -0.18469
+Nuclear charge:           1.00000
+
+---------
+Molecular
+---------
+Domain center:            0.00000     0.00000     0.25856
+Nuclear charge:          10.00000"""
+
+
 OUTPUT_BY_ATOM_00 = """\
 ---------------
 Atomic domain 1

@@ -446,6 +446,13 @@ class NewTest(unittest.TestCase):
         self.maxDiff = None
         self.assertEqual(print_output, ref.OUTPUT_BY_ATOM_n0)
 
+    def test_outfile_PAn0_by_atom_Angstrom(self):
+        self.m.max_l = -1
+        self.m.output_by_atom(fmt="%12.5f", angstrom=True)
+        print_output = sys.stdout.getvalue().strip()
+        self.maxDiff = None
+        self.assertEqual(print_output, ref.OUTPUT_BY_ATOM_n0_ANGSTROM)
+
     def test_outfile_PA00_by_atom(self):
         self.m.output_by_atom(fmt="%12.5f", max_l=0)
         print_output = sys.stdout.getvalue().strip()
