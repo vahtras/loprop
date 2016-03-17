@@ -1,4 +1,4 @@
-import unittest
+from .common import LoPropTestCase
 import os 
 import sys
 import numpy as np
@@ -14,7 +14,7 @@ exec('from . import %s_data as ref'%case)
 from ..core import penalty_function, xtang, pairs
 
 
-class NewTest(unittest.TestCase):
+class NewTest(LoPropTestCase):
 
     def setUp(self):
         self.m = MolFrag(tmpdir, freqs=(0, ), pf=penalty_function(2.0/xtang**2))
@@ -22,21 +22,6 @@ class NewTest(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def assert_str(self, this, ref):
-        def stripm0(numstr):
-            # allow string inequality from round-off errors
-            return numstr.replace("-0.000", " 0.000")
-        thism0 = stripm0(this)
-        refm0 = stripm0(ref)
-        self.assertEqual(thism0, refm0)
-
-
-    def assert_allclose(self, *args, **kwargs):
-        kwargs['atol'] = kwargs.get('atol', 1e-5)
-        if 'text' in kwargs:
-            kwargs['err_msg'] = kwargs.get('text', '')
-            del(kwargs['text'])
-        np.testing.assert_allclose(*args, **kwargs)
 
     def test_nuclear_charge(self):
         Z = self.m.Z

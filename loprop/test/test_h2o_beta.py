@@ -1,3 +1,4 @@
+import unittest
 import os 
 import numpy as np
 from ..daltools.util import full
@@ -25,18 +26,24 @@ def assert_str(this, ref, text=None):
 
 def setup():
     global m
-    global ff
 # modify Gagliardi penalty function to include unit conversion bug
     m = MolFrag(tmpdir, freqs=(0.0,), pf=penalty_function(2.0/xtang**2))
-    ff = ref.ff
 
-def test_nuclear_charge():
-    Z = m.Z
-    assert_(Z, ref.Z)
+class NewTest(unittest.TestCase):
 
-def test_coordinates_au():
-    R = m.R
-    assert_(R, ref.R)
+    def setUp(self):
+        self.m = MolFrag(tmpdir, freqs=(0.0,), pf=penalty_function(2.0/xtang**2))
+
+    def tearDown(self):
+        pass
+
+    def test_nuclear_charge(self):
+        Z = self.m.Z
+        assert_(Z, ref.Z)
+
+    def test_coordinates_au(self):
+        R = self.m.R
+        assert_(R, ref.R)
 
 def test_default_gauge():
     assert_(ref.Rc, m.Rc)
@@ -122,13 +129,13 @@ def test_total_charge_shift2():
 
 def test_atomic_charge_shift():
     dQa = m.dQa[0]
-    dQaref = (ref.dQa[:, 1::2] - ref.dQa[:, 2::2])/(2*ff)
+    dQaref = (ref.dQa[:, 1::2] - ref.dQa[:, 2::2])/(2*ref.ff)
     assert_(dQa, dQaref, .006)
 
 def test_lagrangian():
 # values per "perturbation" as in atomic_charge_shift below
     la = m.la[0]
-    laref = (ref.la[:,0:6:2] - ref.la[:,1:6:2])/(2*ff)
+    laref = (ref.la[:,0:6:2] - ref.la[:,1:6:2])/(2*ref.ff)
 # The sign difference is because mocas sets up rhs with opposite sign
     assert_(-laref, la, atol=100)
 
@@ -137,7 +144,7 @@ def test_bond_charge_shift():
     noa = m.noa
 
 
-    dQabref = (ref.dQab[:, 1:7:2] - ref.dQab[:, 2:7:2])/(2*ff)
+    dQabref = (ref.dQab[:, 1:7:2] - ref.dQab[:, 2:7:2])/(2*ref.ff)
     dQabcmp = full.matrix((3, 3))
     ab = 0
     for a in range(noa):
@@ -240,7 +247,7 @@ def test_polarizability_allbonds_molcas_internal():
     RH2x, RH2y, RH2z = RH2
     
 
-    ihff = 1/(2*ff)
+    ihff = 1/(2*ref.ff)
 
     q, x, y, z = range(4)
     dx1, dx2, dy1, dy2, dz1, dz2 = 1, 2, 3, 4, 5, 6
@@ -394,9 +401,9 @@ def test_altint():
             i1, i2 = diff[i]
             j1, j2 = diff[j]
             pol[ij, ab] += (rMP[i+1, j1, ab] - rMP[i+1, j2, ab]
-                        +   rMP[j+1, i1, ab] - rMP[j+1, i2, ab])/(4*ff)
+                        +   rMP[j+1, i1, ab] - rMP[j+1, i2, ab])/(4*ref.ff)
             if ab in bonds:
-                pol[ij, ab] -= (R[a][i]-R[b][i])*(rMP[0, j1, ab] - rMP[0, j2, ab])/(2*ff)
+                pol[ij, ab] -= (R[a][i]-R[b][i])*(rMP[0, j1, ab] - rMP[0, j2, ab])/(2*ref.ff)
             assert_(ref.Aab[ij, ab], pol[ij, ab], text="%s%s"%(ablab[ab], ijlab[ij]))
 
 def test_polarizability_allbonds_atoms():
