@@ -1,3 +1,5 @@
+[![Coverage Status](https://coveralls.io/repos/github/vahtras/loprop/badge.svg?branch=master)](https://coveralls.io/github/vahtras/loprop?branch=master)
+
 # Loprop for Dalton
 
 

@@ -35,6 +35,10 @@ class NewTest(LoPropTestCase):
     def test_default_gauge(self):
         self.assert_allclose(self.m.Rc, ref.Rc)
 
+    def test_defined_gauge(self):
+        m = MolFrag(tmpdir, gc=[1,2,3])
+        self.assert_allclose(m.Rc, [1,2,3])
+
     def test_total_charge(self):
         Qtot = self.m.Qab.sum()
         self.assertAlmostEqual(Qtot, ref.Qtot)
