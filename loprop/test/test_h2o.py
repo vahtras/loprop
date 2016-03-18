@@ -18,6 +18,7 @@ class NewTest(LoPropTestCase):
 
     def setUp(self):
         self.m = MolFrag(tmpdir, freqs=(0, ), pf=penalty_function(2.0/xtang**2))
+        self.maxDiff = None
 
     def tearDown(self):
         pass
@@ -397,6 +398,34 @@ class NewTest(LoPropTestCase):
         PA22 = self.m.output_potential_file(maxl=2, pol=2, hyper=0)
         self.assert_str(PA22, ref.PA22)
 
+    def test_potfile_PAn0b(self):
+        PAn0b = self.m.output_potential_file(maxl=-1, pol=0, hyper=0, bond_centers=True)
+        self.assert_str(PAn0b, ref.PAn0b)
+
+    def test_potfile_PA00b(self):
+        PA00b = self.m.output_potential_file(maxl=0, pol=0, hyper=0, bond_centers=True)
+        self.assert_str(PA00b, ref.PA00b)
+
+    def test_potfile_PA10b(self):
+        PA10b = self.m.output_potential_file(maxl=1, pol=0, hyper=0, bond_centers=True)
+        self.assert_str(PA10b, ref.PA10b)
+
+    def test_potfile_PA20b(self):
+        with self.assertRaises(NotImplementedError):
+            PA20b = self.m.output_potential_file(maxl=2, pol=0, hyper=0, bond_centers=True)
+
+    def test_potfile_PA01b(self):
+        PA01b = self.m.output_potential_file(maxl=0, pol=1, hyper=0, bond_centers=True)
+        self.assert_str(PA01b, ref.PA01b)
+
+    def test_potfile_PA02(self):
+        this = self.m.output_potential_file(maxl=0, pol=2, hyper=0)
+        self.assert_str(this, ref.PA02)
+
+    def test_potfile_PA02b(self):
+        this = self.m.output_potential_file(maxl=0, pol=2, hyper=0, bond_centers=True)
+        self.assert_str(this, ref.PA02b)
+
     def test_outfile_PAn0_atom_domain(self):
         self.m.max_l = -1
         self.assert_str(self.m.print_atom_domain(0), ref.OUTPUT_n0_1)
@@ -428,42 +457,70 @@ class NewTest(LoPropTestCase):
         self.m.max_l = -1
         self.m.output_by_atom(fmt="%12.5f")
         print_output = sys.stdout.getvalue().strip()
-        self.maxDiff = None
         self.assert_str(print_output, ref.OUTPUT_BY_ATOM_n0)
 
     def test_outfile_PAn0_by_atom_Angstrom(self):
         self.m.max_l = -1
         self.m.output_by_atom(fmt="%12.5f", angstrom=True)
         print_output = sys.stdout.getvalue().strip()
-        self.maxDiff = None
         self.assert_str(print_output, ref.OUTPUT_BY_ATOM_n0_ANGSTROM)
 
     def test_outfile_PA00_by_atom(self):
         self.m.output_by_atom(fmt="%12.5f", max_l=0)
         print_output = sys.stdout.getvalue().strip()
-        self.maxDiff = None
         self.assert_str(print_output, ref.OUTPUT_BY_ATOM_00)
 
     def test_outfile_PA10_by_atom(self):
         self.m.max_l = 1
         self.m.output_by_atom(fmt="%12.5f", max_l=1)
         print_output = sys.stdout.getvalue().strip()
-        self.maxDiff = None
         self.assert_str(print_output, ref.OUTPUT_BY_ATOM_10)
 
     def test_outfile_PA20_by_atom(self):
         self.m.max_l = 2
         self.m.output_by_atom(fmt="%12.5f", max_l=2)
         print_output = sys.stdout.getvalue().strip()
-        self.maxDiff = None
         self.assert_str(print_output, ref.OUTPUT_BY_ATOM_20)
 
     def test_outfile_PA01_by_atom(self):
         self.m.max_l = 0
         self.m.output_by_atom(fmt="%12.5f", max_l=0, pol=1)
         print_output = sys.stdout.getvalue().strip()
-        self.maxDiff = None
         self.assert_str(print_output, ref.OUTPUT_BY_ATOM_01)
+
+    def test_outfile_PAn0_by_bond(self):
+        self.m.max_l = -1
+        self.m.output_by_atom(fmt="%12.5f", max_l=-1, bond_centers=True)
+        print_output = sys.stdout.getvalue().strip()
+        self.assert_str(print_output, ref.OUTPUT_BY_BOND_n0)
+
+    def test_outfile_PA00_by_bond(self):
+        self.m.max_l = 0
+        self.m.output_by_atom(fmt="%12.5f", max_l=0, bond_centers=True)
+        print_output = sys.stdout.getvalue().strip()
+        self.assert_str(print_output, ref.OUTPUT_BY_BOND_00)
+
+    def test_outfile_PA10_by_bond(self):
+        self.m.max_l = 1
+        self.m.output_by_atom(fmt="%12.5f", max_l=1, bond_centers=True)
+        print_output = sys.stdout.getvalue().strip()
+        self.assert_str(print_output, ref.OUTPUT_BY_BOND_10)
+
+    def test_outfile_PA10_by_bond(self):
+        with self.assertRaises(NotImplementedError):
+            self.m.output_by_atom(fmt="%12.5f", max_l=2, bond_centers=True)
+
+    def test_outfile_PAn1_by_bond(self):
+        self.m.max_l = -1
+        self.m.output_by_atom(fmt="%12.5f", max_l=-1, pol=1, bond_centers=True)
+        print_output = sys.stdout.getvalue().strip()
+        self.assert_str(print_output, ref.OUTPUT_BY_BOND_n1)
+
+    def test_outfile_PAn2_by_bond(self):
+        self.m.max_l = -1
+        self.m.output_by_atom(fmt="%12.5f", max_l=-1, pol=2, bond_centers=True)
+        print_output = sys.stdout.getvalue().strip()
+        self.assert_str(print_output, ref.OUTPUT_BY_BOND_n2)
 
 if __name__ == "__main__":
     pass

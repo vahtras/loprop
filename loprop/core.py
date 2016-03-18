@@ -1127,8 +1127,9 @@ class MolFrag:
                     print("Bond center:       " + \
                         (3*fmt) % tuple(0.5*(R[a, :]+R[b, :])*xconv)
                         )
-                    print("Electronic charge:   "+fmt % Qab[a, b])
-                    print("Total charge:        "+fmt % Qab[a, b])
+                    if max_l >= 0:
+                        print("Electronic charge:   "+fmt % Qab[a, b])
+                        print("Total charge:        "+fmt % Qab[a, b])
                     if self._Dab is not None:
                         print("Electronic dipole    " + \
                             (3*fmt) % tuple(Dab[:, a, b]+Dab[:, b, a]))
@@ -1136,15 +1137,16 @@ class MolFrag:
                             fmt % (Dab[:, a, b]+Dab[:, b, a]).norm2()
                             )
                     if self._QUab is not None:
-                        print("Electronic quadrupole" + \
-                            (6*fmt) % tuple(QUab[:, a, b]+QUab[:, b, a]))
+                        raise NotImplementedError
+#                       print("Electronic quadrupole" + \
+#                           (6*fmt) % tuple(QUab[:, a, b]+QUab[:, b, a]))
                     if self._Aab is not None:
                         for iw, w in enumerate(self.freqs):
                             Asym = Aab[iw, :, :, a, b] + Aab[iw, :, :, b, a]
                             if pol > 0:
-                                print("Isotropic polarizability (%g)" % w, fmt % (Asym.trace()/3*xconv3))
+                                print("Isotropic polarizability (%g)" % w + fmt % (Asym.trace()/3*xconv3))
                             if pol > 1:
-                                print("Polarizability (%g)      " % w, )
+                                print("Polarizability (%g)      " % w)
                                 print((6*fmt) % tuple(Asym.pack().view(full.matrix)*xconv3))
 
                     if self._Bab is not None:
@@ -1156,8 +1158,9 @@ class MolFrag:
                 print("Atom center:       " + \
                     (3*fmt) % tuple(R[a,:]*xconv))
                 print("Nuclear charge:    "+fmt % Z[a])
-                print("Electronic charge:   "+fmt % Qab[a, a])
-                print("Total charge:        "+fmt % (Z[a]+Qab[a, a]))
+                if max_l >= 0:
+                    print("Electronic charge:   "+fmt % Qab[a, a])
+                    print("Total charge:        "+fmt % (Z[a]+Qab[a, a]))
                 if self._Dab is not None:
                     print("Electronic dipole    " + \
                         (3*fmt) % tuple(Dab[:, a, a]))
@@ -1170,9 +1173,9 @@ class MolFrag:
                     for iw, w in enumerate(self.freqs):
                         Asym = Aab[iw, :, :, a, a] 
                         if pol > 0:
-                            print("Isotropic polarizability (%g)" % w, fmt % (Asym.trace()/3*xconv3))
+                            print("Isotropic polarizability (%g)" % w + fmt % (Asym.trace()/3*xconv3))
                         if pol > 1:
-                            print("Polarizability (%g)      " % w, (6*fmt) % tuple(Asym.pack().view(full.matrix)*xconv3))
+                            print("Polarizability (%g)       " % w + (6*fmt) % tuple(Asym.pack().view(full.matrix)*xconv3))
                 if self._Bab is not None:
                     for iw, w in enumerate(self.freqs):
                         Bsym = Bab[iw, :, :, a, a] 
@@ -1414,8 +1417,7 @@ class MolFrag:
                 if maxl >= 1:
                     line += (3*fmt) % tuple( reduce(lambda x,y: x+ Dab[:, a, y], nbond_pos, 0.0 ))
                 if maxl >= 2:
-                    print("Bond quadrupoles not supported yet")
-                    raise SystemExit
+                    raise NotImplementedError
                 if pol > 0:
                     for iw, w in enumerate(self.freqs):
                         if pol %10 == 2:

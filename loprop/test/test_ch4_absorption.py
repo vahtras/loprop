@@ -78,5 +78,5 @@ class NewTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             Dk = self.m.Dk
 
-if __name__ == "__main__":
+if __name__ == "__main__": #pragma: no cover
     unittest.main()

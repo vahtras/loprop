@@ -170,10 +170,26 @@ PAn0 = """AU
 1    -1.481     0.000    -0.349
 1     1.481     0.000    -0.349
 """
+PAn0b = """AU
+5 -1 0 1
+1     0.000     0.000     0.698
+1    -0.741     0.000     0.175
+1    -1.481     0.000    -0.349
+1     0.741     0.000     0.175
+1     1.481     0.000    -0.349
+"""
 PA00 = """AU
 3 0 0 1
 1     0.000     0.000     0.698    -0.703
 1    -1.481     0.000    -0.349     0.352
+1     1.481     0.000    -0.349     0.352
+"""
+PA00b = """AU
+5 0 0 1
+1     0.000     0.000     0.698    -0.703
+1    -0.741     0.000     0.175     0.000
+1    -1.481     0.000    -0.349     0.352
+1     0.741     0.000     0.175     0.000
 1     1.481     0.000    -0.349     0.352
 """
 PA10 = """AU
@@ -181,6 +197,36 @@ PA10 = """AU
 1     0.000     0.000     0.698    -0.703    -0.000     0.000    -0.284
 1    -1.481     0.000    -0.349     0.352     0.153     0.000     0.127
 1     1.481     0.000    -0.349     0.352    -0.153     0.000     0.127
+"""
+PA10b = """AU
+5 1 0 1
+1     0.000     0.000     0.698    -0.703    -0.000     0.000    -0.398
+1    -0.741     0.000     0.175     0.000     0.100     0.000     0.115
+1    -1.481     0.000    -0.349     0.352     0.103     0.000     0.070
+1     0.741     0.000     0.175     0.000    -0.100     0.000     0.115
+1     1.481     0.000    -0.349     0.352    -0.103     0.000     0.070
+"""
+PA01b = """AU
+5 0 1 1
+1     0.000     0.000     0.698    -0.703     1.302
+1    -0.741     0.000     0.175     0.000     2.165
+1    -1.481     0.000    -0.349     0.352     0.494
+1     0.741     0.000     0.175     0.000     2.165
+1     1.481     0.000    -0.349     0.352     0.494
+"""
+PA02 = """AU
+3 0 2 1
+1     0.000     0.000     0.698    -0.703     3.875    -0.000    -0.000     3.000    -0.000     3.524
+1    -1.481     0.000    -0.349     0.352     2.156    -0.000     1.106     1.051    -0.000     1.520
+1     1.481     0.000    -0.349     0.352     2.156    -0.000    -1.106     1.051    -0.000     1.520
+"""
+PA02b = """AU
+5 0 2 1
+1     0.000     0.000     0.698    -0.703     0.761     0.000     0.000     1.748     0.000     1.397
+1    -0.741     0.000     0.175     0.000     3.114    -0.000     1.981     1.252    -0.000     2.127
+1    -1.481     0.000    -0.349     0.352     0.599    -0.000     0.115     0.425    -0.000     0.457
+1     0.741     0.000     0.175     0.000     3.114    -0.000    -1.981     1.252    -0.000     2.127
+1     1.481     0.000    -0.349     0.352     0.599    -0.000    -0.115     0.425    -0.000     0.457
 """
 PA20 = """AU
 3 2 0 1
@@ -444,5 +490,273 @@ Domain center:            0.00000     0.00000     0.48861
 Nuclear charge:          10.00000
 Electronic charge:      -10.00000
 Total charge:             0.00000
+Polarizability av (0)        6.61822
+Polarizability (0)           8.18677    -0.00000     5.10275    -0.00000    -0.00000     6.56513"""
+
+OUTPUT_BY_BOND_n0 = """\
+---------
+Atom    1
+---------
+Atom center:            0.00000     0.00000     0.69801
+Nuclear charge:         8.00000
+
+-----------
+Bond    2 1
+-----------
+Bond center:           -0.74075     0.00000     0.17450
+
+---------
+Atom    2
+---------
+Atom center:           -1.48150     0.00000    -0.34901
+Nuclear charge:         1.00000
+
+-----------
+Bond    3 1
+-----------
+Bond center:            0.74075     0.00000     0.17450
+
+-----------
+Bond    3 2
+-----------
+Bond center:            0.00000     0.00000    -0.34901
+
+---------
+Atom    3
+---------
+Atom center:            1.48150     0.00000    -0.34901
+Nuclear charge:         1.00000
+
+---------
+Molecular
+---------
+Domain center:            0.00000     0.00000     0.48861
+Nuclear charge:          10.00000"""
+
+OUTPUT_BY_BOND_00 = """\
+---------
+Atom    1
+---------
+Atom center:            0.00000     0.00000     0.69801
+Nuclear charge:         8.00000
+Electronic charge:       -8.70344
+Total charge:            -0.70344
+
+-----------
+Bond    2 1
+-----------
+Bond center:           -0.74075     0.00000     0.17450
+Electronic charge:        0.00000
+Total charge:             0.00000
+
+---------
+Atom    2
+---------
+Atom center:           -1.48150     0.00000    -0.34901
+Nuclear charge:         1.00000
+Electronic charge:       -0.64828
+Total charge:             0.35172
+
+-----------
+Bond    3 1
+-----------
+Bond center:            0.74075     0.00000     0.17450
+Electronic charge:        0.00000
+Total charge:             0.00000
+
+-----------
+Bond    3 2
+-----------
+Bond center:            0.00000     0.00000    -0.34901
+Electronic charge:        0.00000
+Total charge:             0.00000
+
+---------
+Atom    3
+---------
+Atom center:            1.48150     0.00000    -0.34901
+Nuclear charge:         1.00000
+Electronic charge:       -0.64828
+Total charge:             0.35172
+
+---------
+Molecular
+---------
+Domain center:            0.00000     0.00000     0.48861
+Nuclear charge:          10.00000
+Electronic charge:      -10.00000
+Total charge:            -0.00000"""
+
+OUTPUT_BY_BOND_10 = """\
+---------
+Atom    1
+---------
+Atom center:            0.00000     0.00000     0.69801
+Nuclear charge:         8.00000
+Electronic charge:       -8.70344
+Total charge:            -0.70344
+Electronic dipole        -0.00000    -0.00000    -0.39828
+Electronic dipole norm     0.39828
+
+-----------
+Bond    2 1
+-----------
+Bond center:           -0.74075     0.00000     0.17450
+Electronic charge:        0.00000
+Total charge:             0.00000
+Electronic dipole         0.10023    -0.00000     0.11470
+Electronic dipole norm     0.15233
+
+---------
+Atom    2
+---------
+Atom center:           -1.48150     0.00000    -0.34901
+Nuclear charge:         1.00000
+Electronic charge:       -0.64828
+Total charge:             0.35172
+Electronic dipole         0.10331     0.00000     0.07189
+Electronic dipole norm     0.12586
+
+-----------
+Bond    3 1
+-----------
+Bond center:            0.74075     0.00000     0.17450
+Electronic charge:        0.00000
+Total charge:             0.00000
+Electronic dipole        -0.10023    -0.00000     0.11470
+Electronic dipole norm     0.15233
+
+-----------
+Bond    3 2
+-----------
+Bond center:            0.00000     0.00000    -0.34901
+Electronic charge:        0.00000
+Total charge:             0.00000
+Electronic dipole        -0.00000    -0.00000    -0.00379
+Electronic dipole norm     0.00379
+
+---------
+Atom    3
+---------
+Atom center:            1.48150     0.00000    -0.34901
+Nuclear charge:         1.00000
+Electronic charge:       -0.64828
+Total charge:             0.35172
+Electronic dipole        -0.10331    -0.00000     0.07189
+Electronic dipole norm     0.12586
+
+---------
+Molecular
+---------
+Domain center:            0.00000     0.00000     0.48861
+Nuclear charge:          10.00000
+Electronic charge:      -10.00000
+Total charge:            -0.00000
+Electronic dipole        -0.00000    -0.00000    -0.02888
+Gauge   dipole            0.00000    -0.00000    -0.73651
+Total   dipole           -0.00000    -0.00000    -0.76539"""
+
+OUTPUT_BY_BOND_n1 = """\
+---------
+Atom    1
+---------
+Atom center:            0.00000     0.00000     0.69801
+Nuclear charge:         8.00000
+Isotropic polarizability (0)     1.30184
+
+-----------
+Bond    2 1
+-----------
+Bond center:           -0.74075     0.00000     0.17450
+Isotropic polarizability (0)     2.16455
+
+---------
+Atom    2
+---------
+Atom center:           -1.48150     0.00000    -0.34901
+Nuclear charge:         1.00000
+Isotropic polarizability (0)     0.48998
+
+-----------
+Bond    3 1
+-----------
+Bond center:            0.74075     0.00000     0.17450
+Isotropic polarizability (0)     2.16455
+
+-----------
+Bond    3 2
+-----------
+Bond center:            0.00000     0.00000    -0.34901
+Isotropic polarizability (0)     0.00732
+
+---------
+Atom    3
+---------
+Atom center:            1.48150     0.00000    -0.34901
+Nuclear charge:         1.00000
+Isotropic polarizability (0)     0.48998
+
+---------
+Molecular
+---------
+Domain center:            0.00000     0.00000     0.48861
+Nuclear charge:          10.00000
+Polarizability av (0)        6.61822
+Polarizability (0)           8.18677    -0.00000     5.10275    -0.00000    -0.00000     6.56513"""
+
+OUTPUT_BY_BOND_n2 = """\
+---------
+Atom    1
+---------
+Atom center:            0.00000     0.00000     0.69801
+Nuclear charge:         8.00000
+Isotropic polarizability (0)     1.30184
+Polarizability (0)            0.76086     0.00000     1.74791     0.00000     0.00000     1.39676
+
+-----------
+Bond    2 1
+-----------
+Bond center:           -0.74075     0.00000     0.17450
+Isotropic polarizability (0)     2.16455
+Polarizability (0)      
+     3.11382    -0.00000     1.25236     1.98132    -0.00000     2.12747
+
+---------
+Atom    2
+---------
+Atom center:           -1.48150     0.00000    -0.34901
+Nuclear charge:         1.00000
+Isotropic polarizability (0)     0.48998
+Polarizability (0)            0.57859    -0.00000     0.43361     0.11498    -0.00000     0.45773
+
+-----------
+Bond    3 1
+-----------
+Bond center:            0.74075     0.00000     0.17450
+Isotropic polarizability (0)     2.16455
+Polarizability (0)      
+     3.11382    -0.00000     1.25236    -1.98132    -0.00000     2.12747
+
+-----------
+Bond    3 2
+-----------
+Bond center:            0.00000     0.00000    -0.34901
+Isotropic polarizability (0)     0.00732
+Polarizability (0)      
+     0.04109     0.00000    -0.01709     0.00000     0.00000    -0.00202
+
+---------
+Atom    3
+---------
+Atom center:            1.48150     0.00000    -0.34901
+Nuclear charge:         1.00000
+Isotropic polarizability (0)     0.48998
+Polarizability (0)            0.57859    -0.00000     0.43361    -0.11498    -0.00000     0.45773
+
+---------
+Molecular
+---------
+Domain center:            0.00000     0.00000     0.48861
+Nuclear charge:          10.00000
 Polarizability av (0)        6.61822
 Polarizability (0)           8.18677    -0.00000     5.10275    -0.00000    -0.00000     6.56513"""

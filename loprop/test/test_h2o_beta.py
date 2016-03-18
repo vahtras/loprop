@@ -1,5 +1,6 @@
 from .common import LoPropTestCase
 import os 
+import sys
 import numpy as np
 from ..daltools.util import full
 
@@ -15,6 +16,7 @@ class H2OBetaTest(LoPropTestCase):
 
     def setUp(self):
         self.m = MolFrag(tmpdir, freqs=(0.0,), pf=penalty_function(2.0/xtang**2))
+        self.maxDiff = None
 
     def tearDown(self):
         pass
@@ -439,6 +441,14 @@ class H2OBetaTest(LoPropTestCase):
         PA00 = self.m.output_potential_file(maxl=0, pol=0, hyper=0)
         self.assert_str(PA00, ref.PA00)
 
+    def test_potfile_P0A0B1(self):
+        this = self.m.output_potential_file(maxl=0, pol=0, hyper=1)
+        self.assert_str(this, ref.P0A0B1)
+
+    def test_potfile_P0A0B1b(self):
+        this = self.m.output_potential_file(maxl=0, pol=0, hyper=1, bond_centers=True)
+        self.assert_str(this, ref.P0A0B1b)
+
     def test_potfile_PA10(self):
         PA10 = self.m.output_potential_file(maxl=1, pol=0, hyper=0)
         self.assert_str(PA10, ref.PA10)
@@ -454,6 +464,20 @@ class H2OBetaTest(LoPropTestCase):
     def test_potfile_PA22(self):
         PA22 = self.m.output_potential_file(maxl=2, pol=2, hyper=0)
         self.assert_str(PA22, ref.PA22)
+
+    def test_outfile_PAn0_by_atom(self):
+        self.m.max_l = -1
+        Da = self.m.Da #use for beta internally and will be set in output
+        self.m.output_by_atom(fmt="%12.5f", hyperpol=1)
+        print_output = sys.stdout.getvalue().strip()
+        self.assert_str(print_output, ref.OUTPUT_BY_ATOM_n0)
+
+    def test_outfile_PAn0_by_bond(self):
+        self.m.max_l = 1
+        Da = self.m.Da #use for beta internally and will be set in output
+        self.m.output_by_atom(fmt="%12.5f", max_l=1, hyperpol=1, bond_centers=True)
+        print_output = sys.stdout.getvalue().strip()
+        self.assert_str(print_output, ref.OUTPUT_BY_BOND_11)
 
 if __name__ == "__main__":
     pass
