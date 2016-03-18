@@ -1050,13 +1050,7 @@ class MolFrag:
             for b in range(noa):
                 for i in range(3):
                     for j in range(6):
-                        if  True:
-                            dBab[:, i, j, a, b] = 2*dRab[a, b, i]*d2Qab[:, a, b, j]
-                        else:
-                            dAab[:, i, j, a, b] = (
-                                dRab[a, b, i]*d2Qab[:, a, b, j]+
-                                dRab[a, b, j]*d2Qab[:, a, b, i]
-                                )
+                        dBab[:, i, j, a, b] = 2*dRab[a, b, i]*d2Qab[:, a, b, j]
         self._dBab = dBab
         return self._dBab
 
