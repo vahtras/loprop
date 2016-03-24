@@ -201,10 +201,6 @@ class H2OBetaTest(LoPropTestCase):
         ref.Bm
         self.assert_allclose(Bm, ref.Bm, atol=.005)
 
-    def notest_dynamic_polarizability_total(self):
-        Amw = self.m.Am[1]
-        assert_(Amw, ref.Amw, 0.015)
-        
     def test_polarizability_allbonds_molcas_internal(self):
         O = ref.O
         H1O = ref.H1O
@@ -478,6 +474,3 @@ class H2OBetaTest(LoPropTestCase):
         self.m.output_by_atom(fmt="%12.5f", max_l=1, hyperpol=1, bond_centers=True)
         print_output = sys.stdout.getvalue().strip()
         self.assert_str(print_output, ref.OUTPUT_BY_BOND_11)
-
-if __name__ == "__main__":
-    pass

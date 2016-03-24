@@ -140,14 +140,8 @@ class NewTest(LoPropTestCase):
     def test_polarizability_total(self):
 
         Am = self.m.Am[0]
-
         self.assert_allclose(Am, ref.Am, 0.015)
 
-    def notest_dynamic_polarizability_total(self):
-
-        Amw = self.m.Am[1]
-
-        self.assert_allclose(Amw, ref.Amw, 0.015)
             
     def test_polarizability_allbonds_molcas_internal(self):
 
@@ -526,5 +520,3 @@ class NewTest(LoPropTestCase):
         print_output = sys.stdout.getvalue().strip()
         self.assert_str(print_output, ref.OUTPUT_BY_BOND_n2)
 
-if __name__ == "__main__":
-    pass
