@@ -504,7 +504,7 @@ class NewTest(LoPropTestCase):
         print_output = sys.stdout.getvalue().strip()
         self.assert_str(print_output, ref.OUTPUT_BY_BOND_10)
 
-    def test_outfile_PA10_by_bond(self):
+    def test_outfile_PA10_by_bond_error_for_quad(self):
         with self.assertRaises(NotImplementedError):
             self.m.output_by_atom(fmt="%12.5f", max_l=2, bond_centers=True)
 
