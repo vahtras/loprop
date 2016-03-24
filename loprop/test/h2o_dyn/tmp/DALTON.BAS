@@ -1,7 +1,6 @@
-# DALTON.BAS with INTGRL directive created 14Nov13  18:41:15
+# DALTON.BAS with INTGRL directive created 24Mar16  15:49:04
 # Directive in input mol file was:
-# > BASIS                                                                       
-# > cc-pVTZ                                                                     
+# > INTGRL                                                                      
 INTGRL
 Molcas                                                                          
 test013                                                                         
