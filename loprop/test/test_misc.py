@@ -16,7 +16,7 @@ class NewTest(unittest.TestCase):
         pass
 
     def test_header(self):
-        if not hasattr(sys.stdout, "getvalue"):
+        if not hasattr(sys.stdout, "getvalue"):#pragma: no cover
             self.fail("Run in buffered mode")
         header('yo')
         print_output = sys.stdout.getvalue().strip()
@@ -27,7 +27,7 @@ yo
         self.assertEqual(print_output, ref_output)
 
     def test_output_beta(self):
-        if not hasattr(sys.stdout, "getvalue"):
+        if not hasattr(sys.stdout, "getvalue"):#pragma: no cover
             self.fail("Run in buffered mode")
         output_beta(self.beta)
         print_output = sys.stdout.getvalue().strip()
@@ -42,7 +42,7 @@ beta(:, kk)    1.739591    1.349924    1.487794"""
         self.assertEqual(print_output, ref_output)
 
     def test_output_beta_d(self):
-        if not hasattr(sys.stdout, "getvalue"):
+        if not hasattr(sys.stdout, "getvalue"):#pragma: no cover
             self.fail("Run in buffered mode")
         output_beta(self.beta, self.dipole)
         print_output = sys.stdout.getvalue().strip()
@@ -57,6 +57,6 @@ beta(:, kk)    1.739591    1.349924    1.487794
 beta//dip      0.523123"""
         self.assertEqual(print_output, ref_output)
 
-if __name__ == "__main__":
+if __name__ == "__main__":#pragma: no cover
     unittest.main()
 

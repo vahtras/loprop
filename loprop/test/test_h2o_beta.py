@@ -441,6 +441,10 @@ class H2OBetaTest(LoPropTestCase):
         this = self.m.output_potential_file(maxl=0, pol=0, hyper=1)
         self.assert_str(this, ref.P0A0B1)
 
+    def test_potfile_P0A0B2(self):
+        this = self.m.output_potential_file(maxl=0, pol=0, hyper=2)
+        self.assert_str(this, ref.P0A0B2)
+
     def test_potfile_P0A0B1b(self):
         this = self.m.output_potential_file(maxl=0, pol=0, hyper=1, bond_centers=True)
         self.assert_str(this, ref.P0A0B1b)

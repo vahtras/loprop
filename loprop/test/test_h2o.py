@@ -376,6 +376,10 @@ class NewTest(LoPropTestCase):
         PAn0 = self.m.output_potential_file(maxl=-1, pol=0, hyper=0)
         self.assert_str(PAn0, ref.PAn0)
 
+    def test_potfile_PAn0_angstrom(self):
+        PAn0 = self.m.output_potential_file(maxl=-1, pol=0, hyper=0, angstrom=True)
+        self.assert_str(PAn0, ref.POTFILE_BY_ATOM_n0_ANGSTROM)
+
     def test_potfile_PA00(self):
         PA00 = self.m.output_potential_file(maxl=0, pol=0, hyper=0)
         self.assert_str(PA00, ref.PA00)
@@ -428,6 +432,9 @@ class NewTest(LoPropTestCase):
         self.m.max_l = -1
         self.assert_str(self.m.print_atom_domain(0), ref.OUTPUT_n0_1)
 
+    def test_outfile_PAn0_atom_domain_angstrom(self):
+        self.m.max_l = -1
+        self.assert_str(self.m.print_atom_domain(0, angstrom=True), ref.OUTPUT_n0_1_ANGSTROM)
 
     def test_outfile_PA00_atom_domain(self):
         self.m.max_l = 0

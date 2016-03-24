@@ -7,6 +7,12 @@ class TemplateTest( unittest.TestCase ):
 
     def setUp(self):
         self.tmp = os.path.join( os.path.dirname( __file__ ), DIR)
+        self.mf = MolFrag( tmpdir = self.tmp, max_l =2, pol = 2,
+                freqs = None,
+                pf = penalty_function(2.0),
+                sf = shift_function,
+                gc = None)
+        self.maxDiff = None
 
     def test_h2o_beta_dir(self):
         self.assertTrue(os.path.isdir(self.tmp))
@@ -30,11 +36,7 @@ class TemplateTest( unittest.TestCase ):
 ( 'H3', "beta") : [ -8.671, -0.000, 4.511, -2.783, 0.000, -4.409, -0.000, 1.590, -0.000, 4.585 ],
 """
 
-        string =  MolFrag( tmpdir = self.tmp, max_l =2, pol = 2,
-                freqs = None,
-                pf = penalty_function(2.0),
-                sf = shift_function,
-                gc = None).output_template(2, 2, 2, decimal =3) 
+        string =  self.mf.output_template(2, 2, 2, decimal =3) 
         # Normalize blanks,zeros
         string = string.replace("-0.000", " 0.000")
         string = " ".join(string.split())
@@ -43,6 +45,37 @@ class TemplateTest( unittest.TestCase ):
         
         self.assertEqual(string, reference)
 
+    def test_h2o_template_wrong_l(self):
+        with self.assertRaises(RuntimeError):
+            str_ = self.mf.output_template(maxl=3)
 
-if __name__ == '__main__':
+    def test_h2o_template_wrong_a(self):
+        with self.assertRaises(RuntimeError):
+            str_ = self.mf.output_template(pol=3)
+
+    def test_h2o_template_wrong_b(self):
+        with self.assertRaises(RuntimeError):
+            str_ = self.mf.output_template(hyper=3)
+
+    def test_h2o_template_full(self):
+
+        reference = """\
+( 'O1', "charge") : [ -0.000 ],
+( 'O1', "dipole") : [ -0.000, -0.000, -0.765 ],
+( 'O1', "quadrupole") : [ -3.557, 0.000, -0.000, -5.432, 0.000, -4.526 ],
+( 'O1', "alpha") : [ 8.187, 0.000, -0.000, 5.103, -0.000, 6.565 ],
+( 'O1', "beta") : [ 0.000, -0.000, 14.741, 0.000, 0.000, -0.000, -0.000, 3.284, -0.000, 9.208 ],
+"""
+
+        string =  self.mf.output_template(2, 2, 2, decimal=3, template_full=True)
+        # Normalize blanks,zeros
+        string = string.replace("-0.000", " 0.000")
+        string = " ".join(string.split())
+        reference = reference.replace("-0.000", " 0.000")
+        reference = " ".join(reference.split())
+        
+        print(string)
+        self.assertEqual(string, reference)
+
+if __name__ == '__main__':#pragma: no cover
     unittest.main()

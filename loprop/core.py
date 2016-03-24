@@ -1264,11 +1264,11 @@ class MolFrag:
 
 
         if maxl not in l_dict:
-            print("ERROR: called output_template with wrong argument range")
+            raise RuntimeError("ERROR: called output_template with wrong argument range")
         if pol not in a_dict:
-            print("ERROR: called output_template with wrong argument range")
+            raise RuntimeError("ERROR: called output_template with wrong argument range")
         if hyper not in b_dict:
-            print("ERROR: called output_template with wrong argument range")
+            raise RuntimeError("ERROR: called output_template with wrong argument range")
 
         elem_dict = {1:"H", 6:"C", 7: "N", 8 : "O", 16 : "S"}
         if maxl >= 0:
@@ -1315,6 +1315,7 @@ class MolFrag:
 # Only for one frequency for now, todo, fix later if needed general
                     Bsym = symmetrize_first_beta( Bab.sum(axis=4)[0, :, :, a].view(full.matrix) )
                     line += "( '%s%d', "%(elem_dict[self.Z[a]] ,a+1) +  '"beta") : [ %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ],\n' %(tuple([fmt for i in range(len(Bsym))])) %(tuple(Bsym))
+        print(line)
         return line
 
 
