@@ -129,12 +129,10 @@ class NewTest(LoPropTestCase):
         PA20 = self.m.output_potential_file(maxl=2, pol=0, hyper=0)
         self.assert_str(PA20, ref.PA20)
 
-    @unittest.skip('wait')
     def test_potfile_PA21(self):
         PA21 = self.m.output_potential_file(maxl=2, pol=1, hyper=0)
         self.assert_str(PA21, ref.PA21)
 
-    @unittest.skip('wait')
     def test_potfile_PA22(self):
         PA22 = self.m.output_potential_file(maxl=2, pol=2, hyper=0)
         self.assert_str(PA22, ref.PA22)
@@ -155,17 +153,14 @@ class NewTest(LoPropTestCase):
         with self.assertRaises(NotImplementedError):
             PA20b = self.m.output_potential_file(maxl=2, pol=0, hyper=0, bond_centers=True)
 
-    @unittest.skip('wait')
     def test_potfile_PA01b(self):
         PA01b = self.m.output_potential_file(maxl=0, pol=1, hyper=0, bond_centers=True)
         self.assert_str(PA01b, ref.PA01b)
 
-    @unittest.skip('wait')
     def test_potfile_PA02(self):
         this = self.m.output_potential_file(maxl=0, pol=2, hyper=0)
         self.assert_str(this, ref.PA02)
 
-    @unittest.skip('wait')
     def test_potfile_PA02b(self):
         this = self.m.output_potential_file(maxl=0, pol=2, hyper=0, bond_centers=True)
         self.assert_str(this, ref.PA02b)
@@ -186,97 +181,28 @@ class NewTest(LoPropTestCase):
         self.m.max_l = 1
         self.assert_str(self.m.print_atom_domain(0), ref.OUTPUT_10_1)
 
-    @unittest.skip('wait')
-    def test_outfile_PA20_atom_domain(self):
-        self.m.max_l = 2
-        self.assert_str(self.m.print_atom_domain(0), h2o_data.OUTPUT_20_1)
-
-    @unittest.skip('wait')
     def test_outfile_PA01_atom_domain(self):
         self.m.max_l = 0
         self.m.pol = 1
         self.assert_str(self.m.print_atom_domain(0), ref.OUTPUT_01_1)
 
-    @unittest.skip('wait')
     def test_outfile_PA02_atom_domain(self):
         self.m.max_l = 0
         self.m.pol = 2
         self.assert_str(self.m.print_atom_domain(0), ref.OUTPUT_02_1)
 
-    @unittest.skip('wait')
-    def test_outfile_PAn0_by_atom(self):
-        self.m.max_l = -1
-        self.m.output_by_atom(fmt="%12.5f")
-        print_output = sys.stdout.getvalue().strip()
-        self.assert_str(print_output, ref.OUTPUT_BY_ATOM_n0)
-
-    @unittest.skip('wait')
-    def test_outfile_PAn0_by_atom_Angstrom(self):
-        self.m.max_l = -1
-        self.m.output_by_atom(fmt="%12.5f", angstrom=True)
-        print_output = sys.stdout.getvalue().strip()
-        self.assert_str(print_output, ref.OUTPUT_BY_ATOM_n0_ANGSTROM)
-
-    @unittest.skip('wait')
-    def test_outfile_PA00_by_atom(self):
-        self.m.output_by_atom(fmt="%12.5f", max_l=0)
-        print_output = sys.stdout.getvalue().strip()
-        self.assert_str(print_output, ref.OUTPUT_BY_ATOM_00)
-
-    @unittest.skip('wait')
-    def test_outfile_PA10_by_atom(self):
-        self.m.max_l = 1
-        self.m.output_by_atom(fmt="%12.5f", max_l=1)
-        print_output = sys.stdout.getvalue().strip()
-        self.assert_str(print_output, ref.OUTPUT_BY_ATOM_10)
-
-    @unittest.skip('wait')
-    def test_outfile_PA20_by_atom(self):
-        self.m.max_l = 2
-        self.m.output_by_atom(fmt="%12.5f", max_l=2)
-        print_output = sys.stdout.getvalue().strip()
-        self.assert_str(print_output, ref.OUTPUT_BY_ATOM_20)
-
-    @unittest.skip('wait')
     def test_outfile_PA01_by_atom(self):
         self.m.max_l = 0
         self.m.output_by_atom(fmt="%12.5f", max_l=0, pol=1)
         print_output = sys.stdout.getvalue().strip()
         self.assert_str(print_output, ref.OUTPUT_BY_ATOM_01)
 
-    @unittest.skip('wait')
-    def test_outfile_PAn0_by_bond(self):
-        self.m.max_l = -1
-        self.m.output_by_atom(fmt="%12.5f", max_l=-1, bond_centers=True)
-        print_output = sys.stdout.getvalue().strip()
-        self.assert_str(print_output, ref.OUTPUT_BY_BOND_n0)
-
-    @unittest.skip('wait')
-    def test_outfile_PA00_by_bond(self):
-        self.m.max_l = 0
-        self.m.output_by_atom(fmt="%12.5f", max_l=0, bond_centers=True)
-        print_output = sys.stdout.getvalue().strip()
-        self.assert_str(print_output, ref.OUTPUT_BY_BOND_00)
-
-    @unittest.skip('wait')
-    def test_outfile_PA10_by_bond(self):
-        self.m.max_l = 1
-        self.m.output_by_atom(fmt="%12.5f", max_l=1, bond_centers=True)
-        print_output = sys.stdout.getvalue().strip()
-        self.assert_str(print_output, ref.OUTPUT_BY_BOND_10)
-
-    def test_outfile_PA10_by_bond_error_for_quad(self):
-        with self.assertRaises(NotImplementedError):
-            self.m.output_by_atom(fmt="%12.5f", max_l=2, bond_centers=True)
-
-    @unittest.skip('wait')
     def test_outfile_PAn1_by_bond(self):
         self.m.max_l = -1
         self.m.output_by_atom(fmt="%12.5f", max_l=-1, pol=1, bond_centers=True)
         print_output = sys.stdout.getvalue().strip()
         self.assert_str(print_output, ref.OUTPUT_BY_BOND_n1)
 
-    @unittest.skip('wait')
     def test_outfile_PAn2_by_bond(self):
         self.m.max_l = -1
         self.m.output_by_atom(fmt="%12.5f", max_l=-1, pol=2, bond_centers=True)
