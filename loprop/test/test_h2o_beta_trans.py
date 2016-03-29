@@ -6,7 +6,7 @@ from ..daltools.util import full
 
 import re
 thisdir  = os.path.dirname(__file__)
-case = "h2o_beta"
+case = "h2o_beta_trans"
 tmpdir=os.path.join(thisdir, case, 'tmp')
 exec('from . import %s_data as ref'%case)
 
