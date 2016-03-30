@@ -285,8 +285,7 @@ class MolFrag:
         if self._D is not None:
             return self._D
 
-        Di, Dv = dens.ifc(filename=self.sirifc)
-        D = Di + Dv
+        D = sum(dens.Dab(filename=self.sirifc))
         Ti = self.T.I
         self._D = ( Ti * D * Ti.T ).subblocked(self.cpa, self.cpa)
         return self._D
@@ -707,7 +706,7 @@ class MolFrag:
 
     @property
     def la(self):
-        """Lagrangian for local poplarizabilities"""
+        """Lagrangian for local polarizabilities"""
         #
         # The shift should satisfy
         #   sum(a) sum(b) (F(a,b) + C)l(b) = sum(a) dq(a) = 0
@@ -725,7 +724,7 @@ class MolFrag:
 
     @property
     def l2a(self):
-        """Lagrangian for local poplarizabilities"""
+        """Lagrangian for local hyperpolarizabilities"""
         #
         # The shift should satisfy
         #   sum(a) sum(b) (F(a,b) + C)l(b) = sum(a) dq(a) = 0
@@ -986,11 +985,8 @@ class MolFrag:
 
         if self._Am is not None: return self._Am
 
-        dQa = self.dQa
-        Rab = self.Rab
         Aab = self.Aab
         dAab = self.dAab
-        noa = self.noa
 
         self._Am = (Aab + 0.5*dAab).sum(axis=4).sum(axis=3).view(full.matrix)
         return self._Am
@@ -1000,29 +996,21 @@ class MolFrag:
         """Localized hyperpolariziabilities"""
         if self._Bab is not None: return self._Bab
 
-        D = self.D
         D2k = self.D2k
-        #T = self.T
-        cpa = self.cpa
-        Z = self.Z
         Rab = self.Rab
-        Qab = self.Qab
         d2Qa = self.d2Qa
         x = self.x
 
-        noa = len(cpa)
         labs = ('XDIPLEN ', 'YDIPLEN ', 'ZDIPLEN ')
         qlabs = [labs[i] + labs[j] for i in range(3) for j in range(i,3)]
-        Bab = full.matrix( (self.nfreqs, 3, 6, noa, noa) )
+        Bab = full.matrix( (self.nfreqs, 3, 6, self.noa, self.noa) )
 
-        #pdb.set_trace()
 
         #correction term for shifting origin from O to Rab
         for i, li in enumerate(labs):
             for jk,ljk in enumerate(qlabs):
-                #print(i,jk, li, ljk)
-                for a in range(noa):
-                    for b in range(noa):
+                for a in range(self.noa):
+                    for b in range(self.noa):
                         for iw, w in enumerate(self.freqs):
                             Bab[iw, i, jk, a, b] = (
                                 -x[i].subblock[a][b] & D2k [(ljk, w, w)].subblock[a][b]
@@ -1035,18 +1023,14 @@ class MolFrag:
 
     @property
     def dBab(self):
-        """Charge transfer contribution to bond hyperpolarizabilitypolarizability"""
+        """Charge transfer contribution to bond hyperpolarizability"""
         if self._dBab is not None: return self._dBab
 
-        dQa = self.dQa
-        d2Qa = self.d2Qa
-        dQab = self.dQab
         d2Qab = self.d2Qab
         dRab = self.dRab
-        noa = self.noa
-        dBab = full.matrix((self.nfreqs, 3, 6, noa, noa))
-        for a in range(noa):
-            for b in range(noa):
+        dBab = full.matrix((self.nfreqs, 3, 6, self.noa, self.noa))
+        for a in range(self.noa):
+            for b in range(self.noa):
                 for i in range(3):
                     for j in range(6):
                         dBab[:, i, j, a, b] = 2*dRab[a, b, i]*d2Qab[:, a, b, j]
@@ -1059,12 +1043,8 @@ class MolFrag:
 
         if self._Bm is not None: return self._Bm
 
-        d2Qa = self.d2Qa
-        Rab = self.Rab
-        Bab = self.Bab #+ 0.25 * self.dBab
+        Bab = self.Bab
         dBab = self.dBab
-        noa = self.noa
-
         self._Bm = (Bab + 0.5*dBab).sum(axis=4).sum(axis=3).view(full.matrix)
 
         return self._Bm
@@ -1394,10 +1374,6 @@ class MolFrag:
                         if hyper > 0:
                             for iw, w in enumerate(self.freqs):
                                 Bsym = Bab[iw, :, :, a, b] + Bab[iw, :, :, b, a]
-                                #if hyper == 1:
-                                #    dip = self.Da[:,a]
-                                #    betakk = Bsym[:,0] + Bsym[:, 3] + Bsym[:, 5]
-                                #    line += fmt % ( 0.2 * (betakk & dip) / dip.norm2() )
                                 Btotsym = symmetrize_first_beta( Bsym )
                                 line += 10*fmt % tuple( Btotsym )
                         lines.append(line)
@@ -1424,10 +1400,6 @@ class MolFrag:
                 if hyper > 0:
                     for iw, w in enumerate(self.freqs):
                         Bsym = reduce( lambda x,y: x + Bab[iw, :, :, a, y], nbond_pos, 0.0 ).view(full.matrix)
-                        #if hyper == 1:
-                        #    dip = self.Da[:,a]
-                        #    betakk = Bsym[:,0] + Bsym[:, 3] + Bsym[:, 5]
-                        #    line += fmt % ( 0.2 * (betakk & dip) / dip.norm2() )
                         Btotsym = symmetrize_first_beta( Bsym )
                         line += 10*fmt % tuple( Btotsym )
                 ab += 1
