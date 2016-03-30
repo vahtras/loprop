@@ -23,6 +23,9 @@ class NewTest(LoPropTestCase):
     def tearDown(self):
         pass
 
+    def test_T1(self):
+        T1 = self.m.T1()
+        self.assert_allclose(T1, ref.T1)
 
     def test_nuclear_charge(self):
         Z = self.m.Z

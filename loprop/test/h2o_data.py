@@ -773,3 +773,6 @@ Domain center:            0.00000     0.00000     0.48861
 Nuclear charge:          10.00000
 Polarizability av (0)        6.61822
 Polarizability (0)           8.18677    -0.00000     5.10275    -0.00000    -0.00000     6.56513"""
+
+import numpy
+T1 = numpy.loadtxt('T1')

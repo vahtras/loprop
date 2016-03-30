@@ -305,33 +305,16 @@ class MolFrag:
         if self._T is not None: return self._T
 
         S = self.S()
+        nbf = S.shape[0]
+        noa = self.noa
         cpa = self.cpa
         opa = self.opa
-    #
-    # 1. orthogonalize in each atomic block
-    #
-        nbf = S.shape[0]
-        #
-        # obtain atomic blocking
-        #
-        #assert(len(cpa) == len(opa))
-        noa = len(opa)
-        nocc = 0
-        for at in range(noa):
-            nocc += len(opa[at])
-        Satom = S.block(cpa, cpa)
-        Ubl = full.unit(nbf).subblocked((nbf,), cpa)
-        #
-        # Diagonalize atom-wise
-        #
-        T1 = blocked.BlockDiagonalMatrix(cpa, cpa)
-        for at in range(noa):
-            T1.subblock[at] = Ubl.subblock[0][at].GST(S)
-        T1 = T1.unblock()
+
+        T1 = self.T1()
         #
         # Full transformation
         #
-        S1 = T1.T * S * T1
+        S1 = T1.T * self.S() * T1
        
         # 2. a) Lowdin orthogonalize occupied subspace
         #
@@ -340,7 +323,7 @@ class MolFrag:
         #t2=timing("step 2")
         vpa = []
         adim = []
-        for at in range(noa):
+        for at in range(self.noa):
             vpa.append(cpa[at]-len(opa[at]))
             adim.append(len(opa[at]))
             adim.append(vpa[at])
@@ -376,6 +359,9 @@ class MolFrag:
         P = P1*P2
         S1P = P.T*S1*P
        
+        nocc = 0
+        for at in range(noa):
+            nocc += len(opa[at])
         occdim = (nocc, sum(vpa))
         S1Pbl = S1P.block(occdim, occdim)
         T2bl = S1Pbl.invsqrt()
@@ -415,6 +401,32 @@ class MolFrag:
         #
         self._T = T
         return self._T
+
+    def T1(self):
+        S = self.S()
+        cpa = self.cpa
+        opa = self.opa
+    #
+    # 1. orthogonalize in each atomic block
+    #
+        nbf = S.shape[0]
+        #
+        # obtain atomic blocking
+        #
+        noa = len(opa)
+        nocc = 0
+        for at in range(noa):
+            nocc += len(opa[at])
+        Satom = S.block(cpa, cpa)
+        Ubl = full.unit(nbf).subblocked((nbf,), cpa)
+        #
+        # Diagonalize atom-wise
+        #
+        T1 = blocked.BlockDiagonalMatrix(cpa, cpa)
+        for at in range(noa):
+            T1.subblock[at] = Ubl.subblock[0][at].GST(S)
+        T1 = T1.unblock()
+        return T1
 
     @property
     def Qab(self):
