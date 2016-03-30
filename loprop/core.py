@@ -10,16 +10,15 @@ from functools import reduce
 from .daltools import one, mol, dens, prop, lr, qr, sirifc
 from .daltools.util import full, blocked, subblocked, timing
 
-#full.matrix.fmt = "%14.6f"
-xtang = 0.5291772108
-angtx = 1.0/xtang
+AU2ANG = 0.5291772108
+ANG2AU = 1.0/AU2ANG
 
 # Bragg-Slater radii () converted from Angstrom to Bohr
 rbs = numpy.array([0, 
       0.25,                                     0.25, 
       1.45, 1.05, 0.85, 0.70, 0.65, 0.60, 0.50, 0.45,
       1.80, 1.50, 1.25, 1.10, 1.00, 1.00, 1.00, 1.00, 
-      ])*angtx
+      ])*ANG2AU
 
 bond_co = { ( 1, 1 ) : 1.2, 
             ( 1, 6 ) : 1.2, 
@@ -1092,8 +1091,8 @@ class MolFrag:
          
         if angstrom: 
             unit = "AA" 
-            xconv = 0.5291772108
-            xconv3 = 0.5291772108**3
+            xconv = AU2ANG
+            xconv3 = AU2ANG**3
         else: 
             unit = "AU"
             xconv = 1
@@ -1180,7 +1179,7 @@ class MolFrag:
                 header("Atomic domain %d" % (a+1))
                 print("Domain center:       "+(3*fmt) % tuple(R[a, :]*xconv))
                 line = " 0"
-                line += (3*"%17.10f") % tuple(xtang*R[a, :])
+                line += (3*"%17.10f") % tuple(AU2ANG*R[a, :])
                 print("Nuclear charge:      "+fmt % Z[a])
                 if self.max_l >= 0:
                     print("Electronic charge:   "+fmt % Qa[a])
@@ -1328,8 +1327,8 @@ class MolFrag:
         lines = []
         if angstrom: 
             unit = "AA" 
-            xconv = 0.5291772108
-            xconv3 = 0.5291772108**3
+            xconv = AU2ANG
+            xconv3 = AU2ANG**3
         else: 
             unit = "AU"
             xconv = 1
@@ -1344,7 +1343,7 @@ class MolFrag:
         for a in range( noa ):
             for b in range( a ):
                 r = numpy.sqrt( (( self.R[a] - self.R[b])**2 ).sum() )
-                if r < bond_co[ (int(self.Z[a]), int(self.Z[b])) ]/xtang:
+                if r < bond_co[ (int(self.Z[a]), int(self.Z[b])) ]/AU2ANG:
                     bond_mat[ a, b ] = 1
                     bond_mat[ b, a ] = 1
 
@@ -1467,7 +1466,7 @@ class MolFrag:
     def print_atom_domain(self, n, angstrom=False):
         fmt = "%9.5f"
         if angstrom:
-            xconv = 0.5291772108
+            xconv = AU2ANG
         else:
             xconv = 1
         retstr = """\

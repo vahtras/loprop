@@ -1,7 +1,7 @@
 import unittest
 import os 
 import numpy as np
-from ..core import penalty_function, xtang, pairs, MolFrag
+from ..core import penalty_function, AU2ANG, pairs, MolFrag
 from ..daltools.util import full
 
 import re
@@ -18,7 +18,7 @@ class NewTest(unittest.TestCase):
 
     def setUp(self):
     # modify Gagliardi penalty function to include unit conversion bug
-        self.m = MolFrag(tmpdir, freqs=(0.4425,), damping=0.004556, pf=penalty_function(2.0/xtang**2))
+        self.m = MolFrag(tmpdir, freqs=(0.4425,), damping=0.004556, pf=penalty_function(2.0/AU2ANG**2))
 
     def tearDown(self):
         pass

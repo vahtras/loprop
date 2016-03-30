@@ -3,7 +3,7 @@ from .common import LoPropTestCase
 import os 
 import sys
 import numpy as np
-from ..core import MolFrag, penalty_function, xtang, pairs
+from ..core import MolFrag, penalty_function, AU2ANG, pairs
 from ..daltools.util import full
 
 import re
@@ -12,13 +12,13 @@ case = "h2o_rot"
 tmpdir=os.path.join(thisdir, case, 'tmp')
 exec('from . import %s_data as ref'%case)
 
-from ..core import penalty_function, xtang, pairs
+from ..core import penalty_function, AU2ANG, pairs
 
 
 class NewTest(LoPropTestCase):
 
     def setUp(self):
-        self.m = MolFrag(tmpdir, freqs=(0, ), pf=penalty_function(2.0/xtang**2))
+        self.m = MolFrag(tmpdir, freqs=(0, ), pf=penalty_function(2.0/AU2ANG**2))
         self.maxDiff = None
 
     def tearDown(self):

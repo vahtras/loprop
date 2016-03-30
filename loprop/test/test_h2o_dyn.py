@@ -13,13 +13,13 @@ tmpdir=os.path.join(thisdir, case, 'tmp')
 exec('from . import %s_data as ref'%case)
 from . import h2o_data
 
-from ..core import penalty_function, xtang, pairs
+from ..core import penalty_function, AU2ANG, pairs
 
 
 class NewTest(LoPropTestCase):
 
     def setUp(self):
-        self.m = MolFrag(tmpdir, freqs=(0., 0.15), pf=penalty_function(2.0/xtang**2))
+        self.m = MolFrag(tmpdir, freqs=(0., 0.15), pf=penalty_function(2.0/AU2ANG**2))
         self.maxDiff = None
 
     def tearDown(self):
