@@ -114,7 +114,7 @@ class MolFrag:
 
     def __init__(
         self, tmpdir, max_l=0, pol=0, freqs=None, pf=penalty_function, sf=shift_function, gc=None,
-        damping=False, real_pol=False, imag_pol=False, debug=False
+        damping=False, real_pol=False, imag_pol=False
         ):
         """Constructur of MolFrac class objects
         input: tmpdir, scratch directory of Dalton calculation
@@ -136,7 +136,6 @@ class MolFrag:
         self.pf = pf
         self.sf = sf
         self.gc = gc
-        self.debug = debug
         #
         # Dalton files
         #
@@ -212,10 +211,6 @@ class MolFrag:
         self.noc = 0
         for o in self.opa:
             self.noc += len(o)
-
-        if self.debug:#pragma: no cover
-            print("Orbitals/atom", self.cpa, "\nTotal", self.nbf)
-            print("Occupied/atom", self.opa, "\nTotal", self.noc)
 
     def S(self):
         """
@@ -315,9 +310,6 @@ class MolFrag:
     #
     # 1. orthogonalize in each atomic block
     #
-        #t1=timing("step 1")
-        if self.debug:#pragma: no cover
-            print("Initial S", S)
         nbf = S.shape[0]
         #
         # obtain atomic blocking
@@ -327,28 +319,19 @@ class MolFrag:
         nocc = 0
         for at in range(noa):
             nocc += len(opa[at])
-        if self.debug:#pragma: no cover
-            print("nocc", nocc)
         Satom = S.block(cpa, cpa)
         Ubl = full.unit(nbf).subblocked((nbf,), cpa)
-        if self.debug:#pragma: no cover
-            print("Ubl", Ubl)
         #
-        # Diagonalize atomwise
+        # Diagonalize atom-wise
         #
         T1 = blocked.BlockDiagonalMatrix(cpa, cpa)
         for at in range(noa):
             T1.subblock[at] = Ubl.subblock[0][at].GST(S)
         T1 = T1.unblock()
-        if self.debug:#pragma: no cover
-            print("T1", T1)
         #
-        # Full transformration
+        # Full transformation
         #
         S1 = T1.T * S * T1
-        if self.debug:#pragma: no cover
-            print("Overlap after step 1", S1)
-        #t1.stop()
        
         # 2. a) Lowdin orthogonalize occupied subspace
         #
@@ -361,20 +344,14 @@ class MolFrag:
             vpa.append(cpa[at]-len(opa[at]))
             adim.append(len(opa[at]))
             adim.append(vpa[at])
-        if self.debug:#pragma: no cover
-            print("Blocking: Ao Av Bo Bv...", adim)
         #
         # dimensions for permuted basis
         #
         pdim = []
-        if self.debug:#pragma: no cover
-            print("opa", opa)
         for at in range(noa):
             pdim.append(len(opa[at]))
         for at in range(noa):
             pdim.append(vpa[at])
-        if self.debug:#pragma: no cover
-            print("Blocking: Ao Bo... Av Bv...", pdim)
         #
         # within atom permute occupied first
         #
@@ -382,8 +359,6 @@ class MolFrag:
         for at in range(noa):
             P1.subblock[at][at][:, :] = full.permute(opa[at], cpa[at])
         n = len(adim)
-        if self.debug:#pragma: no cover
-            print("P1", P1)
         P1 = P1.unblock()
        
        
@@ -392,8 +367,6 @@ class MolFrag:
             P2.subblock[i][i//2] = full.unit(adim[i])
         for i in range(1, len(adim), 2):
             P2.subblock[i][noa+(i-1)//2] = full.unit(adim[i])
-        if self.debug:#pragma: no cover
-            print("P2", P2)
         P2 = P2.unblock()
        
         #
@@ -401,75 +374,38 @@ class MolFrag:
         #
        
         P = P1*P2
-        if self.debug:#pragma: no cover
-            print("P", P)
-            if not numpy.allclose(P.inv(), P.T):
-                print("P not unitary")
-                sys.exit(1)
-       
-       
         S1P = P.T*S1*P
-        if self.debug:#pragma: no cover
-            print("Overlap in permuted basis", S1P)
        
-       
-        #invsq=lambda x: 1.0/math.sqrt(x)
         occdim = (nocc, sum(vpa))
         S1Pbl = S1P.block(occdim, occdim)
-        ### SYM ### S1Pbl += S1Pbl.T; S1Pbl *= 0.5 ###SYM###
-        #T2bl=S1Pbl.func(invsq)
         T2bl = S1Pbl.invsqrt()
         T2 = T2bl.unblock()
        
        
         S2 = T2.T*S1P*T2
-        if self.debug:#pragma: no cover
-            print("Overlap after step 2", S2)
-        #t2.stop()
        
         #
         # Project occupied out of virtual
         #
-        #t3=timing("step 3")
-        if 0:
-            T3 = full.unit(nbf).GST(S2)
-        else:
-            S2sb = S2.subblocked(occdim, occdim)
-            T3sb = full.unit(nbf).subblocked(occdim, occdim)
-            T3sb.subblock[0][1] = -S2sb.subblock[0][1]
-            T3 = T3sb.unblock()
+        S2sb = S2.subblocked(occdim, occdim)
+        T3sb = full.unit(nbf).subblocked(occdim, occdim)
+        T3sb.subblock[0][1] = -S2sb.subblock[0][1]
+        T3 = T3sb.unblock()
         S3 = T3.T*S2*T3
         #
-        if self.debug:#pragma: no cover
-            print("T3", T3)
-            print("Overlap after step 3", S3)
-        #t3.stop()
         #
         # 4. Lowdin orthogonalize virtual 
         #
-        #t4=timing("step 4")
         T4b = blocked.unit(occdim)
         S3b = S3.block(occdim, occdim)
-        if self.debug:#pragma: no cover
-            print("S3b", S3b)
-            print("T4b", T4b)
-        ### SYM ### S3b += S3b.T; S3b *= 0.5 ###SYM###
         T4b.subblock[1] = S3b.subblock[1].invsqrt()
         T4 = T4b.unblock()
         S4 = T4.T*S3*T4
-        #S4=S3
-        if self.debug:#pragma: no cover
-            print("T4", T4)
-            print("Overlap after step 4", S4)
-        #t4.stop()
        
         #
         # permute back to original basis
         #
         S4 = P*S4*P.T
-        if self.debug:#pragma: no cover
-            print("Final overlap ", S4)
-       
         #
         # Return total transformation
         #
@@ -477,9 +413,6 @@ class MolFrag:
         #
         # Test
         #
-        if self.debug:#pragma: no cover
-            print("Transformation determinant", T.det())
-            print("original S", S, "final", T.T*S*T)
         self._T = T
         return self._T
 
