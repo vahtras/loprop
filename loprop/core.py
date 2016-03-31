@@ -350,7 +350,7 @@ class MolFrag:
         #
         # obtain atomic blocking
         #
-        noa = len(opa)
+        noa = self.noa
         nocc = 0
         for at in range(noa):
             nocc += len(opa[at])
@@ -393,8 +393,6 @@ class MolFrag:
             pdim.append(len(self.opa[at]))
         for at in range(self.noa):
             pdim.append(vpa[at])
-
-       
        
         P2 = subblocked.matrix(adim, pdim)
         for i in range(0, len(adim), 2):
@@ -405,15 +403,8 @@ class MolFrag:
         return P2
 
     def lowdin_occupied_virtual(self, S1P):
-        vpa = []
-        adim = []
-        for at in range(self.noa):
-            vpa.append(self.cpa[at]-len(self.opa[at]))
-            adim.append(len(self.opa[at]))
-            adim.append(vpa[at])
-        nocc = 0
-        for at in range(self.noa):
-            nocc += len(self.opa[at])
+        vpa = [c - len(o) for c, o in zip(self.cpa, self.opa)]
+        nocc = sum(len(occ) for occ in self.opa)
         occdim = (nocc, sum(vpa))
         S1Pbl = S1P.block(occdim, occdim)
         T2bl = S1Pbl.invsqrt()
