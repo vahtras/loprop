@@ -1,4 +1,5 @@
 from .common import LoPropTestCase
+import unittest
 import os 
 import sys
 import numpy as np
@@ -24,8 +25,37 @@ class NewTest(LoPropTestCase):
         pass
 
     def test_T1(self):
-        T1 = self.m.T1()
+        S = self.m.S()
+        T1 = self.m.gram_schmidt_atomic_blocks(S)
         self.assert_allclose(T1, ref.T1)
+
+
+    def test_P1(self):
+        P1 = self.m.P1()
+        self.assert_allclose(P1, ref.P1)
+
+    def test_P2(self):
+        P2 = self.m.P2()
+        self.assert_allclose(P2, ref.P2)
+
+
+    def test_T2(self):
+        T2 = self.m.lowdin_occupied_virtual(ref.S1P.view(full.matrix))
+        self.assert_allclose(T2, ref.T2)
+
+    def test_T3(self):
+        T3 = self.m.project_occupied_from_virtual(ref.S2.view(full.matrix))
+        self.assert_allclose(T3, ref.T3)
+
+    def test_T4(self):
+        T4 = self.m.lowdin_virtual(ref.S3.view(full.matrix))
+        self.assert_allclose(T4, ref.T4)
+
+    def test_S4(self):
+        T = self.m.T
+        S = self.m.S()
+        S4 = T.T*S*T
+        self.assert_allclose(S4, full.unit(58))
 
     def test_nuclear_charge(self):
         Z = self.m.Z

@@ -1,3 +1,4 @@
+import os
 from ..daltools.util.full import init
 
 Z = [8., 1., 1.]
@@ -775,4 +776,15 @@ Polarizability av (0)        6.61822
 Polarizability (0)           8.18677    -0.00000     5.10275    -0.00000    -0.00000     6.56513"""
 
 import numpy
-T1 = numpy.loadtxt('T1')
+def load(filename):
+    return numpy.loadtxt(os.path.join(os.path.dirname(__file__), 'h2o', filename))
+T1 = load('T1')
+T2 = load('T2')
+T3 = load('T3')
+T4 = load('T4')
+S1 = load('S1')
+S1P = load('S1P')
+S2 = load('S2')
+S3 = load('S3')
+P1 = load('P1')
+P2 = load('P2')
