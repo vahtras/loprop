@@ -108,6 +108,188 @@ def output_beta(beta, dip=None, fmt="%12.6f"):
         betapar = 0.2*(betakk & dip)/dip.norm2()
         print("beta//dip  " + (fmt) % betapar)
 
+class LoPropTransformer(object):
+
+    def __init__(self, S, cpa, opa):
+        self.S = S
+        self.set_cpa(cpa)
+        self.set_opa(opa)
+        self._T = None
+
+    def set_cpa(self, cpa):
+        self.assert_pos_ints(cpa)
+        self.cpa = tuple(cpa)
+        self.noa = len(self.cpa)
+
+    def set_opa(self, opa):
+        for a in opa:
+            self.assert_nonneg_ints(a)
+        self.opa = tuple(tuple(o for o in a) for a in opa)
+
+    @staticmethod
+    def assert_pos_ints(arr):
+        for a in arr:
+            assert type(a) == int and a > 0
+
+    @staticmethod
+    def assert_nonneg_ints(arr):
+        for a in arr:
+            assert type(a) == int and a >= 0
+
+    @property
+    def T(self):
+        """
+        Generate loprop transformation matrix according to the
+        following steps 
+        Given atomic overlap matrix:
+        1. orthogonalize in each atomic block
+        2. a) Lowdin orthogonalize occupied subspace
+           b) Lowdin orthogonalize virtual subspace
+        3. project occupied out of virtual
+        4. Lowdin orthogonalize virtual
+        Input: overlap S (matrix)
+               contracted per atom (list)
+               occupied per atom (nested list)
+        Returns: transformation matrix T
+                 such that T+ST = 1 (unit) """
+
+        if self._T is not None: return self._T
+
+        noa = self.noa
+        cpa = self.cpa
+        opa = self.opa
+        nbf = sum(cpa)
+        S = self.S
+
+        T1 = self.gram_schmidt_atomic_blocks(S)
+        S1 = T1.T*S*T1
+       
+        P = self.permute_to_occupied_virtual()
+        S1P = P.T*S1*P
+
+        T2 = self.lowdin_occupied_virtual(S1P)
+        S2 = T2.T*S1P*T2
+
+       
+        T3 = self.project_occupied_from_virtual(S2)
+        S3 = T3.T*S2*T3
+
+        T4 = self.lowdin_virtual(S3)
+        S4 = T4.T*S3*T4
+       
+        #
+        # permute back to original basis
+        #
+        S4 = P*S4*P.T
+        #
+        # Return total transformation
+        #
+        T = T1*P*T2*T3*T4*P.T
+        #
+        # Test
+        #
+        self._T = T
+        return self._T
+
+    def gram_schmidt_atomic_blocks(self, S):
+        cpa = self.cpa
+        opa = self.opa
+    #
+    # 1. orthogonalize in each atomic block
+    #
+        nbf = sum(cpa)
+        #
+        # obtain atomic blocking
+        #
+        noa = len(cpa)
+        nocc = 0
+        for at in range(noa):
+            nocc += len(opa[at])
+        Satom = S.block(cpa, cpa)
+        Ubl = full.unit(nbf).subblocked((nbf,), cpa)
+        #
+        # Diagonalize atom-wise
+        #
+        T1 = blocked.BlockDiagonalMatrix(cpa, cpa)
+        for at in range(noa):
+            T1.subblock[at] = Ubl.subblock[0][at].GST(S)
+        T1 = T1.unblock()
+        return T1
+
+    def permute_to_occupied_virtual(self):
+        return self.P1()*self.P2()
+
+    def P1(self):
+        #
+        # within atom permute occupied first
+        #
+        P1 = subblocked.matrix(self.cpa, self.cpa)
+        for at in range(self.noa):
+            P1.subblock[at][at][:, :] = full.permute(self.opa[at], self.cpa[at])
+        P1 = P1.unblock()
+        return P1
+
+    def P2(self):
+        vpa = []
+        adim = []
+        for at in range(self.noa):
+            vpa.append(self.cpa[at]-len(self.opa[at]))
+            adim.append(len(self.opa[at]))
+            adim.append(vpa[at])
+        #
+        # dimensions for permuted basis
+        #
+        pdim = []
+        for at in range(self.noa):
+            pdim.append(len(self.opa[at]))
+        for at in range(self.noa):
+            pdim.append(vpa[at])
+       
+        P2 = subblocked.matrix(adim, pdim)
+        for i in range(0, len(adim), 2):
+            P2.subblock[i][i//2] = full.unit(adim[i])
+        for i in range(1, len(adim), 2):
+            P2.subblock[i][self.noa+(i-1)//2] = full.unit(adim[i])
+        P2 = P2.unblock()
+        return P2
+
+    def lowdin_occupied_virtual(self, S1P):
+        vpa = [c - len(o) for c, o in zip(self.cpa, self.opa)]
+        nocc = sum(len(occ) for occ in self.opa)
+        occdim = (nocc, sum(vpa))
+        S1Pbl = S1P.block(occdim, occdim)
+        T2bl = S1Pbl.invsqrt()
+        T2 = T2bl.unblock()
+        return T2
+
+    def project_occupied_from_virtual(self, S2):
+        #
+        # Project occupied out of virtual
+        #
+        vpa = [c - len(o) for c, o in zip(self.cpa, self.opa)]
+        nocc = sum(len(occ) for occ in self.opa)
+        occdim = (nocc, sum(vpa))
+        S2sb = S2.subblocked(occdim, occdim)
+        nbf = S2.shape[0]
+        T3sb = full.unit(nbf).subblocked(occdim, occdim)
+        T3sb.subblock[0][1] = -S2sb.subblock[0][1]
+        T3 = T3sb.unblock()
+        return T3
+
+    def lowdin_virtual(self, S3):
+        #
+        #
+        # 4. Lowdin orthogonalize virtual 
+        #
+        vpa = [c - len(o) for c, o in zip(self.cpa, self.opa)]
+        nocc = sum(len(occ) for occ in self.opa)
+        occdim = (nocc, sum(vpa))
+        T4b = blocked.unit(occdim)
+        S3b = S3.block(occdim, occdim)
+        T4b.subblock[1] = S3b.subblock[1].invsqrt()
+        T4 = T4b.unblock()
+        return T4
+
 class MolFrag:
     """An instance of the MolFrag class is created and populated with
     data from a Dalton runtime scratch directory"""
@@ -302,142 +484,11 @@ class MolFrag:
         Returns: transformation matrix T
                  such that T+ST = 1 (unit) """
 
-        if self._T is not None: return self._T
-
-        S = self.S()
-        nbf = S.shape[0]
-        noa = self.noa
-        cpa = self.cpa
-        opa = self.opa
-
-        T1 = self.gram_schmidt_atomic_blocks(S)
-        S1 = T1.T*S*T1
-       
-        P = self.permute_to_occupied_virtual()
-        S1P = P.T*S1*P
-
-        T2 = self.lowdin_occupied_virtual(S1P)
-        S2 = T2.T*S1P*T2
-
-       
-        T3 = self.project_occupied_from_virtual(S2)
-        S3 = T3.T*S2*T3
-
-        T4 = self.lowdin_virtual(S3)
-        S4 = T4.T*S3*T4
-       
-        #
-        # permute back to original basis
-        #
-        S4 = P*S4*P.T
-        #
-        # Return total transformation
-        #
-        T = T1*P*T2*T3*T4*P.T
-        #
-        # Test
-        #
-        self._T = T
+        if self._T is None: 
+            self._T = LoPropTransformer(self.S(), self.cpa, self.opa).T
         return self._T
 
-    def gram_schmidt_atomic_blocks(self, S):
-        cpa = self.cpa
-        opa = self.opa
-    #
-    # 1. orthogonalize in each atomic block
-    #
-        nbf = S.shape[0]
-        #
-        # obtain atomic blocking
-        #
-        noa = self.noa
-        nocc = 0
-        for at in range(noa):
-            nocc += len(opa[at])
-        Satom = S.block(cpa, cpa)
-        Ubl = full.unit(nbf).subblocked((nbf,), cpa)
-        #
-        # Diagonalize atom-wise
-        #
-        T1 = blocked.BlockDiagonalMatrix(cpa, cpa)
-        for at in range(noa):
-            T1.subblock[at] = Ubl.subblock[0][at].GST(S)
-        T1 = T1.unblock()
-        return T1
 
-    def permute_to_occupied_virtual(self):
-        return self.P1()*self.P2()
-
-    def P1(self):
-        #
-        # within atom permute occupied first
-        #
-        P1 = subblocked.matrix(self.cpa, self.cpa)
-        for at in range(self.noa):
-            P1.subblock[at][at][:, :] = full.permute(self.opa[at], self.cpa[at])
-        P1 = P1.unblock()
-        return P1
-
-    def P2(self):
-        vpa = []
-        adim = []
-        for at in range(self.noa):
-            vpa.append(self.cpa[at]-len(self.opa[at]))
-            adim.append(len(self.opa[at]))
-            adim.append(vpa[at])
-        #
-        # dimensions for permuted basis
-        #
-        pdim = []
-        for at in range(self.noa):
-            pdim.append(len(self.opa[at]))
-        for at in range(self.noa):
-            pdim.append(vpa[at])
-       
-        P2 = subblocked.matrix(adim, pdim)
-        for i in range(0, len(adim), 2):
-            P2.subblock[i][i//2] = full.unit(adim[i])
-        for i in range(1, len(adim), 2):
-            P2.subblock[i][self.noa+(i-1)//2] = full.unit(adim[i])
-        P2 = P2.unblock()
-        return P2
-
-    def lowdin_occupied_virtual(self, S1P):
-        vpa = [c - len(o) for c, o in zip(self.cpa, self.opa)]
-        nocc = sum(len(occ) for occ in self.opa)
-        occdim = (nocc, sum(vpa))
-        S1Pbl = S1P.block(occdim, occdim)
-        T2bl = S1Pbl.invsqrt()
-        T2 = T2bl.unblock()
-        return T2
-
-    def project_occupied_from_virtual(self, S2):
-        #
-        # Project occupied out of virtual
-        #
-        vpa = [c - len(o) for c, o in zip(self.cpa, self.opa)]
-        nocc = sum(len(occ) for occ in self.opa)
-        occdim = (nocc, sum(vpa))
-        S2sb = S2.subblocked(occdim, occdim)
-        nbf = S2.shape[0]
-        T3sb = full.unit(nbf).subblocked(occdim, occdim)
-        T3sb.subblock[0][1] = -S2sb.subblock[0][1]
-        T3 = T3sb.unblock()
-        return T3
-
-    def lowdin_virtual(self, S3):
-        #
-        #
-        # 4. Lowdin orthogonalize virtual 
-        #
-        vpa = [c - len(o) for c, o in zip(self.cpa, self.opa)]
-        nocc = sum(len(occ) for occ in self.opa)
-        occdim = (nocc, sum(vpa))
-        T4b = blocked.unit(occdim)
-        S3b = S3.block(occdim, occdim)
-        T4b.subblock[1] = S3b.subblock[1].invsqrt()
-        T4 = T4b.unblock()
-        return T4
 
     @property
     def Qab(self):

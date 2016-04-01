@@ -3,7 +3,7 @@ import unittest
 import os 
 import sys
 import numpy as np
-from ..core import MolFrag
+from ..core import MolFrag, LoPropTransformer
 from ..daltools.util import full
 
 import re
@@ -15,7 +15,88 @@ exec('from . import %s_data as ref'%case)
 from ..core import penalty_function, AU2ANG, pairs
 
 
-class NewTest(LoPropTestCase):
+class TransformTest(LoPropTestCase):
+
+    def setUp(self):
+        self.maxDiff = None
+        self.S = MolFrag(tmpdir).S()
+        self.cpa = (30, 14, 14)
+        self.opa = ((0, 1, 4, 5, 6), (0,), (0,))
+        self.T = LoPropTransformer(self.S, self.cpa, self.opa)
+
+    def tearDown(self):
+        pass
+
+    def test_created(self):
+        self.assertIsInstance(self.T, LoPropTransformer)
+
+    def test_cpa(self):
+        self.T.set_cpa(self.cpa)
+        self.assertTupleEqual(self.T.cpa, self.cpa)
+
+    def test_cpa_non_iterable(self):
+        with self.assertRaises(TypeError):
+            self.T.set_cpa(None)
+
+    def test_cpa_non_ints(self):
+        with self.assertRaises(AssertionError):
+            self.T.set_cpa((1.0,))
+
+    def test_cpa_non_positive_ints(self):
+        with self.assertRaises(AssertionError):
+            self.T.set_cpa((0,))
+
+    def test_opa(self):
+        self.T.set_opa(self.opa)
+        for this, ref in zip(self.T.opa, self.opa):
+            self.assertTupleEqual(this, ref)
+
+    def test_opa_non_iterable(self):
+        with self.assertRaises(TypeError):
+            self.T.set_cpa(None)
+
+    def test_opa_non_iterable_iterable(self):
+        with self.assertRaises(TypeError):
+            self.T.set_opa((None,))
+
+    def test_opa_non_ints(self):
+        with self.assertRaises(AssertionError):
+            self.T.set_opa(((1.0,),))
+
+    def test_opa_non_positive_ints(self):
+        with self.assertRaises(AssertionError):
+            self.T.set_cpa(((0,),))
+
+    def test_T1(self):
+        T1 = self.T.gram_schmidt_atomic_blocks(self.S)
+        self.assert_allclose(T1, ref.T1)
+
+    def test_P1(self):
+        P1 = self.T.P1()
+        self.assert_allclose(P1, ref.P1)
+
+    def test_P2(self):
+        P2 = self.T.P2()
+        self.assert_allclose(P2, ref.P2)
+
+    def test_T2(self):
+        T2 = self.T.lowdin_occupied_virtual(ref.S1P.view(full.matrix))
+        self.assert_allclose(T2, ref.T2)
+
+    def test_T3(self):
+        T3 = self.T.project_occupied_from_virtual(ref.S2.view(full.matrix))
+        self.assert_allclose(T3, ref.T3)
+
+    def test_T4(self):
+        T4 = self.T.lowdin_virtual(ref.S3.view(full.matrix))
+        self.assert_allclose(T4, ref.T4)
+
+    def test_S4(self):
+        T = self.T.T
+        S4 = T.T*self.S*T
+        self.assert_allclose(S4, full.unit(58))
+
+class H2OTest(LoPropTestCase):
 
     def setUp(self):
         self.m = MolFrag(tmpdir, freqs=(0, ), pf=penalty_function(2.0/AU2ANG**2))
@@ -23,39 +104,6 @@ class NewTest(LoPropTestCase):
 
     def tearDown(self):
         pass
-
-    def test_T1(self):
-        S = self.m.S()
-        T1 = self.m.gram_schmidt_atomic_blocks(S)
-        self.assert_allclose(T1, ref.T1)
-
-
-    def test_P1(self):
-        P1 = self.m.P1()
-        self.assert_allclose(P1, ref.P1)
-
-    def test_P2(self):
-        P2 = self.m.P2()
-        self.assert_allclose(P2, ref.P2)
-
-
-    def test_T2(self):
-        T2 = self.m.lowdin_occupied_virtual(ref.S1P.view(full.matrix))
-        self.assert_allclose(T2, ref.T2)
-
-    def test_T3(self):
-        T3 = self.m.project_occupied_from_virtual(ref.S2.view(full.matrix))
-        self.assert_allclose(T3, ref.T3)
-
-    def test_T4(self):
-        T4 = self.m.lowdin_virtual(ref.S3.view(full.matrix))
-        self.assert_allclose(T4, ref.T4)
-
-    def test_S4(self):
-        T = self.m.T
-        S = self.m.S()
-        S4 = T.T*S*T
-        self.assert_allclose(S4, full.unit(58))
 
     def test_nuclear_charge(self):
         Z = self.m.Z
