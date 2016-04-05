@@ -21,6 +21,7 @@ before_install:
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy scipy nose mock
   - pip install pep8 python-coveralls
+  - pip install -r requirements.txt
 script:
   - nosetests --with-coverage --cover-package loprop
 after_success:
