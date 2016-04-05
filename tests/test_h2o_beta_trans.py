@@ -1,21 +1,21 @@
-from .common import LoPropTestCase
+import unittest
+from .common import loprop, LoPropTestCase
 import os 
-import sys
 import numpy as np
-from ..daltools.util import full
+from util import full
 
 import re
 thisdir  = os.path.dirname(__file__)
-case = "h2o_beta"
+case = "h2o_beta_trans"
 tmpdir=os.path.join(thisdir, case, 'tmp')
 exec('from . import %s_data as ref'%case)
 
-from ..core import penalty_function, AU2ANG, pairs, MolFrag
+from loprop.core import penalty_function, AU2ANG, pairs, MolFrag
 
-class H2OBetaTest(LoPropTestCase):
+class NewTest(LoPropTestCase):
 
     def setUp(self):
-        self.m = MolFrag(tmpdir, freqs=(0.0,), pf=penalty_function(2.0/AU2ANG**2))
+        self.m = MolFrag(tmpdir, freqs=(0.0, ), pf=penalty_function(2.0/AU2ANG**2))
         self.maxDiff = None
 
     def tearDown(self):
@@ -67,7 +67,7 @@ class H2OBetaTest(LoPropTestCase):
     def test_quadrupole_total(self):
         QUc = self.m.QUc
         self.assert_allclose(QUc, ref.QUc)
-    
+        
     def test_nuclear_quadrupole(self):
         QUN = self.m.QUN
         self.assert_allclose(QUN, ref.QUN)
@@ -85,15 +85,20 @@ class H2OBetaTest(LoPropTestCase):
         self.assert_allclose(QUsym, ref.QU)
 
     def test_quadrupole_nobonds(self):
-        self.assert_allclose(self.m.QUa, ref.QUaa)
+
+        QUaa = (self.m.QUab + self.m.dQUab).sum(axis=2).view(full.matrix)
+        self.assert_allclose(QUaa, ref.QUaa)
+
 
     def test_Fab(self):
+
         Fab = self.m.Fab
         self.assert_allclose(Fab, ref.Fab)
 
     def test_molcas_shift(self):
         Fab = self.m.Fab
         Lab = Fab + self.m.sf(Fab)
+
         self.assert_allclose(Lab, ref.Lab)
 
     def test_total_charge_shift(self):
@@ -122,6 +127,7 @@ class H2OBetaTest(LoPropTestCase):
         dQab = self.m.dQab[0]
         noa = self.m.noa
 
+
         dQabref = (ref.dQab[:, 1:7:2] - ref.dQab[:, 2:7:2])/(2*ref.ff)
         dQabcmp = full.matrix((3, 3))
         ab = 0
@@ -144,8 +150,10 @@ class H2OBetaTest(LoPropTestCase):
 
 
     def test_polarizability_total(self):
+
         Am = self.m.Am[0]
-        self.assert_allclose(Am, ref.Am, atol=0.015)
+
+        self.assert_allclose(Am, ref.Am, 0.015)
 
     def test_beta_zxx(self):
         r = self.m.x
@@ -153,7 +161,7 @@ class H2OBetaTest(LoPropTestCase):
         z = r[2].unblock()
         xx = D2k[('XDIPLEN XDIPLEN ', 0.0, 0.0)].unblock()
         bzxx = - z&xx
-        self.assert_allclose(bzxx, ref.Bm[2, 0], atol=.005)
+        self.assert_allclose(bzxx, ref.Bm[2, 0], .005)
 
     def test_beta_xzx(self):
         r = self.m.x
@@ -161,7 +169,7 @@ class H2OBetaTest(LoPropTestCase):
         x = r[0].unblock()
         zx = D2k[('ZDIPLEN XDIPLEN ', 0.0, 0.0)].unblock()
         bxzx = - x&zx
-        self.assert_allclose(bxzx, ref.Bm[0, 2], atol=.005)
+        self.assert_allclose(bxzx, ref.Bm[0, 2], .005)
 
     def test_beta_xxz(self):
         r = self.m.x
@@ -169,7 +177,7 @@ class H2OBetaTest(LoPropTestCase):
         x = r[0].unblock()
         xz = D2k[('XDIPLEN ZDIPLEN ', 0.0, 0.0)].unblock()
         bxxz = - x&xz
-        self.assert_allclose(bxxz, ref.Bm[0, 2], atol=.005)
+        self.assert_allclose(bxxz, ref.Bm[0, 2], .005)
 
     def test_beta_yyz(self):
         r = self.m.x
@@ -177,7 +185,7 @@ class H2OBetaTest(LoPropTestCase):
         y = r[1].unblock()
         yz = D2k[('YDIPLEN ZDIPLEN ', 0.0, 0.0)].unblock()
         byyz = - y&yz
-        self.assert_allclose(byyz, ref.Bm[1, 4], atol=.005)
+        self.assert_allclose(byyz, ref.Bm[1, 4], .005)
 
     def test_beta_zyy(self):
         r = self.m.x
@@ -185,7 +193,7 @@ class H2OBetaTest(LoPropTestCase):
         z = r[2].unblock()
         yy = D2k[('YDIPLEN YDIPLEN ', 0.0, 0.0)].unblock()
         bzyy = - z&yy
-        self.assert_allclose(bzyy, ref.Bm[2, 3], atol=.005)
+        self.assert_allclose(bzyy, ref.Bm[2, 3], .005)
 
     def test_beta_zzz(self):
         r = self.m.x
@@ -193,13 +201,13 @@ class H2OBetaTest(LoPropTestCase):
         z = r[2].unblock()
         zz = D2k[('ZDIPLEN ZDIPLEN ', 0.0, 0.0)].unblock()
         bzzz = - z&zz
-        self.assert_allclose(bzzz, ref.Bm[2, 5], atol=.005)
+        self.assert_allclose(bzzz, ref.Bm[2, 5], .005)
 
     def test_hyperpolarizability_total(self):
         Bm = self.m.Bm[0]
         Bab = self.m.Bab.sum(axis=4).sum(axis=3)
         ref.Bm
-        self.assert_allclose(Bm, ref.Bm, atol=.005)
+        self.assert_allclose(Bm, ref.Bm, .005)
 
     def test_polarizability_allbonds_molcas_internal(self):
         O = ref.O
@@ -377,7 +385,7 @@ class H2OBetaTest(LoPropTestCase):
 
     def test_polarizability_allbonds_atoms(self):
 
-        Aab = self.m.Aab[0] #+ m.dAab
+        Aab = self.m.Aab[0] #+ self.m.dAab
         noa = self.m.noa
 
         Acmp=full.matrix(ref.Aab.shape)
@@ -412,7 +420,7 @@ class H2OBetaTest(LoPropTestCase):
         self.assert_allclose(ref.Aab[:, 1], Acmp[:, 1], atol=.150, err_msg='H1O')
         self.assert_allclose(ref.Aab[:, 3], Acmp[:, 3], atol=.150, err_msg='H2O')
         self.assert_allclose(ref.Aab[:, 4], Acmp[:, 4], atol=.005, err_msg='H2H1')
-    
+        
 
     def test_polarizability_nobonds(self):
 
@@ -437,18 +445,6 @@ class H2OBetaTest(LoPropTestCase):
         PA00 = self.m.output_potential_file(maxl=0, pol=0, hyper=0)
         self.assert_str(PA00, ref.PA00)
 
-    def test_potfile_P0A0B1(self):
-        this = self.m.output_potential_file(maxl=0, pol=0, hyper=1)
-        self.assert_str(this, ref.P0A0B1)
-
-    def test_potfile_P0A0B2(self):
-        this = self.m.output_potential_file(maxl=0, pol=0, hyper=2)
-        self.assert_str(this, ref.P0A0B2)
-
-    def test_potfile_P0A0B1b(self):
-        this = self.m.output_potential_file(maxl=0, pol=0, hyper=1, bond_centers=True)
-        self.assert_str(this, ref.P0A0B1b)
-
     def test_potfile_PA10(self):
         PA10 = self.m.output_potential_file(maxl=1, pol=0, hyper=0)
         self.assert_str(PA10, ref.PA10)
@@ -465,16 +461,3 @@ class H2OBetaTest(LoPropTestCase):
         PA22 = self.m.output_potential_file(maxl=2, pol=2, hyper=0)
         self.assert_str(PA22, ref.PA22)
 
-    def test_outfile_PAn0_by_atom(self):
-        self.m.max_l = -1
-        Da = self.m.Da #use for beta internally and will be set in output
-        self.m.output_by_atom(fmt="%12.5f", hyperpol=1)
-        print_output = sys.stdout.getvalue().strip()
-        self.assert_str(print_output, ref.OUTPUT_BY_ATOM_n0)
-
-    def test_outfile_PAn0_by_bond(self):
-        self.m.max_l = 1
-        Da = self.m.Da #use for beta internally and will be set in output
-        self.m.output_by_atom(fmt="%12.5f", max_l=1, hyperpol=1, bond_centers=True)
-        print_output = sys.stdout.getvalue().strip()
-        self.assert_str(print_output, ref.OUTPUT_BY_BOND_11)

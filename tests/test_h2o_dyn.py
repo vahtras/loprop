@@ -1,10 +1,10 @@
 import unittest
-from .common import LoPropTestCase
+from .common import loprop, LoPropTestCase
 import os 
 import sys
 import numpy as np
-from ..core import MolFrag
-from ..daltools.util import full
+from loprop.core import MolFrag
+from util import full
 
 import re
 thisdir  = os.path.dirname(__file__)
@@ -13,7 +13,7 @@ tmpdir=os.path.join(thisdir, case, 'tmp')
 exec('from . import %s_data as ref'%case)
 from . import h2o_data
 
-from ..core import penalty_function, AU2ANG, pairs
+from loprop.core import penalty_function, AU2ANG, pairs
 
 
 class NewTest(LoPropTestCase):

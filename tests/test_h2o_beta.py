@@ -1,29 +1,25 @@
-import unittest
-from .common import LoPropTestCase
+from .common import loprop, LoPropTestCase
 import os 
 import sys
 import numpy as np
-from ..core import MolFrag, penalty_function, AU2ANG, pairs
-from ..daltools.util import full
+from util import full
 
 import re
 thisdir  = os.path.dirname(__file__)
-case = "h2o_rot"
+case = "h2o_beta"
 tmpdir=os.path.join(thisdir, case, 'tmp')
 exec('from . import %s_data as ref'%case)
 
-from ..core import penalty_function, AU2ANG, pairs
+from loprop.core import penalty_function, AU2ANG, pairs, MolFrag
 
-
-class NewTest(LoPropTestCase):
+class H2OBetaTest(LoPropTestCase):
 
     def setUp(self):
-        self.m = MolFrag(tmpdir, freqs=(0, ), pf=penalty_function(2.0/AU2ANG**2))
+        self.m = MolFrag(tmpdir, freqs=(0.0,), pf=penalty_function(2.0/AU2ANG**2))
         self.maxDiff = None
 
     def tearDown(self):
         pass
-
 
     def test_nuclear_charge(self):
         Z = self.m.Z
@@ -34,18 +30,23 @@ class NewTest(LoPropTestCase):
         self.assert_allclose(R, ref.R)
 
     def test_default_gauge(self):
-        self.assert_allclose(self.m.Rc, ref.Rc)
+        self.assert_allclose(ref.Rc, self.m.Rc)
 
     def test_total_charge(self):
         Qtot = self.m.Qab.sum()
         self.assert_allclose(Qtot, ref.Qtot)
 
     def test_charge(self):
-        Qaa = self.m.Qa
+        Qaa = self.m.Qab.diagonal()
         self.assert_allclose(ref.Q, Qaa)
 
     def test_total_dipole(self):
-        self.assert_allclose(self.m.Dtot, ref.Dtot)
+        # molecular dipole moment wrt gauge center gc
+        Dtot = self.m.Dab.sum(axis=2).sum(axis=1).view(full.matrix)
+        Qa = self.m.Qab.diagonal()
+        Q = Qa.sum()
+        Dtot += Qa*self.m.R - Q*self.m.Rc
+        self.assert_allclose(Dtot, ref.Dtot)
 
     def test_dipole_allbonds(self):
         D = full.matrix(ref.D.shape)
@@ -64,26 +65,9 @@ class NewTest(LoPropTestCase):
         self.assert_allclose(Daa, ref.Daa)
 
     def test_quadrupole_total(self):
-        rrab=full.matrix((6, self.m.noa, self.m.noa))
-        rRab=full.matrix((6, self.m.noa, self.m.noa))
-        RRab=full.matrix((6, self.m.noa, self.m.noa))
-        Rabc = 1.0*self.m.Rab
-        for a in range(self.m.noa):
-            for b in range(self.m.noa):
-                Rabc[a,b,:] -= self.m.Rc
-        for a in range(self.m.noa):
-            for b in range(self.m.noa):
-                ij = 0
-                for i in range(3):
-                    for j in range(i,3):
-                        rRab[ij, a, b] = self.m.Dab[i, a, b]*Rabc[a, b, j]\
-                                       + self.m.Dab[j, a, b]*Rabc[a, b, i]
-                        RRab[ij, a, b] = self.m.Qab[a, b]*(self.m.R[a, i] - self.m.Rc[i])*(self.m.R[b, j] - self.m.Rc[j])
-                        ij += 1
-        QUcab = self.m.QUab + rRab + RRab
-        QUc = QUcab.sum(axis=2).sum(axis=1).view(full.matrix)
+        QUc = self.m.QUc
         self.assert_allclose(QUc, ref.QUc)
-
+    
     def test_nuclear_quadrupole(self):
         QUN = self.m.QUN
         self.assert_allclose(QUN, ref.QUN)
@@ -101,8 +85,7 @@ class NewTest(LoPropTestCase):
         self.assert_allclose(QUsym, ref.QU)
 
     def test_quadrupole_nobonds(self):
-        QUaa = (self.m.QUab + self.m.dQUab).sum(axis=2).view(full.matrix)
-        self.assert_allclose(QUaa, ref.QUaa)
+        self.assert_allclose(self.m.QUa, ref.QUaa)
 
     def test_Fab(self):
         Fab = self.m.Fab
@@ -118,10 +101,14 @@ class NewTest(LoPropTestCase):
         dQref = [0., 0., 0.]
         self.assert_allclose(dQref, dQ)
 
+    def test_total_charge_shift2(self):
+        d2Q = self.m.d2Qa[0].sum(axis=0).view(full.matrix)
+        d2Qref = [0., 0., 0., 0., 0., 0.]
+        self.assert_allclose(d2Qref, d2Q)
+
     def test_atomic_charge_shift(self):
         dQa = self.m.dQa[0]
         dQaref = (ref.dQa[:, 1::2] - ref.dQa[:, 2::2])/(2*ref.ff)
-
         self.assert_allclose(dQa, dQaref, atol=.006)
 
     def test_lagrangian(self):
@@ -134,7 +121,6 @@ class NewTest(LoPropTestCase):
     def test_bond_charge_shift(self):
         dQab = self.m.dQab[0]
         noa = self.m.noa
-
 
         dQabref = (ref.dQab[:, 1:7:2] - ref.dQab[:, 2:7:2])/(2*ref.ff)
         dQabcmp = full.matrix((3, 3))
@@ -151,14 +137,71 @@ class NewTest(LoPropTestCase):
         dQaref = self.m.dQa[0]
         self.assert_allclose(dQa, dQaref)
 
+    def test_bond_charge_shift_sum2(self):
+        d2Qa  = self.m.d2Qab[0].sum(axis=1).view(full.matrix)
+        d2Qaref = self.m.d2Qa[0]
+        self.assert_allclose(d2Qa, d2Qaref)
+
 
     def test_polarizability_total(self):
-
         Am = self.m.Am[0]
-        self.assert_allclose(Am, ref.Am, 0.015)
-            
-    def test_polarizability_allbonds_molcas_internal(self):
+        self.assert_allclose(Am, ref.Am, atol=0.015)
 
+    def test_beta_zxx(self):
+        r = self.m.x
+        D2k = self.m.D2k
+        z = r[2].unblock()
+        xx = D2k[('XDIPLEN XDIPLEN ', 0.0, 0.0)].unblock()
+        bzxx = - z&xx
+        self.assert_allclose(bzxx, ref.Bm[2, 0], atol=.005)
+
+    def test_beta_xzx(self):
+        r = self.m.x
+        D2k = self.m.D2k
+        x = r[0].unblock()
+        zx = D2k[('ZDIPLEN XDIPLEN ', 0.0, 0.0)].unblock()
+        bxzx = - x&zx
+        self.assert_allclose(bxzx, ref.Bm[0, 2], atol=.005)
+
+    def test_beta_xxz(self):
+        r = self.m.x
+        D2k = self.m.D2k
+        x = r[0].unblock()
+        xz = D2k[('XDIPLEN ZDIPLEN ', 0.0, 0.0)].unblock()
+        bxxz = - x&xz
+        self.assert_allclose(bxxz, ref.Bm[0, 2], atol=.005)
+
+    def test_beta_yyz(self):
+        r = self.m.x
+        D2k = self.m.D2k
+        y = r[1].unblock()
+        yz = D2k[('YDIPLEN ZDIPLEN ', 0.0, 0.0)].unblock()
+        byyz = - y&yz
+        self.assert_allclose(byyz, ref.Bm[1, 4], atol=.005)
+
+    def test_beta_zyy(self):
+        r = self.m.x
+        D2k = self.m.D2k
+        z = r[2].unblock()
+        yy = D2k[('YDIPLEN YDIPLEN ', 0.0, 0.0)].unblock()
+        bzyy = - z&yy
+        self.assert_allclose(bzyy, ref.Bm[2, 3], atol=.005)
+
+    def test_beta_zzz(self):
+        r = self.m.x
+        D2k = self.m.D2k
+        z = r[2].unblock()
+        zz = D2k[('ZDIPLEN ZDIPLEN ', 0.0, 0.0)].unblock()
+        bzzz = - z&zz
+        self.assert_allclose(bzzz, ref.Bm[2, 5], atol=.005)
+
+    def test_hyperpolarizability_total(self):
+        Bm = self.m.Bm[0]
+        Bab = self.m.Bab.sum(axis=4).sum(axis=3)
+        ref.Bm
+        self.assert_allclose(Bm, ref.Bm, atol=.005)
+
+    def test_polarizability_allbonds_molcas_internal(self):
         O = ref.O
         H1O = ref.H1O
         H1 = ref.H1
@@ -323,7 +366,7 @@ class NewTest(LoPropTestCase):
         pol = np.zeros((6, self.m.noa*(self.m.noa+1)//2))
         for ab, a, b in pairs(self.m.noa):
             for ij, i, j in pairs(3):
-                #from pdb import set_trace; set_trace(self)
+                #from pdb import set_trace; set_trace()
                 i1, i2 = diff[i]
                 j1, j2 = diff[j]
                 pol[ij, ab] += (rMP[i+1, j1, ab] - rMP[i+1, j2, ab]
@@ -334,7 +377,7 @@ class NewTest(LoPropTestCase):
 
     def test_polarizability_allbonds_atoms(self):
 
-        Aab = self.m.Aab[0] #+ self.m.dAab[0]
+        Aab = self.m.Aab[0] #+ m.dAab
         noa = self.m.noa
 
         Acmp=full.matrix(ref.Aab.shape)
@@ -369,7 +412,7 @@ class NewTest(LoPropTestCase):
         self.assert_allclose(ref.Aab[:, 1], Acmp[:, 1], atol=.150, err_msg='H1O')
         self.assert_allclose(ref.Aab[:, 3], Acmp[:, 3], atol=.150, err_msg='H2O')
         self.assert_allclose(ref.Aab[:, 4], Acmp[:, 4], atol=.005, err_msg='H2H1')
-        
+    
 
     def test_polarizability_nobonds(self):
 
@@ -388,25 +431,50 @@ class NewTest(LoPropTestCase):
 
     def test_potfile_PAn0(self):
         PAn0 = self.m.output_potential_file(maxl=-1, pol=0, hyper=0)
-        self.assertEqual(PAn0, ref.PAn0)
+        self.assert_str(PAn0, ref.PAn0)
 
     def test_potfile_PA00(self):
         PA00 = self.m.output_potential_file(maxl=0, pol=0, hyper=0)
-        self.assertEqual(PA00, ref.PA00)
+        self.assert_str(PA00, ref.PA00)
+
+    def test_potfile_P0A0B1(self):
+        this = self.m.output_potential_file(maxl=0, pol=0, hyper=1)
+        self.assert_str(this, ref.P0A0B1)
+
+    def test_potfile_P0A0B2(self):
+        this = self.m.output_potential_file(maxl=0, pol=0, hyper=2)
+        self.assert_str(this, ref.P0A0B2)
+
+    def test_potfile_P0A0B1b(self):
+        this = self.m.output_potential_file(maxl=0, pol=0, hyper=1, bond_centers=True)
+        self.assert_str(this, ref.P0A0B1b)
 
     def test_potfile_PA10(self):
         PA10 = self.m.output_potential_file(maxl=1, pol=0, hyper=0)
-        self.assertEqual(PA10, ref.PA10)
+        self.assert_str(PA10, ref.PA10)
 
     def test_potfile_PA20(self):
         PA20 = self.m.output_potential_file(maxl=2, pol=0, hyper=0)
-        self.assertEqual(PA20, ref.PA20)
+        self.assert_str(PA20, ref.PA20)
 
     def test_potfile_PA21(self):
         PA21 = self.m.output_potential_file(maxl=2, pol=1, hyper=0)
-        self.assertEqual(PA21, ref.PA21)
+        self.assert_str(PA21, ref.PA21)
 
     def test_potfile_PA22(self):
         PA22 = self.m.output_potential_file(maxl=2, pol=2, hyper=0)
-        self.assertEqual(PA22, ref.PA22)
+        self.assert_str(PA22, ref.PA22)
 
+    def test_outfile_PAn0_by_atom(self):
+        self.m.max_l = -1
+        Da = self.m.Da #use for beta internally and will be set in output
+        self.m.output_by_atom(fmt="%12.5f", hyperpol=1)
+        print_output = sys.stdout.getvalue().strip()
+        self.assert_str(print_output, ref.OUTPUT_BY_ATOM_n0)
+
+    def test_outfile_PAn0_by_bond(self):
+        self.m.max_l = 1
+        Da = self.m.Da #use for beta internally and will be set in output
+        self.m.output_by_atom(fmt="%12.5f", max_l=1, hyperpol=1, bond_centers=True)
+        print_output = sys.stdout.getvalue().strip()
+        self.assert_str(print_output, ref.OUTPUT_BY_BOND_11)

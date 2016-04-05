@@ -1,8 +1,8 @@
 import unittest
 import sys
 import numpy
-from ..core import output_beta, header
-from ..daltools.util import full
+from loprop.core import output_beta, header
+from util import full
 
 
 class NewTest(unittest.TestCase):

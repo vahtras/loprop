@@ -1,21 +1,103 @@
+from .common import loprop, LoPropTestCase
 import unittest
-from .common import LoPropTestCase
 import os 
+import sys
 import numpy as np
-from ..daltools.util import full
+from loprop.core import MolFrag, LoPropTransformer, penalty_function, AU2ANG, pairs
+from util import full
 
 import re
 thisdir  = os.path.dirname(__file__)
-case = "h2o_beta_trans"
+case = "h2o"
 tmpdir=os.path.join(thisdir, case, 'tmp')
 exec('from . import %s_data as ref'%case)
 
-from ..core import penalty_function, AU2ANG, pairs, MolFrag
 
-class NewTest(LoPropTestCase):
+class TransformTest(LoPropTestCase):
 
     def setUp(self):
-        self.m = MolFrag(tmpdir, freqs=(0.0, ), pf=penalty_function(2.0/AU2ANG**2))
+        self.maxDiff = None
+        self.S = MolFrag(tmpdir).S()
+        self.cpa = (30, 14, 14)
+        self.opa = ((0, 1, 4, 5, 6), (0,), (0,))
+        self.T = LoPropTransformer(self.S, self.cpa, self.opa)
+
+    def tearDown(self):
+        pass
+
+    def test_created(self):
+        self.assertIsInstance(self.T, LoPropTransformer)
+
+    def test_cpa(self):
+        self.T.set_cpa(self.cpa)
+        self.assertTupleEqual(self.T.cpa, self.cpa)
+
+    def test_cpa_non_iterable(self):
+        with self.assertRaises(TypeError):
+            self.T.set_cpa(None)
+
+    def test_cpa_non_ints(self):
+        with self.assertRaises(AssertionError):
+            self.T.set_cpa((1.0,))
+
+    def test_cpa_non_positive_ints(self):
+        with self.assertRaises(AssertionError):
+            self.T.set_cpa((0,))
+
+    def test_opa(self):
+        self.T.set_opa(self.opa)
+        for this, ref in zip(self.T.opa, self.opa):
+            self.assertTupleEqual(this, ref)
+
+    def test_opa_non_iterable(self):
+        with self.assertRaises(TypeError):
+            self.T.set_cpa(None)
+
+    def test_opa_non_iterable_iterable(self):
+        with self.assertRaises(TypeError):
+            self.T.set_opa((None,))
+
+    def test_opa_non_ints(self):
+        with self.assertRaises(AssertionError):
+            self.T.set_opa(((1.0,),))
+
+    def test_opa_non_positive_ints(self):
+        with self.assertRaises(AssertionError):
+            self.T.set_cpa(((0,),))
+
+    def test_T1(self):
+        T1 = self.T.gram_schmidt_atomic_blocks(self.S)
+        self.assert_allclose(T1, ref.T1)
+
+    def test_P1(self):
+        P1 = self.T.P1()
+        self.assert_allclose(P1, ref.P1)
+
+    def test_P2(self):
+        P2 = self.T.P2()
+        self.assert_allclose(P2, ref.P2)
+
+    def test_T2(self):
+        T2 = self.T.lowdin_occupied_virtual(ref.S1P.view(full.matrix))
+        self.assert_allclose(T2, ref.T2)
+
+    def test_T3(self):
+        T3 = self.T.project_occupied_from_virtual(ref.S2.view(full.matrix))
+        self.assert_allclose(T3, ref.T3)
+
+    def test_T4(self):
+        T4 = self.T.lowdin_virtual(ref.S3.view(full.matrix))
+        self.assert_allclose(T4, ref.T4)
+
+    def test_S4(self):
+        T = self.T.T
+        S4 = T.T*self.S*T
+        self.assert_allclose(S4, full.unit(58))
+
+class H2OTest(LoPropTestCase):
+
+    def setUp(self):
+        self.m = MolFrag(tmpdir, freqs=(0, ), pf=penalty_function(2.0/AU2ANG**2))
         self.maxDiff = None
 
     def tearDown(self):
@@ -30,23 +112,22 @@ class NewTest(LoPropTestCase):
         self.assert_allclose(R, ref.R)
 
     def test_default_gauge(self):
-        self.assert_allclose(ref.Rc, self.m.Rc)
+        self.assert_allclose(self.m.Rc, ref.Rc)
+
+    def test_defined_gauge(self):
+        m = MolFrag(tmpdir, gc=[1,2,3])
+        self.assert_allclose(m.Rc, [1,2,3])
 
     def test_total_charge(self):
         Qtot = self.m.Qab.sum()
-        self.assert_allclose(Qtot, ref.Qtot)
+        self.assertAlmostEqual(Qtot, ref.Qtot)
 
     def test_charge(self):
-        Qaa = self.m.Qab.diagonal()
+        Qaa = self.m.Qa
         self.assert_allclose(ref.Q, Qaa)
 
     def test_total_dipole(self):
-        # molecular dipole moment wrt gauge center gc
-        Dtot = self.m.Dab.sum(axis=2).sum(axis=1).view(full.matrix)
-        Qa = self.m.Qab.diagonal()
-        Q = Qa.sum()
-        Dtot += Qa*self.m.R - Q*self.m.Rc
-        self.assert_allclose(Dtot, ref.Dtot)
+        self.assert_allclose(self.m.Dtot, ref.Dtot)
 
     def test_dipole_allbonds(self):
         D = full.matrix(ref.D.shape)
@@ -67,7 +148,7 @@ class NewTest(LoPropTestCase):
     def test_quadrupole_total(self):
         QUc = self.m.QUc
         self.assert_allclose(QUc, ref.QUc)
-        
+    
     def test_nuclear_quadrupole(self):
         QUN = self.m.QUN
         self.assert_allclose(QUN, ref.QUN)
@@ -85,20 +166,15 @@ class NewTest(LoPropTestCase):
         self.assert_allclose(QUsym, ref.QU)
 
     def test_quadrupole_nobonds(self):
-
-        QUaa = (self.m.QUab + self.m.dQUab).sum(axis=2).view(full.matrix)
-        self.assert_allclose(QUaa, ref.QUaa)
-
+        self.assert_allclose(self.m.QUa, ref.QUaa)
 
     def test_Fab(self):
-
         Fab = self.m.Fab
         self.assert_allclose(Fab, ref.Fab)
 
     def test_molcas_shift(self):
         Fab = self.m.Fab
         Lab = Fab + self.m.sf(Fab)
-
         self.assert_allclose(Lab, ref.Lab)
 
     def test_total_charge_shift(self):
@@ -106,14 +182,10 @@ class NewTest(LoPropTestCase):
         dQref = [0., 0., 0.]
         self.assert_allclose(dQref, dQ)
 
-    def test_total_charge_shift2(self):
-        d2Q = self.m.d2Qa[0].sum(axis=0).view(full.matrix)
-        d2Qref = [0., 0., 0., 0., 0., 0.]
-        self.assert_allclose(d2Qref, d2Q)
-
     def test_atomic_charge_shift(self):
         dQa = self.m.dQa[0]
         dQaref = (ref.dQa[:, 1::2] - ref.dQa[:, 2::2])/(2*ref.ff)
+
         self.assert_allclose(dQa, dQaref, atol=.006)
 
     def test_lagrangian(self):
@@ -143,73 +215,15 @@ class NewTest(LoPropTestCase):
         dQaref = self.m.dQa[0]
         self.assert_allclose(dQa, dQaref)
 
-    def test_bond_charge_shift_sum2(self):
-        d2Qa  = self.m.d2Qab[0].sum(axis=1).view(full.matrix)
-        d2Qaref = self.m.d2Qa[0]
-        self.assert_allclose(d2Qa, d2Qaref)
-
 
     def test_polarizability_total(self):
 
         Am = self.m.Am[0]
-
         self.assert_allclose(Am, ref.Am, 0.015)
 
-    def test_beta_zxx(self):
-        r = self.m.x
-        D2k = self.m.D2k
-        z = r[2].unblock()
-        xx = D2k[('XDIPLEN XDIPLEN ', 0.0, 0.0)].unblock()
-        bzxx = - z&xx
-        self.assert_allclose(bzxx, ref.Bm[2, 0], .005)
-
-    def test_beta_xzx(self):
-        r = self.m.x
-        D2k = self.m.D2k
-        x = r[0].unblock()
-        zx = D2k[('ZDIPLEN XDIPLEN ', 0.0, 0.0)].unblock()
-        bxzx = - x&zx
-        self.assert_allclose(bxzx, ref.Bm[0, 2], .005)
-
-    def test_beta_xxz(self):
-        r = self.m.x
-        D2k = self.m.D2k
-        x = r[0].unblock()
-        xz = D2k[('XDIPLEN ZDIPLEN ', 0.0, 0.0)].unblock()
-        bxxz = - x&xz
-        self.assert_allclose(bxxz, ref.Bm[0, 2], .005)
-
-    def test_beta_yyz(self):
-        r = self.m.x
-        D2k = self.m.D2k
-        y = r[1].unblock()
-        yz = D2k[('YDIPLEN ZDIPLEN ', 0.0, 0.0)].unblock()
-        byyz = - y&yz
-        self.assert_allclose(byyz, ref.Bm[1, 4], .005)
-
-    def test_beta_zyy(self):
-        r = self.m.x
-        D2k = self.m.D2k
-        z = r[2].unblock()
-        yy = D2k[('YDIPLEN YDIPLEN ', 0.0, 0.0)].unblock()
-        bzyy = - z&yy
-        self.assert_allclose(bzyy, ref.Bm[2, 3], .005)
-
-    def test_beta_zzz(self):
-        r = self.m.x
-        D2k = self.m.D2k
-        z = r[2].unblock()
-        zz = D2k[('ZDIPLEN ZDIPLEN ', 0.0, 0.0)].unblock()
-        bzzz = - z&zz
-        self.assert_allclose(bzzz, ref.Bm[2, 5], .005)
-
-    def test_hyperpolarizability_total(self):
-        Bm = self.m.Bm[0]
-        Bab = self.m.Bab.sum(axis=4).sum(axis=3)
-        ref.Bm
-        self.assert_allclose(Bm, ref.Bm, .005)
-
+            
     def test_polarizability_allbonds_molcas_internal(self):
+
         O = ref.O
         H1O = ref.H1O
         H1 = ref.H1
@@ -385,7 +399,7 @@ class NewTest(LoPropTestCase):
 
     def test_polarizability_allbonds_atoms(self):
 
-        Aab = self.m.Aab[0] #+ self.m.dAab
+        Aab = self.m.Aab[0] #+ m.dAab
         noa = self.m.noa
 
         Acmp=full.matrix(ref.Aab.shape)
@@ -417,9 +431,9 @@ class NewTest(LoPropTestCase):
             Acmp[:, ab] = Aab[:, :, a, a].pack()
             ab += 1
         # atoms
-        self.assert_allclose(ref.Aab[:, 1], Acmp[:, 1], atol=.150, err_msg='H1O')
-        self.assert_allclose(ref.Aab[:, 3], Acmp[:, 3], atol=.150, err_msg='H2O')
-        self.assert_allclose(ref.Aab[:, 4], Acmp[:, 4], atol=.005, err_msg='H2H1')
+        self.assert_allclose(ref.Aab[:, 1], Acmp[:, 1], atol=.150)
+        self.assert_allclose(ref.Aab[:, 3], Acmp[:, 3], atol=.150)
+        self.assert_allclose(ref.Aab[:, 4], Acmp[:, 4], atol=.005)
         
 
     def test_polarizability_nobonds(self):
@@ -441,6 +455,10 @@ class NewTest(LoPropTestCase):
         PAn0 = self.m.output_potential_file(maxl=-1, pol=0, hyper=0)
         self.assert_str(PAn0, ref.PAn0)
 
+    def test_potfile_PAn0_angstrom(self):
+        PAn0 = self.m.output_potential_file(maxl=-1, pol=0, hyper=0, angstrom=True)
+        self.assert_str(PAn0, ref.POTFILE_BY_ATOM_n0_ANGSTROM)
+
     def test_potfile_PA00(self):
         PA00 = self.m.output_potential_file(maxl=0, pol=0, hyper=0)
         self.assert_str(PA00, ref.PA00)
@@ -460,4 +478,131 @@ class NewTest(LoPropTestCase):
     def test_potfile_PA22(self):
         PA22 = self.m.output_potential_file(maxl=2, pol=2, hyper=0)
         self.assert_str(PA22, ref.PA22)
+
+    def test_potfile_PAn0b(self):
+        PAn0b = self.m.output_potential_file(maxl=-1, pol=0, hyper=0, bond_centers=True)
+        self.assert_str(PAn0b, ref.PAn0b)
+
+    def test_potfile_PA00b(self):
+        PA00b = self.m.output_potential_file(maxl=0, pol=0, hyper=0, bond_centers=True)
+        self.assert_str(PA00b, ref.PA00b)
+
+    def test_potfile_PA10b(self):
+        PA10b = self.m.output_potential_file(maxl=1, pol=0, hyper=0, bond_centers=True)
+        self.assert_str(PA10b, ref.PA10b)
+
+    def test_potfile_PA20b(self):
+        with self.assertRaises(NotImplementedError):
+            PA20b = self.m.output_potential_file(maxl=2, pol=0, hyper=0, bond_centers=True)
+
+    def test_potfile_PA01b(self):
+        PA01b = self.m.output_potential_file(maxl=0, pol=1, hyper=0, bond_centers=True)
+        self.assert_str(PA01b, ref.PA01b)
+
+    def test_potfile_PA02(self):
+        this = self.m.output_potential_file(maxl=0, pol=2, hyper=0)
+        self.assert_str(this, ref.PA02)
+
+    def test_potfile_PA02b(self):
+        this = self.m.output_potential_file(maxl=0, pol=2, hyper=0, bond_centers=True)
+        self.assert_str(this, ref.PA02b)
+
+    def test_outfile_PAn0_atom_domain(self):
+        self.m.max_l = -1
+        self.assert_str(self.m.print_atom_domain(0), ref.OUTPUT_n0_1)
+
+    def test_outfile_PAn0_atom_domain_angstrom(self):
+        self.m.max_l = -1
+        self.assert_str(self.m.print_atom_domain(0, angstrom=True), ref.OUTPUT_n0_1_ANGSTROM)
+
+    def test_outfile_PA00_atom_domain(self):
+        self.m.max_l = 0
+        self.assert_str(self.m.print_atom_domain(0), ref.OUTPUT_00_1)
+
+    def test_outfile_PA10_atom_domain(self):
+        self.m.max_l = 1
+        self.assert_str(self.m.print_atom_domain(0), ref.OUTPUT_10_1)
+
+    def test_outfile_PA20_atom_domain(self):
+        self.m.max_l = 2
+        self.assert_str(self.m.print_atom_domain(0), ref.OUTPUT_20_1)
+
+    def test_outfile_PA01_atom_domain(self):
+        self.m.max_l = 0
+        self.m.pol = 1
+        self.assert_str(self.m.print_atom_domain(0), ref.OUTPUT_01_1)
+
+    def test_outfile_PA02_atom_domain(self):
+        self.m.max_l = 0
+        self.m.pol = 2
+        self.assert_str(self.m.print_atom_domain(0), ref.OUTPUT_02_1)
+
+    def test_outfile_PAn0_by_atom(self):
+        self.m.max_l = -1
+        self.m.output_by_atom(fmt="%12.5f")
+        print_output = sys.stdout.getvalue().strip()
+        self.assert_str(print_output, ref.OUTPUT_BY_ATOM_n0)
+
+    def test_outfile_PAn0_by_atom_Angstrom(self):
+        self.m.max_l = -1
+        self.m.output_by_atom(fmt="%12.5f", angstrom=True)
+        print_output = sys.stdout.getvalue().strip()
+        self.assert_str(print_output, ref.OUTPUT_BY_ATOM_n0_ANGSTROM)
+
+    def test_outfile_PA00_by_atom(self):
+        self.m.output_by_atom(fmt="%12.5f", max_l=0)
+        print_output = sys.stdout.getvalue().strip()
+        self.assert_str(print_output, ref.OUTPUT_BY_ATOM_00)
+
+    def test_outfile_PA10_by_atom(self):
+        self.m.max_l = 1
+        self.m.output_by_atom(fmt="%12.5f", max_l=1)
+        print_output = sys.stdout.getvalue().strip()
+        self.assert_str(print_output, ref.OUTPUT_BY_ATOM_10)
+
+    def test_outfile_PA20_by_atom(self):
+        self.m.max_l = 2
+        self.m.output_by_atom(fmt="%12.5f", max_l=2)
+        print_output = sys.stdout.getvalue().strip()
+        self.assert_str(print_output, ref.OUTPUT_BY_ATOM_20)
+
+    def test_outfile_PA01_by_atom(self):
+        self.m.max_l = 0
+        self.m.output_by_atom(fmt="%12.5f", max_l=0, pol=1)
+        print_output = sys.stdout.getvalue().strip()
+        self.assert_str(print_output, ref.OUTPUT_BY_ATOM_01)
+
+    def test_outfile_PAn0_by_bond(self):
+        self.m.max_l = -1
+        self.m.output_by_atom(fmt="%12.5f", max_l=-1, bond_centers=True)
+        print_output = sys.stdout.getvalue().strip()
+        self.assert_str(print_output, ref.OUTPUT_BY_BOND_n0)
+
+    def test_outfile_PA00_by_bond(self):
+        self.m.max_l = 0
+        self.m.output_by_atom(fmt="%12.5f", max_l=0, bond_centers=True)
+        print_output = sys.stdout.getvalue().strip()
+        self.assert_str(print_output, ref.OUTPUT_BY_BOND_00)
+
+    def test_outfile_PA10_by_bond(self):
+        self.m.max_l = 1
+        self.m.output_by_atom(fmt="%12.5f", max_l=1, bond_centers=True)
+        print_output = sys.stdout.getvalue().strip()
+        self.assert_str(print_output, ref.OUTPUT_BY_BOND_10)
+
+    def test_outfile_PA10_by_bond_error_for_quad(self):
+        with self.assertRaises(NotImplementedError):
+            self.m.output_by_atom(fmt="%12.5f", max_l=2, bond_centers=True)
+
+    def test_outfile_PAn1_by_bond(self):
+        self.m.max_l = -1
+        self.m.output_by_atom(fmt="%12.5f", max_l=-1, pol=1, bond_centers=True)
+        print_output = sys.stdout.getvalue().strip()
+        self.assert_str(print_output, ref.OUTPUT_BY_BOND_n1)
+
+    def test_outfile_PAn2_by_bond(self):
+        self.m.max_l = -1
+        self.m.output_by_atom(fmt="%12.5f", max_l=-1, pol=2, bond_centers=True)
+        print_output = sys.stdout.getvalue().strip()
+        self.assert_str(print_output, ref.OUTPUT_BY_BOND_n2)
 

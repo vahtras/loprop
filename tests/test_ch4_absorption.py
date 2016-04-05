@@ -1,8 +1,8 @@
 import unittest
 import os 
 import numpy as np
-from ..core import penalty_function, AU2ANG, pairs, MolFrag
-from ..daltools.util import full
+from loprop.core import penalty_function, AU2ANG, pairs, MolFrag
+from util import full
 
 import re
 thisdir  = os.path.dirname(__file__)

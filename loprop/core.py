@@ -7,8 +7,8 @@ import sys
 import math
 import numpy
 from functools import reduce
-from .daltools import one, mol, dens, prop, lr, qr, sirifc
-from .daltools.util import full, blocked, subblocked, timing
+from daltools import one, mol, dens, prop, lr, qr, sirifc
+from util import full, blocked, subblocked, timing
 
 AU2ANG = 0.5291772108
 ANG2AU = 1.0/AU2ANG
