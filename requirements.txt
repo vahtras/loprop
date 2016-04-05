@@ -1,5 +1,5 @@
 --index-url https://pypi.python.org/simple
 
--e git+https://github.com/vahtras/daltools.git@repackage#egg=daltools
--e git+https://github.com/vahtras/util.git@repackage#egg=util
+-e git+https://github.com/vahtras/daltools.git@master#egg=daltools
+-e git+https://github.com/vahtras/util.git@master#egg=util
 -e .
