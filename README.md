@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/vahtras/loprop.svg?branch=master)](https://travis-ci.org/vahtras/loprop)
 [![Coverage Status](https://coveralls.io/repos/github/vahtras/loprop/badge.svg?branch=master)](https://coveralls.io/github/vahtras/loprop?branch=master)
 
 # Loprop for Dalton
@@ -22,37 +23,25 @@ To install the latest version
 ```bash
 $ git clone https://github.com/vahtras/loprop.git
 $ cd loprop
-$ git submodule update --init --recursive
+$ pip install -r requirements.txt
 ```
-
-There are two levels of git submodules (daltools, daltools/util) which will be installed.
-
-### 2) Via setuptools
 
 This will automatically put loprop into your path.  
-Works with virtual env and anaconda.
+Works with virtualenv and anaconda.
 
-```bash
-$ git clone https://github.com/vahtras/loprop.git
-$ cd loprop
-$ python setup.py install
-```
-
-If you don't have Anaconda and lack superuser privilege:
-
-```bash
-$ python setup.py install --user
-```
 
 ## Test
 
 With `nose` installed one can travers all tests which should give
 
 ```
-$ nosetests
-............................................................................................................................................................................................................................................................................................................
+$ pip install nose
+$ python -m nose
+.......................................................................................................................................................................................................................................................................
 ----------------------------------------------------------------------
-Ran 300 tests in 1.139s
+Ran 263 tests in 12.499s
+
+OK
 ```
 
 ## Basic usage
