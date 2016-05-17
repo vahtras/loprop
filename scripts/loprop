@@ -4,7 +4,7 @@ import os
 import argparse
 
 try:
-    from loprop import MolFrag, timing, penalty_function
+    from loprop import MolFrag, timing, penalty_function, shift_function
 except ImportError:
     sys.path.append(os.path.dirname(os.path.dirname(__file__)))
     from loprop import MolFrag, timing, penalty_function
