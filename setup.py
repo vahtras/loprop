@@ -3,7 +3,7 @@
 from setuptools import setup
 
 setup(name="LoProp",
-    version="0.1.6",
+    version="0.2.0",
     packages = ["loprop"],
     scripts = ['scripts/loprop'],
     author="Olav Vahtras",
