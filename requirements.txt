@@ -1,5 +1,6 @@
 --index-url https://pypi.python.org/simple
 
--e git+https://github.com/vahtras/daltools.git@master#egg=daltools
--e git+https://github.com/vahtras/util.git@master#egg=util
+-e git+https://github.com/vahtras/daltools.git@8df859ddcd57e1f7d09629d6b9098f82520f5298#egg=daltools
+-e git+https://github.com/vahtras/util.git@eb71f1fd0129ddcfec3b746a2cc840756a68442d#egg=util
+-e git+https://github.com/vahtras/fortran-binary.git@fff194318d283353cd8779b0e52e6db407c1f44f#egg=fortran_binary
 -e .
