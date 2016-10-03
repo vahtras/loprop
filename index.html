@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Loprop : ">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Loprop</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/vahtras/loprop">View on GitHub</a>
+
+          <h1 id="project_title">Loprop</h1>
+          <h2 id="project_tagline"></h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/vahtras/loprop/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/vahtras/loprop/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <p><a href="https://travis-ci.org/vahtras/loprop"><img src="https://travis-ci.org/vahtras/loprop.svg?branch=master" alt="Build Status"></a>
+<a href="https://coveralls.io/github/vahtras/loprop?branch=master"><img src="https://coveralls.io/repos/github/vahtras/loprop/badge.svg?branch=master" alt="Coverage Status"></a></p>
+
+<h1>
+<a id="loprop-for-dalton" class="anchor" href="#loprop-for-dalton" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Loprop for Dalton</h1>
+
+<p>This code is an implementation of the LoProp algorithm based on Gagliardi et al., JCP <strong>121</strong>, 4494 (2004) for postprocessing calculation with Dalton (<a href="http://daltonprogram.org">http://daltonprogram.org</a>)</p>
+
+<h2>
+<a id="how-to-cite-this-software" class="anchor" href="#how-to-cite-this-software" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How to cite this software</h2>
+
+<p>LoProp for Dalton, Olav Vahtras (2014). <a href="http://dx.doi.org/10.5281/zenodo.13276">http://dx.doi.org/10.5281/zenodo.13276</a></p>
+
+<h2>
+<a id="requirements" class="anchor" href="#requirements" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Requirements</h2>
+
+<p>A python installation with <code>numpy</code> and <code>scipy</code> libraries</p>
+
+<h2>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h2>
+
+<h3>
+<a id="1" class="anchor" href="#1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1)</h3>
+
+<p>To install the latest version</p>
+
+<div class="highlight highlight-source-shell"><pre>$ git clone https://github.com/vahtras/loprop.git
+$ <span class="pl-c1">cd</span> loprop
+$ pip install -r requirements.txt</pre></div>
+
+<p>This will automatically put loprop into your path.<br>
+Works with virtualenv and anaconda.</p>
+
+<h2>
+<a id="test" class="anchor" href="#test" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Test</h2>
+
+<p>With <code>nose</code> installed one can travers all tests which should give</p>
+
+<pre><code>$ pip install nose
+$ python -m nose
+.......................................................................................................................................................................................................................................................................
+----------------------------------------------------------------------
+Ran 263 tests in 12.499s
+
+OK
+</code></pre>
+
+<h2>
+<a id="basic-usage" class="anchor" href="#basic-usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Basic usage</h2>
+
+<p>To setup a Dalton calculation for postprocessing with loprop, a typical input file is as follows</p>
+
+<pre><code>**DALTON INPUT
+.RUN RESP
+*END OF GENERAL
+**WAVE FUNCTION
+.INTERFACE
+.HF
+**INTEGRAL
+.NOSUP
+.DIPLEN
+.SECMOM
+**RESPONSE
+*LINEAR
+.DIPLEN
+*END OF
+</code></pre>
+
+<p>This is required for calculating atomic dipoles, quadrupoles and polarizabilities
+One-electron integral files are required that are not normally saved after a Dalton calculation. The dalton program should be executed with the following options</p>
+
+<pre><code>$ dalton -get "AOONEINT AOPROPER" hf h2o
+</code></pre>
+
+<p>A sample run with charges and isotropic polarizabilities is</p>
+
+<pre><code>$ loprop -f hf_h2o.tar.gz -l 0 -a 1
+AU
+3 0 1 1
+1     0.000     0.000     0.698    -0.703     3.466
+1    -1.481     0.000    -0.349     0.352     1.576
+1     1.481     0.000    -0.349     0.352     1.576
+</code></pre>
+
+<p>generating a potential file, with local coordinates, charge and polarizability for each atom.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Loprop maintained by <a href="https://github.com/vahtras">vahtras</a></p>
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
