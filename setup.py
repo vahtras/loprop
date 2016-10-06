@@ -9,6 +9,6 @@ setup(name="LoProp",
     scripts=['scripts/loprop'],
     author="Olav Vahtras",
     author_email="vahtras@kth.se",
-    install_requires = ["daltools", "util"],
+    install_requires = ["daltools"],
     description = 'LoProp implementation for Dalton',
     )
