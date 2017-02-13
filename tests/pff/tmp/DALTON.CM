@@ -1,0 +1,74 @@
+  ------------------------------------------------------------------------
+  QC in fibrils    19  time in fs=    459.609985                          
+      7.14383    6.86806    8.87897                                       
+  ------------------------------------------------------------------------
+Point group: C1 
+  Number of atom types :    5
+  Total number of atoms:   29
+
+  label    atoms   charge   prim   cont     basis
+  ----------------------------------------------------------------------
+  S           1   16.0000    55    22      [17s11p1d|5s4p1d]                                  
+  O           2    8.0000    31    18      [11s5p1d|4s3p1d]                                   
+  N           2    7.0000    31    18      [11s5p1d|4s3p1d]                                   
+  C           8    6.0000    31    18      [11s5p1d|4s3p1d]                                   
+  H          16    1.0000     4     2      [4s|2s]                                            
+  total:     29  110.0000   491   270
+
+  Spherical harmonic basis used.
+
+ **********************************************************************
+ *SIRIUS* a direct, restricted step, second order MCSCF program       *
+ **********************************************************************
+
+ 
+     Date and time (Linux)  : Sun Feb  5 10:31:41 2017
+     Host name              : n1409                                   
+
+ Title lines from ".mol" input file:
+     QC in fibrils    19  time in fs=    459.609985                          
+         7.14383    6.86806    8.87897                                       
+
+ Print level on unit LUPRI =   2 is   0
+ Print level on unit LUW4  =   2 is   5
+
+@    Restricted, closed shell Kohn-Sham DFT calculation.
+
+@    Time-dependent Kohn-Sham DFT calculation (TD-DFT).
+ Fock matrices are calculated directly and in parallel without use of integrals on disk.
+
+ Initial molecular orbitals are obtained according to
+ ".MOSTART EWMO  " input option
+
+     Wave function specification
+     ============================
+@    Wave function type        >>> KS-DFT <<<
+@    Number of closed shell electrons         110
+@    Number of electrons in active shells       0
+@    Total charge of the molecule               0
+
+@    Spin multiplicity and 2 M_S                1         0
+@    Total number of symmetries                 1 (point group: C1 )
+@    Reference state symmetry                   1 (irrep name : A  )
+
+     Orbital specifications
+     ======================
+@    Abelian symmetry species          All |    1
+@                                          |  A  
+                                       --- |  ---
+@    Occupied SCF orbitals              55 |   55
+@    Secondary orbitals                215 |  215
+@    Total number of orbitals          270 |  270
+@    Number of basis functions         270 |  270
+
+     Optimization information
+     ========================
+@    Number of configurations                 1
+@    Number of orbital rotations          11825
+     ------------------------------------------
+@    Total number of variables            11826
+
+     Maximum number of Fock   iterations      0
+     Maximum number of DIIS   iterations     60
+     Maximum number of QC-SCF iterations     60
+     Threshold for SCF convergence     1.00D-05
