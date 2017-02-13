@@ -7,11 +7,13 @@ import sys
 import math
 import numpy
 from functools import reduce
+from collections import defaultdict
 from daltools import one, mol, dens, prop, lr, qr, sirifc
 from util import full, blocked, subblocked, timing
 
 AU2ANG = 0.5291772108
 ANG2AU = 1.0/AU2ANG
+DEFAULT_CUTOFF = 1.6
 
 # Bragg-Slater radii () converted from Angstrom to Bohr
 rbs = numpy.array([0, 
@@ -20,7 +22,9 @@ rbs = numpy.array([0,
       1.80, 1.50, 1.25, 1.10, 1.00, 1.00, 1.00, 1.00, 
       ])*ANG2AU
 
-bond_co = { ( 1, 1 ) : 1.2, 
+bond_co = defaultdict(lambda: DEFAULT_CUTOFF)
+bond_co.update({
+            ( 1, 1 ) : 1.2, 
             ( 1, 6 ) : 1.2, 
             ( 6, 1 ) : 1.2, 
             ( 1, 7 ) : 1.2, 
@@ -36,6 +40,8 @@ bond_co = { ( 1, 1 ) : 1.2,
             ( 7, 8 ) : 1.6, 
             ( 8, 7 ) : 1.6, 
             ( 8, 8 ) : 1.6, }
+)
+
 #permute dict items in keypairs
 #for key1, key2 in bond_co.keys():
     #bond_co[ ( key2, key1 ) ] = bond_co[ (key1, key2) ]
