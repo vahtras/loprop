@@ -6,3 +6,6 @@ dist
 build
 *egg*
 *cover*
+.cache
+.vimrc
+errors.err
