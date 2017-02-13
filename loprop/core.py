@@ -1325,14 +1325,15 @@ class MolFrag:
 
         noa = self.noa
 
+        if bond_centers:
 #To get number of centers and bonding is on
-        bond_mat = numpy.zeros( (noa, noa,), dtype = int )
-        for a in range( noa ):
-            for b in range( a ):
-                r = numpy.sqrt( (( self.R[a] - self.R[b])**2 ).sum() )
-                if r < bond_co[ (int(self.Z[a]), int(self.Z[b])) ]/AU2ANG:
-                    bond_mat[ a, b ] = 1
-                    bond_mat[ b, a ] = 1
+            bond_mat = numpy.zeros( (noa, noa,), dtype = int )
+            for a in range( noa ):
+                for b in range( a ):
+                    r = numpy.sqrt( (( self.R[a] - self.R[b])**2 ).sum() )
+                    if r < bond_co[ (int(self.Z[a]), int(self.Z[b])) ]/AU2ANG:
+                        bond_mat[ a, b ] = 1
+                        bond_mat[ b, a ] = 1
 
         if bond_centers:
 #Where the number of bonds is the diagonal plus each entry with '1'
