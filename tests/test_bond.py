@@ -21,48 +21,102 @@ str_bond ="""AU
 Time used in Loprop              :      0.45 (cpu)       0.11 (wall)
 """
 
-class TestBond(unittest.TestCase):
+class TestBondH2O(unittest.TestCase):
 
 
-    def test_bond_nobond_properties(self):
-        #a0 = 0.52917721092
-        a0 = 1.0
-
+    def setUp(self):
 #Read in string that is for no bonds output
         lines = [line for line in str_bond.split('\n') if len(line.split()) > 10 ]
+        a0 = 1.0
 
-        n_bond = np.array(   [8.0, 0.0, 1.0, 0.0, 1.0], dtype = float )
-        r_bond = a0 * np.array(   [l.split()[1:4] for l in lines ], dtype = float)
-        q_bond = np.array(   [l.split()[4] for l in lines], dtype = float)
-        d_bond = np.array(   [l.split()[5:8] for l in lines], dtype = float)
-        a_bond = np.array(   [l.split()[8:15] for l in lines], dtype = float)
-        b_bond = np.array(   [l.split()[15:26] for l in lines], dtype = float)
+        self.n_bond = np.array(   [8.0, 0.0, 1.0, 0.0, 1.0], dtype = float )
+        self.r_bond = a0 * np.array(   [l.split()[1:4] for l in lines ], dtype = float)
+        self.q_bond = np.array(   [l.split()[4] for l in lines], dtype = float)
+        self.d_bond = np.array(   [l.split()[5:8] for l in lines], dtype = float)
+        self.a_bond = np.array(   [l.split()[8:15] for l in lines], dtype = float)
+        self.b_bond = np.array(   [l.split()[15:26] for l in lines], dtype = float)
+
+        self.coc_bond = np.einsum( 'ij,i', self.r_bond , self.n_bond ) / self.n_bond.sum()
 
 #Read in string that is for bonds output -b
         lines = [line for line in str_nobond.split('\n') if len(line.split()) > 10 ]
 
-        n_nobond = np.array( [8.0, 1.0, 1.0], dtype = float )
-        r_nobond = a0 * np.array( [l.split()[1:4] for l in lines ], dtype = float)
-        q_nobond = np.array( [l.split()[4] for l in lines], dtype = float)
-        d_nobond = np.array( [l.split()[5:8] for l in lines], dtype = float)
-        a_nobond = np.array( [l.split()[8:15] for l in lines], dtype = float)
-        b_nobond = np.array( [l.split()[15:26] for l in lines], dtype = float)
+        self.n_nobond = np.array( [8.0, 1.0, 1.0], dtype = float )
+        self.r_nobond = a0 * np.array( [l.split()[1:4] for l in lines ], dtype = float)
+        self.q_nobond = np.array( [l.split()[4] for l in lines], dtype = float)
+        self.d_nobond = np.array( [l.split()[5:8] for l in lines], dtype = float)
+        self.a_nobond = np.array( [l.split()[8:15] for l in lines], dtype = float)
+        self.b_nobond = np.array( [l.split()[15:26] for l in lines], dtype = float)
 
-#Total dipole moment should be the same
-        coc_bond = np.einsum( 'ij,i', r_bond , n_bond ) / n_bond.sum()
-        coc_nobond = np.einsum( 'ij,i', r_nobond , n_nobond ) / n_nobond.sum()
+        self.coc_nobond = np.einsum( 'ij,i', self.r_nobond , self.n_nobond ) / self.n_nobond.sum()
 
-        np.testing.assert_allclose( coc_bond, coc_nobond )
 
-        a_tot_bond = np.sum(a_bond)
-        a_tot_nobond = np.sum(a_nobond)
+    def test_bond_nobond_properties(self):
+        np.testing.assert_allclose(self.coc_bond, self.coc_nobond )
 
-        np.testing.assert_allclose( a_tot_bond, a_tot_nobond )
+    def test_a(self):
+        a_tot_bond = np.sum(self.a_bond)
+        a_tot_nobond = np.sum(self.a_nobond)
 
-        b_tot_bond = np.sum(b_bond)
-        b_tot_nobond = np.sum(b_nobond)
+        np.testing.assert_allclose(a_tot_bond, a_tot_nobond )
 
-        np.testing.assert_allclose( b_tot_bond, b_tot_nobond )
+    def test_b(self):
+        b_tot_bond = np.sum(self.b_bond)
+        b_tot_nobond = np.sum(self.b_nobond)
 
-        dip_bond = np.einsum( 'ij,i', (r_bond - coc_bond), q_bond ) + d_bond.sum(axis=0)
-        dip_nobond = np.einsum( 'ij,i', (r_nobond - coc_nobond), q_nobond ) + d_nobond.sum(axis = 0 )
+        np.testing.assert_allclose(b_tot_bond, b_tot_nobond )
+
+    def test_dip(self):
+        dip_bond = np.einsum( 'ij,i', (self.r_bond - self.coc_bond), self.q_bond ) + self.d_bond.sum(axis=0)
+        dip_nobond = np.einsum( 'ij,i', (self.r_nobond - self.coc_nobond), self.q_nobond ) + self.d_nobond.sum(axis = 0 )
+        np.testing.assert_allclose(dip_bond, dip_nobond)
+
+class TestBondH2S(unittest.TestCase):
+
+
+    def setUp(self):
+#Read in string that is for no bonds output
+        lines = [line for line in str_bond.split('\n') if len(line.split()) > 10 ]
+        a0 = 1.0
+
+        self.n_bond = np.array(   [16.0, 0.0, 1.0, 0.0, 1.0], dtype = float )
+        self.r_bond = a0 * np.array(   [l.split()[1:4] for l in lines ], dtype = float)
+        self.q_bond = np.array(   [l.split()[4] for l in lines], dtype = float)
+        self.d_bond = np.array(   [l.split()[5:8] for l in lines], dtype = float)
+        self.a_bond = np.array(   [l.split()[8:15] for l in lines], dtype = float)
+        self.b_bond = np.array(   [l.split()[15:26] for l in lines], dtype = float)
+
+        self.coc_bond = np.einsum( 'ij,i', self.r_bond , self.n_bond ) / self.n_bond.sum()
+
+#Read in string that is for bonds output -b
+        lines = [line for line in str_nobond.split('\n') if len(line.split()) > 10 ]
+
+        self.n_nobond = np.array( [16.0, 1.0, 1.0], dtype = float )
+        self.r_nobond = a0 * np.array( [l.split()[1:4] for l in lines ], dtype = float)
+        self.q_nobond = np.array( [l.split()[4] for l in lines], dtype = float)
+        self.d_nobond = np.array( [l.split()[5:8] for l in lines], dtype = float)
+        self.a_nobond = np.array( [l.split()[8:15] for l in lines], dtype = float)
+        self.b_nobond = np.array( [l.split()[15:26] for l in lines], dtype = float)
+
+        self.coc_nobond = np.einsum( 'ij,i', self.r_nobond , self.n_nobond ) / self.n_nobond.sum()
+
+
+    def test_bond_nobond_properties(self):
+        np.testing.assert_allclose(self.coc_bond, self.coc_nobond )
+
+    def test_a(self):
+        a_tot_bond = np.sum(self.a_bond)
+        a_tot_nobond = np.sum(self.a_nobond)
+
+        np.testing.assert_allclose(a_tot_bond, a_tot_nobond )
+
+    def test_b(self):
+        b_tot_bond = np.sum(self.b_bond)
+        b_tot_nobond = np.sum(self.b_nobond)
+
+        np.testing.assert_allclose(b_tot_bond, b_tot_nobond )
+
+    def test_dip(self):
+        dip_bond = np.einsum( 'ij,i', (self.r_bond - self.coc_bond), self.q_bond ) + self.d_bond.sum(axis=0)
+        dip_nobond = np.einsum( 'ij,i', (self.r_nobond - self.coc_nobond), self.q_nobond ) + self.d_nobond.sum(axis = 0 )
+        np.testing.assert_allclose(dip_bond, dip_nobond)
