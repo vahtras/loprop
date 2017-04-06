@@ -9,3 +9,4 @@ build
 .cache
 .vimrc
 errors.err
+*.[0-9]
