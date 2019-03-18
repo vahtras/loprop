@@ -469,12 +469,12 @@ class H2OBetaTest(LoPropTestCase):
         self.m.max_l = -1
         Da = self.m.Da #use for beta internally and will be set in output
         self.m.output_by_atom(fmt="%12.5f", hyperpol=1)
-        print_output = sys.stdout.getvalue().strip()
+        print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_ATOM_n0)
 
     def test_outfile_PAn0_by_bond(self):
         self.m.max_l = 1
         Da = self.m.Da #use for beta internally and will be set in output
         self.m.output_by_atom(fmt="%12.5f", max_l=1, hyperpol=1, bond_centers=True)
-        print_output = sys.stdout.getvalue().strip()
+        print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_BOND_11)

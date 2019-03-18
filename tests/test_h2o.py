@@ -1,5 +1,6 @@
 from .common import loprop, LoPropTestCase
 import unittest
+import pytest
 import os 
 import sys
 import numpy as np
@@ -540,54 +541,54 @@ class H2OTest(LoPropTestCase):
     def test_outfile_PAn0_by_atom(self):
         self.m.max_l = -1
         self.m.output_by_atom(fmt="%12.5f")
-        print_output = sys.stdout.getvalue().strip()
+        print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_ATOM_n0)
 
     def test_outfile_PAn0_by_atom_Angstrom(self):
         self.m.max_l = -1
         self.m.output_by_atom(fmt="%12.5f", angstrom=True)
-        print_output = sys.stdout.getvalue().strip()
+        print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_ATOM_n0_ANGSTROM)
 
     def test_outfile_PA00_by_atom(self):
         self.m.output_by_atom(fmt="%12.5f", max_l=0)
-        print_output = sys.stdout.getvalue().strip()
+        print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_ATOM_00)
 
     def test_outfile_PA10_by_atom(self):
         self.m.max_l = 1
         self.m.output_by_atom(fmt="%12.5f", max_l=1)
-        print_output = sys.stdout.getvalue().strip()
+        print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_ATOM_10)
 
     def test_outfile_PA20_by_atom(self):
         self.m.max_l = 2
         self.m.output_by_atom(fmt="%12.5f", max_l=2)
-        print_output = sys.stdout.getvalue().strip()
+        print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_ATOM_20)
 
     def test_outfile_PA01_by_atom(self):
         self.m.max_l = 0
         self.m.output_by_atom(fmt="%12.5f", max_l=0, pol=1)
-        print_output = sys.stdout.getvalue().strip()
+        print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_ATOM_01)
 
     def test_outfile_PAn0_by_bond(self):
         self.m.max_l = -1
         self.m.output_by_atom(fmt="%12.5f", max_l=-1, bond_centers=True)
-        print_output = sys.stdout.getvalue().strip()
+        print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_BOND_n0)
 
     def test_outfile_PA00_by_bond(self):
         self.m.max_l = 0
         self.m.output_by_atom(fmt="%12.5f", max_l=0, bond_centers=True)
-        print_output = sys.stdout.getvalue().strip()
+        print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_BOND_00)
 
     def test_outfile_PA10_by_bond(self):
         self.m.max_l = 1
         self.m.output_by_atom(fmt="%12.5f", max_l=1, bond_centers=True)
-        print_output = sys.stdout.getvalue().strip()
+        print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_BOND_10)
 
     def test_outfile_PA10_by_bond_error_for_quad(self):
@@ -597,12 +598,12 @@ class H2OTest(LoPropTestCase):
     def test_outfile_PAn1_by_bond(self):
         self.m.max_l = -1
         self.m.output_by_atom(fmt="%12.5f", max_l=-1, pol=1, bond_centers=True)
-        print_output = sys.stdout.getvalue().strip()
+        print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_BOND_n1)
 
     def test_outfile_PAn2_by_bond(self):
         self.m.max_l = -1
         self.m.output_by_atom(fmt="%12.5f", max_l=-1, pol=2, bond_centers=True)
-        print_output = sys.stdout.getvalue().strip()
+        print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_BOND_n2)
 

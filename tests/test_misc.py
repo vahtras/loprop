@@ -1,11 +1,11 @@
 import unittest
-import sys
 import numpy
 from loprop.core import output_beta, header
 from util import full
+from .common import LoPropTestCase
 
 
-class NewTest(unittest.TestCase):
+class NewTest(LoPropTestCase):
 
     def setUp(self):
         numpy.random.seed(0)
@@ -16,10 +16,8 @@ class NewTest(unittest.TestCase):
         pass
 
     def test_header(self):
-        if not hasattr(sys.stdout, "getvalue"):#pragma: no cover
-            self.fail("Run in buffered mode")
         header('yo')
-        print_output = sys.stdout.getvalue().strip()
+        print_output = self.capfd.readouterr().out.strip()
         ref_output = """\
 --
 yo
@@ -27,10 +25,8 @@ yo
         self.assertEqual(print_output, ref_output)
 
     def test_output_beta(self):
-        if not hasattr(sys.stdout, "getvalue"):#pragma: no cover
-            self.fail("Run in buffered mode")
         output_beta(self.beta)
-        print_output = sys.stdout.getvalue().strip()
+        print_output = self.capfd.readouterr().out.strip()
         ref_output="""\
 Hyperpolarizability
 beta(:, xx xy xz yy yz zz)
@@ -42,10 +38,8 @@ beta(:, kk)    1.739591    1.349924    1.487794"""
         self.assertEqual(print_output, ref_output)
 
     def test_output_beta_d(self):
-        if not hasattr(sys.stdout, "getvalue"):#pragma: no cover
-            self.fail("Run in buffered mode")
         output_beta(self.beta, self.dipole)
-        print_output = sys.stdout.getvalue().strip()
+        print_output = self.capfd.readouterr().out.strip()
         ref_output="""\
 Hyperpolarizability
 beta(:, xx xy xz yy yz zz)

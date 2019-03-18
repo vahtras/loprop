@@ -1,4 +1,5 @@
 import unittest
+import pytest
 import numpy
 import os
 import sys
@@ -6,6 +7,10 @@ sys.path.insert(0, os.path.abspath('..'))
 import loprop
 
 class LoPropTestCase(unittest.TestCase):
+
+    @pytest.fixture(autouse=True)
+    def capfd(self, capfd):
+        self.capfd = capfd
 
     def assert_str(self, this, ref):
         def stripm0(numstr):

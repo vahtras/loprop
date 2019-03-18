@@ -194,18 +194,18 @@ class NewTest(LoPropTestCase):
     def test_outfile_PA01_by_atom(self):
         self.m.max_l = 0
         self.m.output_by_atom(fmt="%12.5f", max_l=0, pol=1)
-        print_output = sys.stdout.getvalue().strip()
+        print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_ATOM_01)
 
     def test_outfile_PAn1_by_bond(self):
         self.m.max_l = -1
         self.m.output_by_atom(fmt="%12.5f", max_l=-1, pol=1, bond_centers=True)
-        print_output = sys.stdout.getvalue().strip()
+        print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_BOND_n1)
 
     def test_outfile_PAn2_by_bond(self):
         self.m.max_l = -1
         self.m.output_by_atom(fmt="%12.5f", max_l=-1, pol=2, bond_centers=True)
-        print_output = sys.stdout.getvalue().strip()
+        print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_BOND_n2)
 
