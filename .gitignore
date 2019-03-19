@@ -10,3 +10,4 @@ build
 .vimrc
 errors.err
 *.[0-9]
+.pytest_cache
