@@ -1,17 +1,17 @@
-from .common import loprop, LoPropTestCase
-import unittest
-import pytest
-import os 
-import sys
+import os
+
 import numpy as np
-from loprop.core import MolFrag, LoPropTransformer, penalty_function, AU2ANG, pairs
 from util import full
 
-import re
-thisdir  = os.path.dirname(__file__)
+from loprop.core import MolFrag, LoPropTransformer, penalty_function, AU2ANG,\
+    pairs
+
+from .common import LoPropTestCase
+from . import h2o_data as ref
+
 case = "h2o"
-tmpdir=os.path.join(thisdir, case, 'tmp')
-exec('from . import %s_data as ref'%case)
+thisdir = os.path.dirname(__file__)
+tmpdir = os.path.join(thisdir, case, 'tmp')
 
 
 class TransformTest(LoPropTestCase):
