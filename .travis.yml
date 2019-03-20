@@ -5,23 +5,20 @@ cache: apt
 addons:
    apt:
       packages:
-      - libatlas-dev
-      - libatlas-base-dev
-      - liblapack-dev
-      - gfortran
+      - git
+      - wget
+      - bzip2
 
 before_install:
-  - git submodule update --init --recursive
   - wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - #conda update --yes conda
+  - bash miniconda.sh -b -p /opt/miniconda
+  - export PATH="/opt/miniconda/bin:$PATH"
+  - conda update --yes conda
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy scipy pytest pytest-cov mock
-  - pip install pep8 python-coveralls
   - pip install -r requirements.txt
 script:
   - python -m pytest -v --cov=loprop --cov-report=term  --cov-report=html
 
 after_success:
-  - coveralls
+  - :
