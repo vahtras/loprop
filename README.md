@@ -16,9 +16,13 @@ A python installation with `numpy` and `scipy` libraries
 
 ## Installation
 
-### 1)
+### pypi (recommended)
 
-To install the latest version
+```bash
+$ pip install loprop
+```
+
+### github
 
 ```bash
 $ git clone https://github.com/vahtras/loprop.git
