@@ -1,3 +1,4 @@
+dist: xenial
 sudo: false
 language: python
 python: 3.6
@@ -10,12 +11,12 @@ addons:
       - bzip2
 
 before_install:
-  - wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
   - bash miniconda.sh -b -p /opt/miniconda
   - export PATH="/opt/miniconda/bin:$PATH"
   - conda update --yes conda
 install:
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy scipy pytest pytest-cov mock
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy scipy pytest pytest-cov
   - pip install -r requirements.txt
 script:
   - python -m pytest -v --cov=loprop --cov-report=term  --cov-report=html

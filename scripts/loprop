@@ -2,6 +2,7 @@
 import sys
 import os
 import argparse
+import tempfile
 
 try:
     from loprop import MolFrag, timing, penalty_function, shift_function
@@ -20,8 +21,8 @@ def main():
           )
     parser.add_argument(
           '-t','--tmpdir',
-          dest='tmpdir', default='/tmp',
-          help='scratch directory [/tmp]'
+          dest='tmpdir', default=None,
+          help='scratch directory'
           )
     parser.add_argument(
           '-f','--daltgz',
@@ -119,6 +120,9 @@ def main():
     #
     # Check consistency: present Dalton files
     #
+    if args.tmpdir is None:
+        tmpdir = tempfile.TemporaryDirectory()
+        args.tmpdir = tmpdir.name
     if not os.path.isdir(args.tmpdir):
         print("%s: Directory not found: %s" % (sys.argv[0], args.tmpdir))
         raise SystemExit
