@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 setup(name="LoProp",
-    version="0.2.2",
+    version="0.2.3",
     packages=["loprop"],
     #packages=find_packages(exclude=("tests",)),
     scripts=['scripts/loprop'],
