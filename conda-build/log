@@ -1,0 +1,322 @@
+Adding in variants from internal_defaults
+INFO:conda_build.variants:Adding in variants from internal_defaults
+Adding in variants from config.variant
+INFO:conda_build.variants:Adding in variants from config.variant
+Attempting to finalize metadata for loprop
+INFO:conda_build.metadata:Attempting to finalize metadata for loprop
+Collecting package metadata: ...working... done
+Solving environment: ...working... done
+BUILD START: ['loprop-0.2.2-py37_0.tar.bz2']
+Collecting package metadata: ...working... done
+Solving environment: ...working... done
+Collecting package metadata: ...working... done
+Solving environment: ...working... done
+
+## Package Plan ##
+
+  environment location: /home/olav/miniconda3/conda-bld/loprop_1558612447195/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_place
+
+
+The following NEW packages will be INSTALLED:
+
+    atomicwrites:         1.3.0-py37_1                 
+    attrs:                19.1.0-py37_1                
+    blas:                 1.0-mkl                      
+    blocked-matrix-utils: 1.0.1-py37h39e3cac_0    local
+    ca-certificates:      2019.1.23-0                  
+    certifi:              2019.3.9-py37_0              
+    daltools:             1.0.1-py37_0            local
+    fortran-binary:       1.0.1-py37h39e3cac_0    local
+    intel-openmp:         2019.3-199                   
+    libedit:              3.1.20181209-hc058e9b_0      
+    libffi:               3.2.1-hd88cf55_4             
+    libgcc-ng:            8.2.0-hdf63c60_1             
+    libgfortran-ng:       7.3.0-hdf63c60_0             
+    libstdcxx-ng:         8.2.0-hdf63c60_1             
+    mkl:                  2019.3-199                   
+    mkl_fft:              1.0.12-py37ha843d7b_0        
+    mkl_random:           1.0.2-py37hd81dba3_0         
+    more-itertools:       7.0.0-py37_0                 
+    ncurses:              6.1-he6710b0_1               
+    numpy:                1.16.3-py37h7e9f1db_0        
+    numpy-base:           1.16.3-py37hde5b4d6_0        
+    openssl:              1.1.1b-h7b6447c_1            
+    pip:                  19.1.1-py37_0                
+    pluggy:               0.11.0-py_0                  
+    py:                   1.8.0-py37_0                 
+    pytest:               4.5.0-py37_0                 
+    python:               3.7.3-h0371630_0             
+    readline:             7.0-h7b6447c_5               
+    scipy:                1.2.1-py37h7c811a0_0         
+    setuptools:           41.0.1-py37_0                
+    six:                  1.12.0-py37_0                
+    sqlite:               3.28.0-h7b6447c_0            
+    tk:                   8.6.8-hbc83047_0             
+    wcwidth:              0.1.7-py37_0                 
+    wheel:                0.33.4-py37_0                
+    xz:                   5.2.4-h14c3975_4             
+    zlib:                 1.2.11-h7b6447c_3            
+
+Preparing transaction: ...working... done
+Verifying transaction: ...working... done
+Executing transaction: ...working... done
+From https://github.com/vahtras/loprop
+ * [new ref]                    -> _conda_cache_origin_head
+Cloning into '/home/olav/miniconda3/conda-bld/loprop_1558612447195/work'...
+done.
+Your branch is up to date with 'origin/_conda_cache_origin_head'.
+zip_safe flag not set; analyzing archive contents...
+commit d50c5f882e8fb8f521dbba7b32eb8f0698d9c67a
+Author: Olav Vahtras <vahtras@kth.se>
+Date:   Wed May 22 10:32:37 2019 +0200
+
+    update install info (pip)
+
+v1.0-126-gd50c5f8
+
+On branch _conda_cache_origin_head
+Your branch is up to date with 'origin/_conda_cache_origin_head'.
+
+nothing to commit, working tree clean
+
+checkout: 'HEAD'
+==> git log -n1 <==
+
+==> git describe --tags --dirty <==
+
+==> git status <==
+
+source tree in: /home/olav/miniconda3/conda-bld/loprop_1558612447195/work
+export PREFIX=/home/olav/miniconda3/conda-bld/loprop_1558612447195/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_place
+export SRC_DIR=/home/olav/miniconda3/conda-bld/loprop_1558612447195/work
+running install
+running bdist_egg
+running egg_info
+creating LoProp.egg-info
+writing LoProp.egg-info/PKG-INFO
+writing dependency_links to LoProp.egg-info/dependency_links.txt
+writing requirements to LoProp.egg-info/requires.txt
+writing top-level names to LoProp.egg-info/top_level.txt
+writing manifest file 'LoProp.egg-info/SOURCES.txt'
+reading manifest file 'LoProp.egg-info/SOURCES.txt'
+reading manifest template 'MANIFEST.in'
+writing manifest file 'LoProp.egg-info/SOURCES.txt'
+installing library code to build/bdist.linux-x86_64/egg
+running install_lib
+running build_py
+creating build
+creating build/lib
+creating build/lib/loprop
+copying loprop/core.py -> build/lib/loprop
+copying loprop/__init__.py -> build/lib/loprop
+creating build/bdist.linux-x86_64
+creating build/bdist.linux-x86_64/egg
+creating build/bdist.linux-x86_64/egg/loprop
+copying build/lib/loprop/core.py -> build/bdist.linux-x86_64/egg/loprop
+copying build/lib/loprop/__init__.py -> build/bdist.linux-x86_64/egg/loprop
+byte-compiling build/bdist.linux-x86_64/egg/loprop/core.py to core.cpython-37.pyc
+byte-compiling build/bdist.linux-x86_64/egg/loprop/__init__.py to __init__.cpython-37.pyc
+creating build/bdist.linux-x86_64/egg/EGG-INFO
+installing scripts to build/bdist.linux-x86_64/egg/EGG-INFO/scripts
+running install_scripts
+running build_scripts
+creating build/scripts-3.7
+copying and adjusting scripts/loprop -> build/scripts-3.7
+changing mode of build/scripts-3.7/loprop from 644 to 755
+creating build/bdist.linux-x86_64/egg/EGG-INFO/scripts
+copying build/scripts-3.7/loprop -> build/bdist.linux-x86_64/egg/EGG-INFO/scripts
+changing mode of build/bdist.linux-x86_64/egg/EGG-INFO/scripts/loprop to 755
+copying LoProp.egg-info/PKG-INFO -> build/bdist.linux-x86_64/egg/EGG-INFO
+copying LoProp.egg-info/SOURCES.txt -> build/bdist.linux-x86_64/egg/EGG-INFO
+copying LoProp.egg-info/dependency_links.txt -> build/bdist.linux-x86_64/egg/EGG-INFO
+copying LoProp.egg-info/requires.txt -> build/bdist.linux-x86_64/egg/EGG-INFO
+copying LoProp.egg-info/top_level.txt -> build/bdist.linux-x86_64/egg/EGG-INFO
+creating dist
+creating 'dist/LoProp-0.2.2-py3.7.egg' and adding 'build/bdist.linux-x86_64/egg' to it
+removing 'build/bdist.linux-x86_64/egg' (and everything under it)
+Processing LoProp-0.2.2-py3.7.egg
+Copying LoProp-0.2.2-py3.7.egg to $PREFIX/lib/python3.7/site-packages
+Adding LoProp 0.2.2 to easy-install.pth file
+Installing loprop script to $PREFIX/bin
+
+Installed $PREFIX/lib/python3.7/site-packages/LoProp-0.2.2-py3.7.egg
+Processing dependencies for LoProp==0.2.2
+Searching for daltools==1.0.1
+Best match: daltools 1.0.1
+Adding daltools 1.0.1 to easy-install.pth file
+
+Using $PREFIX/lib/python3.7/site-packages
+Searching for blocked-matrix-utils==1.0.1
+Best match: blocked-matrix-utils 1.0.1
+Processing blocked_matrix_utils-1.0.1-py3.7.egg
+Adding blocked-matrix-utils 1.0.1 to easy-install.pth file
+
+Using $PREFIX/lib/python3.7/site-packages/blocked_matrix_utils-1.0.1-py3.7.egg
+Searching for fortran-binary==1.0.1
+Best match: fortran-binary 1.0.1
+Processing fortran_binary-1.0.1-py3.7.egg
+Adding fortran-binary 1.0.1 to easy-install.pth file
+Installing forbin script to $PREFIX/bin
+
+Using $PREFIX/lib/python3.7/site-packages/fortran_binary-1.0.1-py3.7.egg
+Searching for scipy==1.2.1
+Best match: scipy 1.2.1
+Adding scipy 1.2.1 to easy-install.pth file
+
+Using $PREFIX/lib/python3.7/site-packages
+Searching for numpy==1.16.3
+Best match: numpy 1.16.3
+Adding numpy 1.16.3 to easy-install.pth file
+Installing f2py script to $PREFIX/bin
+Installing f2py3 script to $PREFIX/bin
+Installing f2py3.7 script to $PREFIX/bin
+
+Using $PREFIX/lib/python3.7/site-packages
+Finished processing dependencies for LoProp==0.2.2
+
+Resource usage statistics from building loprop:
+   Process count: 1
+   CPU time: unavailable
+   Memory: 3.5M
+   Disk usage: 222.9K
+   Time elapsed: 0:00:02.0
+
+Packaging loprop
+WARNING: symlink_conda() is deprecated.
+INFO:conda_build.build:Packaging loprop
+Packaging loprop-0.2.2-py37_0
+INFO:conda_build.build:Packaging loprop-0.2.2-py37_0
+nm: dynamic_annotations.o: no symbols
+No numpy version specified in conda_build_config.yaml.  Falling back to default numpy value of 1.11
+WARNING:conda_build.metadata:No numpy version specified in conda_build_config.yaml.  Falling back to default numpy value of 1.11
+found egg: /home/olav/miniconda3/conda-bld/loprop_1558612447195/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_place/lib/python3.7/site-packages/LoProp-0.2.2-py3.7.egg
+number of files: 3
+WARNING (loprop): dso library package defaults::python-3.7.3-h0371630_0 in requirements/run but it is not used (i.e. it is overdepending or perhaps statically linked? If that is what you want then add it to `build/ignore_run_exports`)
+Fixing permissions
+Detected hard-coded path in text file bin/loprop
+Compressing to /tmp/tmp_q21ysjo/loprop-0.2.2-py37_0.tar.bz2
+TEST START: /home/olav/miniconda3/conda-bld/linux-64/loprop-0.2.2-py37_0.tar.bz2
+Adding in variants from /tmp/tmpwfafhzvb/info/recipe/conda_build_config.yaml
+INFO:conda_build.variants:Adding in variants from /tmp/tmpwfafhzvb/info/recipe/conda_build_config.yaml
+Renaming work directory,  /home/olav/miniconda3/conda-bld/loprop_1558612447195/work  to  /home/olav/miniconda3/conda-bld/loprop_1558612447195/work_moved_loprop-0.2.2-py37_0_linux-64
+Collecting package metadata: ...working... done
+Solving environment: ...working... done
+
+## Package Plan ##
+
+  environment location: /home/olav/miniconda3/conda-bld/loprop_1558612447195/_test_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl
+
+
+The following NEW packages will be INSTALLED:
+
+    atomicwrites:         1.3.0-py37_1                 
+    attrs:                19.1.0-py37_1                
+    blas:                 1.0-mkl                      
+    blocked-matrix-utils: 1.0.1-py37h39e3cac_0    local
+    ca-certificates:      2019.1.23-0                  
+    certifi:              2019.3.9-py37_0              
+    daltools:             1.0.1-py37_0            local
+    fortran-binary:       1.0.1-py37h39e3cac_0    local
+    intel-openmp:         2019.3-199                   
+    libedit:              3.1.20181209-hc058e9b_0      
+    libffi:               3.2.1-hd88cf55_4             
+    libgcc-ng:            8.2.0-hdf63c60_1             
+    libgfortran-ng:       7.3.0-hdf63c60_0             
+    libstdcxx-ng:         8.2.0-hdf63c60_1             
+    loprop:               0.2.2-py37_0            local
+    mkl:                  2019.3-199                   
+    mkl_fft:              1.0.12-py37ha843d7b_0        
+    mkl_random:           1.0.2-py37hd81dba3_0         
+    more-itertools:       7.0.0-py37_0                 
+    ncurses:              6.1-he6710b0_1               
+    numpy:                1.16.3-py37h7e9f1db_0        
+    numpy-base:           1.16.3-py37hde5b4d6_0        
+    openssl:              1.1.1b-h7b6447c_1            
+    pip:                  19.1.1-py37_0                
+    pluggy:               0.11.0-py_0                  
+    py:                   1.8.0-py37_0                 
+    pytest:               4.5.0-py37_0                 
+    python:               3.7.3-h0371630_0             
+    readline:             7.0-h7b6447c_5               
+    scipy:                1.2.1-py37h7c811a0_0         
+    setuptools:           41.0.1-py37_0                
+    six:                  1.12.0-py37_0                
+    sqlite:               3.28.0-h7b6447c_0            
+    tk:                   8.6.8-hbc83047_0             
+    wcwidth:              0.1.7-py37_0                 
+    wheel:                0.33.4-py37_0                
+    xz:                   5.2.4-h14c3975_4             
+    zlib:                 1.2.11-h7b6447c_3            
+
+Preparing transaction: ...working... done
+Verifying transaction: ...working... done
+Executing transaction: ...working... done
+WARNING: symlink_conda() is deprecated.
+export PREFIX=/home/olav/miniconda3/conda-bld/loprop_1558612447195/_test_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl
+export SRC_DIR=/home/olav/miniconda3/conda-bld/loprop_1558612447195/test_tmp
+============================= test session starts ==============================
+platform linux -- Python 3.7.3, pytest-4.5.0, py-1.8.0, pluggy-0.11.0
+rootdir: $SRC_DIR
+collected 281 items
+
+tests/test_bond.py ........                                              [  2%]
+tests/test_ch4_absorption.py ..........                                  [  6%]
+tests/test_exceptions.py .                                               [  6%]
+tests/test_h2o.py ...................................................... [ 25%]
+........................                                                 [ 34%]
+tests/test_h2o_beta.py ...............................................   [ 51%]
+tests/test_h2o_beta_trans.py ..........................................  [ 66%]
+tests/test_h2o_dyn.py ..........................................         [ 81%]
+tests/test_h2o_rot.py .................................                  [ 92%]
+tests/test_hcl_absorption.py .........                                   [ 96%]
+tests/test_misc.py ...                                                   [ 97%]
+tests/test_pff.py ..                                                     [ 97%]
+tests/test_template_writing.py ......                                    [100%]
+
+=============================== warnings summary ===============================
+$PREFIX/lib/python3.7/site-packages/LoProp-0.2.2-py3.7.egg/loprop/core.py:933
+$PREFIX/lib/python3.7/site-packages/LoProp-0.2.2-py3.7.egg/loprop/core.py:933
+  $PREFIX/lib/python3.7/site-packages/LoProp-0.2.2-py3.7.egg/loprop/core.py:933: DeprecationWarning: invalid escape sequence \d
+
+$PREFIX/lib/python3.7/site-packages/LoProp-0.2.2-py3.7.egg/loprop/core.py:997
+$PREFIX/lib/python3.7/site-packages/LoProp-0.2.2-py3.7.egg/loprop/core.py:997
+  $PREFIX/lib/python3.7/site-packages/LoProp-0.2.2-py3.7.egg/loprop/core.py:997: DeprecationWarning: invalid escape sequence \d
+
+tests/test_ch4_absorption.py::NewTest::test_capture_error_setup
+  $PREFIX/lib/python3.7/importlib/_bootstrap.py:219: RuntimeWarning: numpy.ufunc size changed, may indicate binary incompatibility. Expected 192 from C header, got 216 from PyObject
+    return f(*args, **kwds)
+
+-- Docs: https://docs.pytest.org/en/latest/warnings.html
+==================== 281 passed, 5 warnings in 8.75 seconds ====================
+
+Resource usage statistics from testing loprop:
+   Process count: 3
+   CPU time: Sys=0:00:00.9, User=0:00:43.4
+   Memory: 75.8M
+   Disk usage: 160.0K
+   Time elapsed: 0:00:10.1
+
+TEST END: /home/olav/miniconda3/conda-bld/linux-64/loprop-0.2.2-py37_0.tar.bz2
+Renaming work directory,  /home/olav/miniconda3/conda-bld/loprop_1558612447195/work  to  /home/olav/miniconda3/conda-bld/loprop_1558612447195/work_moved_loprop-0.2.2-py37_0_linux-64_main_build_loop
+# Automatic uploading is disabled
+# If you want to upload package(s) to anaconda.org later, type:
+
+anaconda upload /home/olav/miniconda3/conda-bld/linux-64/loprop-0.2.2-py37_0.tar.bz2
+
+# To have conda build upload to anaconda.org automatically, use
+# $ conda config --set anaconda_upload yes
+
+anaconda_upload is not set.  Not uploading wheels: []
+####################################################################################
+Resource usage summary:
+
+Total time: 0:01:40.2
+CPU usage: sys=0:00:00.9, user=0:00:43.4
+Maximum memory usage observed: 75.8M
+Total disk usage observed (not including envs): 382.8K
+
+
+####################################################################################
+Source and build intermediates have been left in /home/olav/miniconda3/conda-bld.
+There are currently 21 accumulated.
+To remove them, you can run the ```conda build purge``` command
