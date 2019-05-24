@@ -49,7 +49,7 @@ jobs:
           name: run tests
           command: |
             . .venv/bin/activate
-            make test
+            python -m pytest -v --cov=loprop --cov-report=term  --cov-report=html
 
       - store_artifacts:
           path: test-reports
