@@ -1,4 +1,4 @@
-import unittest
+import pytest
 from .common import loprop, LoPropTestCase
 import os 
 import sys
@@ -15,125 +15,131 @@ exec('from . import %s_data as ref'%case)
 from loprop.core import penalty_function, AU2ANG, pairs
 
 
+@pytest.fixture
+def molfrag(request):
+     cls = request.param
+     return cls(tmpdir, freqs=(0.0,), pf=penalty_function(2.0/AU2ANG**2))
+
+@pytest.mark.parametrize('molfrag', [MolFrag], ids=['dalton'], indirect=True)
 class TestNew(LoPropTestCase):
 
-    def setup(self):
-        self.m = MolFrag(tmpdir, freqs=(0, ), pf=penalty_function(2.0/AU2ANG**2))
-        self.maxDiff = None
+    #def setup(self):
+    #    molfrag = MolFrag(tmpdir, freqs=(0, ), pf=penalty_function(2.0/AU2ANG**2))
+    #    molfragaxDiff = None
 
-    def tearDown(self):
-        pass
+    #def tearDown(self):
+    #    pass
 
 
-    def test_nuclear_charge(self):
-        Z = self.m.Z
+    def test_nuclear_charge(self, molfrag):
+        Z = molfrag.Z
         self.assert_allclose(Z, ref.Z)
 
-    def test_coordinates_au(self):
-        R = self.m.R
+    def test_coordinates_au(self, molfrag):
+        R = molfrag.R
         self.assert_allclose(R, ref.R)
 
-    def test_default_gauge(self):
-        self.assert_allclose(self.m.Rc, ref.Rc)
+    def test_default_gauge(self, molfrag):
+        self.assert_allclose(molfrag.Rc, ref.Rc)
 
-    def test_total_charge(self):
-        Qtot = self.m.Qab.sum()
+    def test_total_charge(self, molfrag):
+        Qtot = molfrag.Qab.sum()
         self.assert_allclose(Qtot, ref.Qtot)
 
-    def test_charge(self):
-        Qaa = self.m.Qa
+    def test_charge(self, molfrag):
+        Qaa = molfrag.Qa
         self.assert_allclose(ref.Q, Qaa)
 
-    def test_total_dipole(self):
-        self.assert_allclose(self.m.Dtot, ref.Dtot)
+    def test_total_dipole(self, molfrag):
+        self.assert_allclose(molfrag.Dtot, ref.Dtot)
 
-    def test_dipole_allbonds(self):
+    def test_dipole_allbonds(self, molfrag):
         D = full.matrix(ref.D.shape)
-        Dab = self.m.Dab
-        for ab, a, b in pairs(self.m.noa):
+        Dab = molfrag.Dab
+        for ab, a, b in pairs(molfrag.noa):
             D[:, ab] += Dab[:, a, b ] 
             if a != b: D[:, ab] += Dab[:, b, a] 
         self.assert_allclose(D, ref.D)
 
-    def test_dipole_allbonds_sym(self):
-        Dsym = self.m.Dsym
+    def test_dipole_allbonds_sym(self, molfrag):
+        Dsym = molfrag.Dsym
         self.assert_allclose(Dsym, ref.D)
 
-    def test_dipole_nobonds(self):
-        Daa = self.m.Dab.sum(axis=2).view(full.matrix)
+    def test_dipole_nobonds(self, molfrag):
+        Daa = molfrag.Dab.sum(axis=2).view(full.matrix)
         self.assert_allclose(Daa, ref.Daa)
 
-    def test_quadrupole_total(self):
-        rrab=full.matrix((6, self.m.noa, self.m.noa))
-        rRab=full.matrix((6, self.m.noa, self.m.noa))
-        RRab=full.matrix((6, self.m.noa, self.m.noa))
-        Rabc = 1.0*self.m.Rab
-        for a in range(self.m.noa):
-            for b in range(self.m.noa):
-                Rabc[a,b,:] -= self.m.Rc
-        for a in range(self.m.noa):
-            for b in range(self.m.noa):
+    def test_quadrupole_total(self, molfrag):
+        rrab=full.matrix((6, molfrag.noa, molfrag.noa))
+        rRab=full.matrix((6, molfrag.noa, molfrag.noa))
+        RRab=full.matrix((6, molfrag.noa, molfrag.noa))
+        Rabc = 1.0*molfrag.Rab
+        for a in range(molfrag.noa):
+            for b in range(molfrag.noa):
+                Rabc[a,b,:] -= molfrag.Rc
+        for a in range(molfrag.noa):
+            for b in range(molfrag.noa):
                 ij = 0
                 for i in range(3):
                     for j in range(i,3):
-                        rRab[ij, a, b] = self.m.Dab[i, a, b]*Rabc[a, b, j]\
-                                       + self.m.Dab[j, a, b]*Rabc[a, b, i]
-                        RRab[ij, a, b] = self.m.Qab[a, b]*(self.m.R[a, i] - self.m.Rc[i])*(self.m.R[b, j] - self.m.Rc[j])
+                        rRab[ij, a, b] = molfrag.Dab[i, a, b]*Rabc[a, b, j]\
+                                       + molfrag.Dab[j, a, b]*Rabc[a, b, i]
+                        RRab[ij, a, b] = molfrag.Qab[a, b]*(molfrag.R[a, i] - molfrag.Rc[i])*(molfrag.R[b, j] - molfrag.Rc[j])
                         ij += 1
-        QUcab = self.m.QUab + rRab + RRab
+        QUcab = molfrag.QUab + rRab + RRab
         QUc = QUcab.sum(axis=2).sum(axis=1).view(full.matrix)
         self.assert_allclose(QUc, ref.QUc)
 
-    def test_nuclear_quadrupole(self):
-        QUN = self.m.QUN
+    def test_nuclear_quadrupole(self, molfrag):
+        QUN = molfrag.QUN
         self.assert_allclose(QUN, ref.QUN)
 
-    def test_quadrupole_allbonds(self):
+    def test_quadrupole_allbonds(self, molfrag):
         QU = full.matrix(ref.QU.shape)
-        QUab = self.m.QUab
-        for ab, a, b in pairs(self.m.noa):
+        QUab = molfrag.QUab
+        for ab, a, b in pairs(molfrag.noa):
             QU[:, ab] += QUab[:, a, b ] 
             if a != b: QU[:, ab] += QUab[:, b, a] 
         self.assert_allclose(QU, ref.QU)
 
-    def test_quadrupole_allbonds_sym(self):
-        QUsym = self.m.QUsym
+    def test_quadrupole_allbonds_sym(self, molfrag):
+        QUsym = molfrag.QUsym
         self.assert_allclose(QUsym, ref.QU)
 
-    def test_quadrupole_nobonds(self):
-        QUaa = (self.m.QUab + self.m.dQUab).sum(axis=2).view(full.matrix)
+    def test_quadrupole_nobonds(self, molfrag):
+        QUaa = (molfrag.QUab + molfrag.dQUab).sum(axis=2).view(full.matrix)
         self.assert_allclose(QUaa, ref.QUaa)
 
-    def test_Fab(self):
-        Fab = self.m.Fab
+    def test_Fab(self, molfrag):
+        Fab = molfrag.Fab
         self.assert_allclose(Fab, ref.Fab)
 
-    def test_molcas_shift(self):
-        Fab = self.m.Fab
-        Lab = Fab + self.m.sf(Fab)
+    def test_molcas_shift(self, molfrag):
+        Fab = molfrag.Fab
+        Lab = Fab + molfrag.sf(Fab)
         self.assert_allclose(Lab, ref.Lab)
 
-    def test_total_charge_shift(self):
-        dQ = self.m.dQa[0].sum(axis=0).view(full.matrix)
+    def test_total_charge_shift(self, molfrag):
+        dQ = molfrag.dQa[0].sum(axis=0).view(full.matrix)
         dQref = [0., 0., 0.]
         self.assert_allclose(dQref, dQ)
 
-    def test_atomic_charge_shift(self):
-        dQa = self.m.dQa[0]
+    def test_atomic_charge_shift(self, molfrag):
+        dQa = molfrag.dQa[0]
         dQaref = (ref.dQa[:, 1::2] - ref.dQa[:, 2::2])/(2*ref.ff)
 
         self.assert_allclose(dQa, dQaref, atol=.006)
 
-    def test_lagrangian(self):
+    def test_lagrangian(self, molfrag):
     # values per "perturbation" as in atomic_charge_shift below
-        la = self.m.la[0]
+        la = molfrag.la[0]
         laref = (ref.la[:,0:6:2] - ref.la[:,1:6:2])/(2*ref.ff)
     # The sign difference is because mocas sets up rhs with opposite sign
         self.assert_allclose(-laref, la, atol=100)
 
-    def test_bond_charge_shift(self):
-        dQab = self.m.dQab[0]
-        noa = self.m.noa
+    def test_bond_charge_shift(self, molfrag):
+        dQab = molfrag.dQab[0]
+        noa = molfrag.noa
 
 
         dQabref = (ref.dQab[:, 1:7:2] - ref.dQab[:, 2:7:2])/(2*ref.ff)
@@ -146,18 +152,18 @@ class TestNew(LoPropTestCase):
     # The sign difference is because mocas sets up rhs with opposite sign
         self.assert_allclose(-dQabref, dQabcmp, atol=0.006)
 
-    def test_bond_charge_shift_sum(self):
-        dQa  = self.m.dQab[0].sum(axis=1).view(full.matrix)
-        dQaref = self.m.dQa[0]
+    def test_bond_charge_shift_sum(self, molfrag):
+        dQa  = molfrag.dQab[0].sum(axis=1).view(full.matrix)
+        dQaref = molfrag.dQa[0]
         self.assert_allclose(dQa, dQaref)
 
 
-    def test_polarizability_total(self):
+    def test_polarizability_total(self, molfrag):
 
-        Am = self.m.Am[0]
+        Am = molfrag.Am[0]
         self.assert_allclose(Am, ref.Am, 0.015)
             
-    def test_polarizability_allbonds_molcas_internal(self):
+    def test_polarizability_allbonds_molcas_internal(self, molfrag):
 
         O = ref.O
         H1O = ref.H1O
@@ -167,7 +173,7 @@ class TestNew(LoPropTestCase):
         H2 = ref.H2
         rMP = ref.rMP
 
-        RO, RH1, RH2 = self.m.R
+        RO, RH1, RH2 = molfrag.R
         ROx, ROy, ROz = RO
         RH1x, RH1y, RH1z = RH1
         RH2x, RH2y, RH2z = RH2
@@ -311,8 +317,8 @@ class TestNew(LoPropTestCase):
         self.assert_allclose(H2[4], H2zy, text="H2zy")
         self.assert_allclose(H2[5], H2zz, text="H2zz")
 
-    def test_altint(self):
-        R = self.m.R
+    def test_altint(self, molfrag):
+        R = molfrag.R
         rMP = ref.rMP
         diff = [(1, 2), (3, 4), (5, 6)]
         atoms = (0, 2, 5) 
@@ -320,8 +326,8 @@ class TestNew(LoPropTestCase):
         ablab = ("O", "H1O", "H1", "H2O", "H2H1", "H2")
         ijlab = ("xx", "yx", "yy", "zx", "zy", "zz")
 
-        pol = np.zeros((6, self.m.noa*(self.m.noa+1)//2))
-        for ab, a, b in pairs(self.m.noa):
+        pol = np.zeros((6, molfrag.noa*(molfrag.noa+1)//2))
+        for ab, a, b in pairs(molfrag.noa):
             for ij, i, j in pairs(3):
                 i1, i2 = diff[i]
                 j1, j2 = diff[j]
@@ -331,10 +337,10 @@ class TestNew(LoPropTestCase):
                     pol[ij, ab] -= (R[a][i]-R[b][i])*(rMP[0, j1, ab] - rMP[0, j2, ab])/(2*ref.ff)
                 self.assert_allclose(ref.Aab[ij, ab], pol[ij, ab], text="%s%s"%(ablab[ab], ijlab[ij]))
 
-    def test_polarizability_allbonds_atoms(self):
+    def test_polarizability_allbonds_atoms(self, molfrag):
 
-        Aab = self.m.Aab[0] #+ self.m.dAab[0]
-        noa = self.m.noa
+        Aab = molfrag.Aab[0] #+ molfrag.dAab[0]
+        noa = molfrag.noa
 
         Acmp=full.matrix(ref.Aab.shape)
         
@@ -350,10 +356,10 @@ class TestNew(LoPropTestCase):
         self.assert_allclose(ref.Aab[:, 2], Acmp[:, 2], atol=.005)
         self.assert_allclose(ref.Aab[:, 5], Acmp[:, 5], atol=.005)
 
-    def test_polarizability_allbonds_bonds(self):
+    def test_polarizability_allbonds_bonds(self, molfrag):
 
-        Aab = self.m.Aab[0] + self.m.dAab[0]/2
-        noa = self.m.noa
+        Aab = molfrag.Aab[0] + molfrag.dAab[0]/2
+        noa = molfrag.noa
 
         Acmp=full.matrix(ref.Aab.shape)
         
@@ -370,10 +376,10 @@ class TestNew(LoPropTestCase):
         self.assert_allclose(ref.Aab[:, 4], Acmp[:, 4], atol=.005, err_msg='H2H1')
 
 
-    def test_polarizability_nobonds(self):
+    def test_polarizability_nobonds(self, molfrag):
 
-        Aab = self.m.Aab[0] + self.m.dAab[0]/2
-        noa = self.m.noa
+        Aab = molfrag.Aab[0] + molfrag.dAab[0]/2
+        noa = molfrag.noa
 
         Acmp = full.matrix((6, noa ))
         Aa = Aab.sum(axis=3).view(full.matrix)
@@ -385,27 +391,27 @@ class TestNew(LoPropTestCase):
         # atoms
         self.assert_allclose(Acmp, ref.Aa, atol=0.07)
 
-    def test_potfile_PAn0(self):
-        PAn0 = self.m.output_potential_file(maxl=-1, pol=0, hyper=0)
+    def test_potfile_PAn0(self, molfrag):
+        PAn0 = molfrag.output_potential_file(maxl=-1, pol=0, hyper=0)
         assert PAn0 == ref.PAn0
 
-    def test_potfile_PA00(self):
-        PA00 = self.m.output_potential_file(maxl=0, pol=0, hyper=0)
+    def test_potfile_PA00(self, molfrag):
+        PA00 = molfrag.output_potential_file(maxl=0, pol=0, hyper=0)
         assert PA00 == ref.PA00
 
-    def test_potfile_PA10(self):
-        PA10 = self.m.output_potential_file(maxl=1, pol=0, hyper=0)
+    def test_potfile_PA10(self, molfrag):
+        PA10 = molfrag.output_potential_file(maxl=1, pol=0, hyper=0)
         assert PA10 == ref.PA10
 
-    def test_potfile_PA20(self):
-        PA20 = self.m.output_potential_file(maxl=2, pol=0, hyper=0)
+    def test_potfile_PA20(self, molfrag):
+        PA20 = molfrag.output_potential_file(maxl=2, pol=0, hyper=0)
         assert PA20 == ref.PA20
 
-    def test_potfile_PA21(self):
-        PA21 = self.m.output_potential_file(maxl=2, pol=1, hyper=0)
+    def test_potfile_PA21(self, molfrag):
+        PA21 = molfrag.output_potential_file(maxl=2, pol=1, hyper=0)
         assert PA21 == ref.PA21
 
-    def test_potfile_PA22(self):
-        PA22 = self.m.output_potential_file(maxl=2, pol=2, hyper=0)
+    def test_potfile_PA22(self, molfrag):
+        PA22 = molfrag.output_potential_file(maxl=2, pol=2, hyper=0)
         assert PA22 == ref.PA22
 

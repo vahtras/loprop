@@ -9,10 +9,10 @@ from .common import LoPropTestCase, codes
 @pytest.mark.parametrize('code', codes)
 class TestNew(LoPropTestCase):
 
-    def setup_class(self):
+    def setup_class(cls):
         numpy.random.seed(0)
-        self.beta = full.matrix((3, 6)).random()
-        self.dipole = full.matrix(3).random()
+        cls.beta = full.matrix((3, 6)).random()
+        cls.dipole = full.matrix(3).random()
 
     def test_header(self, code):
         header('yo')

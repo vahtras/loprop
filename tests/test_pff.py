@@ -1,28 +1,32 @@
-from .common import loprop, LoPropTestCase
-import unittest, os
+import pytest
+from .common import LoPropTestCase
+from . import pff_data as ref
+import os
 from loprop.core import MolFrag, penalty_function, shift_function
 
 case = "pff"
 DIR = os.path.join(case, 'tmp')
-exec('from . import %s_data as ref'%case)
 
+
+@pytest.fixture
+def molfrag(request):
+    tmp = os.path.join(os.path.dirname(__file__), DIR)
+    cls = request.param
+    return cls(
+       tmpdir=tmp, max_l=0, pol=0,
+       freqs=None,
+       pf=penalty_function(2.0),
+       sf=shift_function,
+       gc=None
+    )
+
+
+@pytest.mark.parametrize('molfrag', [MolFrag], ids=['dalton'], indirect=True)
 class TestSulphur(LoPropTestCase):
 
-    def setup(self):
-        self.tmp = os.path.join( os.path.dirname( __file__ ), DIR)
-        self.mf = MolFrag( tmpdir = self.tmp, max_l =0, pol = 0,
-                freqs = None,
-                pf = penalty_function(2.0),
-                sf = shift_function,
-                gc = None)
-        self.maxDiff = None
+    def test_dir(self, molfrag):
+        assert os.path.isdir(molfrag.tmpdir)
 
-    def test_dir(self):
-        assert  os.path.isdir(self.tmp)
-
-    def test_nuclear_charge(self):
-        Z = self.mf.Z
+    def test_nuclear_charge(self, molfrag):
+        Z = molfrag.Z
         self.assert_allclose(Z, ref.Z)
-
-if __name__ == '__main__':#pragma: no cover
-    unittest.main()
