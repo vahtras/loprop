@@ -15,9 +15,9 @@ exec('from . import %s_data as ref'%case)
 from loprop.core import penalty_function, AU2ANG, pairs
 
 
-class NewTest(LoPropTestCase):
+class TestNew(LoPropTestCase):
 
-    def setUp(self):
+    def setup(self):
         self.m = MolFrag(tmpdir, freqs=(0, ), pf=penalty_function(2.0/AU2ANG**2))
         self.maxDiff = None
 
@@ -323,7 +323,6 @@ class NewTest(LoPropTestCase):
         pol = np.zeros((6, self.m.noa*(self.m.noa+1)//2))
         for ab, a, b in pairs(self.m.noa):
             for ij, i, j in pairs(3):
-                #from pdb import set_trace; set_trace(self)
                 i1, i2 = diff[i]
                 j1, j2 = diff[j]
                 pol[ij, ab] += (rMP[i+1, j1, ab] - rMP[i+1, j2, ab]
@@ -369,7 +368,7 @@ class NewTest(LoPropTestCase):
         self.assert_allclose(ref.Aab[:, 1], Acmp[:, 1], atol=.150, err_msg='H1O')
         self.assert_allclose(ref.Aab[:, 3], Acmp[:, 3], atol=.150, err_msg='H2O')
         self.assert_allclose(ref.Aab[:, 4], Acmp[:, 4], atol=.005, err_msg='H2H1')
-        
+
 
     def test_polarizability_nobonds(self):
 
@@ -378,7 +377,7 @@ class NewTest(LoPropTestCase):
 
         Acmp = full.matrix((6, noa ))
         Aa = Aab.sum(axis=3).view(full.matrix)
-        
+
         ab = 0
         for a in range(noa):
             Acmp[:, a,] = Aa[:, :, a].pack()
@@ -388,25 +387,25 @@ class NewTest(LoPropTestCase):
 
     def test_potfile_PAn0(self):
         PAn0 = self.m.output_potential_file(maxl=-1, pol=0, hyper=0)
-        self.assertEqual(PAn0, ref.PAn0)
+        assert PAn0 == ref.PAn0
 
     def test_potfile_PA00(self):
         PA00 = self.m.output_potential_file(maxl=0, pol=0, hyper=0)
-        self.assertEqual(PA00, ref.PA00)
+        assert PA00 == ref.PA00
 
     def test_potfile_PA10(self):
         PA10 = self.m.output_potential_file(maxl=1, pol=0, hyper=0)
-        self.assertEqual(PA10, ref.PA10)
+        assert PA10 == ref.PA10
 
     def test_potfile_PA20(self):
         PA20 = self.m.output_potential_file(maxl=2, pol=0, hyper=0)
-        self.assertEqual(PA20, ref.PA20)
+        assert PA20 == ref.PA20
 
     def test_potfile_PA21(self):
         PA21 = self.m.output_potential_file(maxl=2, pol=1, hyper=0)
-        self.assertEqual(PA21, ref.PA21)
+        assert PA21 == ref.PA21
 
     def test_potfile_PA22(self):
         PA22 = self.m.output_potential_file(maxl=2, pol=2, hyper=0)
-        self.assertEqual(PA22, ref.PA22)
+        assert PA22 == ref.PA22
 

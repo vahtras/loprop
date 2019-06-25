@@ -1,4 +1,4 @@
-import unittest
+import pytest
 from .common import loprop, LoPropTestCase
 import os 
 import sys
@@ -16,13 +16,13 @@ from . import h2o_data
 from loprop.core import penalty_function, AU2ANG, pairs
 
 
-class NewTest(LoPropTestCase):
+class TestNew(LoPropTestCase):
 
-    def setUp(self):
+    def setup(self):
         self.m = MolFrag(tmpdir, freqs=(0., 0.15), pf=penalty_function(2.0/AU2ANG**2))
         self.maxDiff = None
 
-    def tearDown(self):
+    def teardown(self):
         pass
 
 
@@ -43,7 +43,7 @@ class NewTest(LoPropTestCase):
 
     def test_total_charge(self):
         Qtot = self.m.Qab.sum()
-        self.assertAlmostEqual(Qtot, ref.Qtot)
+        self.assert_allclose(Qtot, ref.Qtot)
 
     def test_charge(self):
         Qaa = self.m.Qa
@@ -150,7 +150,7 @@ class NewTest(LoPropTestCase):
         self.assert_str(PA10b, h2o_data.PA10b)
 
     def test_potfile_PA20b(self):
-        with self.assertRaises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             PA20b = self.m.output_potential_file(maxl=2, pol=0, hyper=0, bond_centers=True)
 
     def test_potfile_PA01b(self):
@@ -208,4 +208,3 @@ class NewTest(LoPropTestCase):
         self.m.output_by_atom(fmt="%12.5f", max_l=-1, pol=2, bond_centers=True)
         print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_BOND_n2)
-

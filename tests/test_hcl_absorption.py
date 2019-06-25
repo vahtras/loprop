@@ -1,4 +1,4 @@
-import unittest
+import pytest
 import os 
 import numpy as np
 from loprop.core import penalty_function, AU2ANG, pairs, MolFrag
@@ -11,12 +11,9 @@ tmpdir=os.path.join(thisdir, case, 'tmp')
 exec('from . import %s_data as ref'%case)
 
 
-import unittest
+class Test:
 
-
-class NewTest(unittest.TestCase):
-
-    def setUp(self):
+    def setup(self):
     # modify Gagliardi penalty function to include unit conversion bug
         self.m = MolFrag(tmpdir, freqs=(0.4425,), damping=0.004556, pf=penalty_function(2.0/AU2ANG**2))
 
@@ -76,7 +73,7 @@ class NewTest(unittest.TestCase):
     def test_capture_error_setup(self):
         self.m._real_pol = False
         self.m._imag_pol = False
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             Dk = self.m.Dk
 
 if __name__ == "__main__": #pragma: no cover

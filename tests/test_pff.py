@@ -6,9 +6,9 @@ case = "pff"
 DIR = os.path.join(case, 'tmp')
 exec('from . import %s_data as ref'%case)
 
-class SulphurTest(LoPropTestCase):
+class TestSulphur(LoPropTestCase):
 
-    def setUp(self):
+    def setup(self):
         self.tmp = os.path.join( os.path.dirname( __file__ ), DIR)
         self.mf = MolFrag( tmpdir = self.tmp, max_l =0, pol = 0,
                 freqs = None,
@@ -18,7 +18,7 @@ class SulphurTest(LoPropTestCase):
         self.maxDiff = None
 
     def test_dir(self):
-        self.assertTrue(os.path.isdir(self.tmp))
+        assert  os.path.isdir(self.tmp)
 
     def test_nuclear_charge(self):
         Z = self.mf.Z

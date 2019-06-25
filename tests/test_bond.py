@@ -1,4 +1,3 @@
-import unittest
 import numpy as np
 
 STR_NOBOND = """AU
@@ -21,11 +20,11 @@ STR_BOND = """AU
 Time used in Loprop              :      0.45 (cpu)       0.11 (wall)
 """
 
-class TestBondH2O(unittest.TestCase):
+class TestBondH2O:
     """H2O tests bonded versus non-bonden results"""
 
 
-    def setUp(self):
+    def setup(self):
 #Read in string that is for no bonds output
         lines = [line for line in STR_BOND.split('\n') if len(line.split()) > 10]
         a0 = 1.0
@@ -76,11 +75,11 @@ class TestBondH2O(unittest.TestCase):
         dip_nobond = np.einsum('ij,i', (self.r_nobond - self.coc_nobond), self.q_nobond) + self.d_nobond.sum(axis=0)
         np.testing.assert_allclose(dip_bond, dip_nobond)
 
-class TestBondH2S(unittest.TestCase):
+class TestBondH2S:
     """H2O tests bonded versus non-bonden results"""
 
 
-    def setUp(self):
+    def setup(self):
 #Read in string that is for no bonds output
         lines = [line for line in STR_BOND.split('\n') if len(line.split()) > 10]
         a0 = 1.0

@@ -6,7 +6,9 @@ import sys
 sys.path.insert(0, os.path.abspath('..'))
 import loprop
 
-class LoPropTestCase(unittest.TestCase):
+codes = ['dal', 'vlx']
+
+class LoPropTestCase:#(unittest.TestCase):
 
     @pytest.fixture(autouse=True)
     def capfd(self, capfd):
@@ -18,7 +20,8 @@ class LoPropTestCase(unittest.TestCase):
             return numstr.replace("-0.000", " 0.000")
         thism0 = stripm0(this)
         refm0 = stripm0(ref)
-        self.assertEqual(thism0, refm0)
+        #self.assertEqual(thism0, refm0)
+        assert thism0 == refm0
 
 
     def assert_allclose(self, *args, **kwargs):

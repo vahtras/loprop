@@ -12,13 +12,13 @@ exec('from . import %s_data as ref'%case)
 
 from loprop.core import penalty_function, AU2ANG, pairs, MolFrag
 
-class NewTest(LoPropTestCase):
+class TestNew(LoPropTestCase):
 
-    def setUp(self):
+    def setup(self):
         self.m = MolFrag(tmpdir, freqs=(0.0, ), pf=penalty_function(2.0/AU2ANG**2))
         self.maxDiff = None
 
-    def tearDown(self):
+    def teardown(self):
         pass
 
     def test_nuclear_charge(self):

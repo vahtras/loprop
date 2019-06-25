@@ -1,18 +1,14 @@
-import unittest
+import pytest
 import os
-from daltools import sirifc
 from loprop.core import MolFrag
 
-class TestException(unittest.TestCase):
 
-    def setUp(self):
+class TestException:
+
+    def setup(self):
         self.thisdir = os.path.dirname(__file__)
         self.tmpdir = os.path.join(self.thisdir, 'h2o_sym', 'tmp')
 
     def test_raise_exception_if_symmetry(self):
-        nsym = sirifc.sirifc(name=os.path.join(self.tmpdir, "SIRIFC")).nsym
-        self.assertRaises(AssertionError, MolFrag, self.tmpdir)
-        
-    
-
-
+        with pytest.raises(AssertionError):
+            MolFrag(self.tmpdir)

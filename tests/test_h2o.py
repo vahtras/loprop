@@ -1,3 +1,4 @@
+import pytest
 import os
 
 import numpy as np
@@ -14,9 +15,9 @@ thisdir = os.path.dirname(__file__)
 tmpdir = os.path.join(thisdir, case, 'tmp')
 
 
-class TransformTest(LoPropTestCase):
+class TestTransform(LoPropTestCase):
 
-    def setUp(self):
+    def setup(self):
         self.maxDiff = None
         self.S = MolFrag(tmpdir).S()
         self.cpa = (30, 14, 14)
@@ -27,43 +28,45 @@ class TransformTest(LoPropTestCase):
         pass
 
     def test_created(self):
-        self.assertIsInstance(self.T, LoPropTransformer)
+        #self.assertIsInstance(self.T, LoPropTransformer)
+        assert isinstance(self.T, LoPropTransformer)
 
     def test_cpa(self):
         self.T.set_cpa(self.cpa)
-        self.assertTupleEqual(self.T.cpa, self.cpa)
+        #self.assertTupleEqual(self.T.cpa, self.cpa)
+        assert self.T.cpa ==  self.cpa
 
     def test_cpa_non_iterable(self):
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             self.T.set_cpa(None)
 
     def test_cpa_non_ints(self):
-        with self.assertRaises(AssertionError):
+        with pytest.raises(AssertionError):
             self.T.set_cpa((1.0,))
 
     def test_cpa_non_positive_ints(self):
-        with self.assertRaises(AssertionError):
+        with pytest.raises(AssertionError):
             self.T.set_cpa((0,))
 
     def test_opa(self):
         self.T.set_opa(self.opa)
         for this, ref in zip(self.T.opa, self.opa):
-            self.assertTupleEqual(this, ref)
+            assert this == ref
 
     def test_opa_non_iterable(self):
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             self.T.set_cpa(None)
 
     def test_opa_non_iterable_iterable(self):
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             self.T.set_opa((None,))
 
     def test_opa_non_ints(self):
-        with self.assertRaises(AssertionError):
+        with pytest.raises(AssertionError):
             self.T.set_opa(((1.0,),))
 
     def test_opa_non_positive_ints(self):
-        with self.assertRaises(AssertionError):
+        with pytest.raises(AssertionError):
             self.T.set_cpa(((0,),))
 
     def test_T1(self):
@@ -95,13 +98,13 @@ class TransformTest(LoPropTestCase):
         S4 = T.T*self.S*T
         self.assert_allclose(S4, full.unit(58))
 
-class H2OTest(LoPropTestCase):
+class TestH2O(LoPropTestCase):
 
-    def setUp(self):
+    def setup(self):
         self.m = MolFrag(tmpdir, freqs=(0, ), pf=penalty_function(2.0/AU2ANG**2))
         self.maxDiff = None
 
-    def tearDown(self):
+    def teardown(self):
         pass
 
     def test_nuclear_charge(self):
@@ -121,7 +124,9 @@ class H2OTest(LoPropTestCase):
 
     def test_total_charge(self):
         Qtot = self.m.Qab.sum()
-        self.assertAlmostEqual(Qtot, ref.Qtot)
+        #self.assertAlmostEqual(Qtot, ref.Qtot)
+        assert Qtot == pytest.approx(ref.Qtot)
+        
 
     def test_charge(self):
         Qaa = self.m.Qa
@@ -493,7 +498,7 @@ class H2OTest(LoPropTestCase):
         self.assert_str(PA10b, ref.PA10b)
 
     def test_potfile_PA20b(self):
-        with self.assertRaises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             PA20b = self.m.output_potential_file(maxl=2, pol=0, hyper=0, bond_centers=True)
 
     def test_potfile_PA01b(self):
@@ -592,7 +597,7 @@ class H2OTest(LoPropTestCase):
         self.assert_str(print_output, ref.OUTPUT_BY_BOND_10)
 
     def test_outfile_PA10_by_bond_error_for_quad(self):
-        with self.assertRaises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             self.m.output_by_atom(fmt="%12.5f", max_l=2, bond_centers=True)
 
     def test_outfile_PAn1_by_bond(self):

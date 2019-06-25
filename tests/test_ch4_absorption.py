@@ -1,6 +1,8 @@
-import unittest
-import os 
+import os
+
+import pytest
 import numpy as np
+
 from loprop.core import penalty_function, AU2ANG, pairs, MolFrag
 from util import full
 
@@ -8,16 +10,13 @@ import re
 thisdir  = os.path.dirname(__file__)
 case = "ch4_absorption"
 tmpdir=os.path.join(thisdir, case, 'tmp')
-exec('from . import %s_data as ref'%case)
+from . import ch4_absorption_data as ref
 
 
-import unittest
+class TestNew:
 
-
-class NewTest(unittest.TestCase):
-
-    def setUp(self):
-    # modify Gagliardi penalty function to include unit conversion bug
+    def setup(self):
+        # modify Gagliardi penalty function to include unit conversion bug
         self.m = MolFrag(tmpdir, freqs=(0.4425,), damping=0.004556, pf=penalty_function(2.0/AU2ANG**2))
 
     def tearDown(self):
@@ -75,8 +74,5 @@ class NewTest(unittest.TestCase):
     def test_capture_error_setup(self):
         self.m._real_pol = False
         self.m._imag_pol = False
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             Dk = self.m.Dk
-
-if __name__ == "__main__": #pragma: no cover
-    unittest.main()

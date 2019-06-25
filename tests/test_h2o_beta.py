@@ -12,9 +12,9 @@ exec('from . import %s_data as ref'%case)
 
 from loprop.core import penalty_function, AU2ANG, pairs, MolFrag
 
-class H2OBetaTest(LoPropTestCase):
+class TestH2OBeta(LoPropTestCase):
 
-    def setUp(self):
+    def setup(self):
         self.m = MolFrag(tmpdir, freqs=(0.0,), pf=penalty_function(2.0/AU2ANG**2))
         self.maxDiff = None
 

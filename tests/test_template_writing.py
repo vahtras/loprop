@@ -1,11 +1,12 @@
-import unittest, os
+import pytest
+import os
 from loprop.core import MolFrag, penalty_function, shift_function
 
 DIR = "h2o_beta/tmp"
 
-class TemplateTest( unittest.TestCase ):
+class TestTemplate:
 
-    def setUp(self):
+    def setup(self):
         self.tmp = os.path.join( os.path.dirname( __file__ ), DIR)
         self.mf = MolFrag( tmpdir = self.tmp, max_l =2, pol = 2,
                 freqs = None,
@@ -15,7 +16,7 @@ class TemplateTest( unittest.TestCase ):
         self.maxDiff = None
 
     def test_h2o_beta_dir(self):
-        self.assertTrue(os.path.isdir(self.tmp))
+        assert os.path.isdir(self.tmp)
 
     def test_h2o_template(self):
 
@@ -42,19 +43,19 @@ class TemplateTest( unittest.TestCase ):
         string = " ".join(string.split())
         reference = reference.replace("-0.000", " 0.000")
         reference = " ".join(reference.split())
-        
-        self.assertEqual(string, reference)
+
+        assert string == reference
 
     def test_h2o_template_wrong_l(self):
-        with self.assertRaises(RuntimeError):
+        with pytest.raises(RuntimeError):
             str_ = self.mf.output_template(maxl=3)
 
     def test_h2o_template_wrong_a(self):
-        with self.assertRaises(RuntimeError):
+        with pytest.raises(RuntimeError):
             str_ = self.mf.output_template(pol=3)
 
     def test_h2o_template_wrong_b(self):
-        with self.assertRaises(RuntimeError):
+        with pytest.raises(RuntimeError):
             str_ = self.mf.output_template(hyper=3)
 
     def test_h2o_template_full(self):
@@ -73,9 +74,6 @@ class TemplateTest( unittest.TestCase ):
         string = " ".join(string.split())
         reference = reference.replace("-0.000", " 0.000")
         reference = " ".join(reference.split())
-        
-        print(string)
-        self.assertEqual(string, reference)
 
-if __name__ == '__main__':#pragma: no cover
-    unittest.main()
+        print(string)
+        assert string == reference
