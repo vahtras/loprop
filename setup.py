@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
-setup(name="LoProp",
+setup(
+    name="LoProp",
     version="0.2.3",
     packages=["loprop"],
-    #packages=find_packages(exclude=("tests",)),
-    scripts=['scripts/loprop'],
+    entry_points={
+        'console_scripts': ['loprop=loprop.__main__:main'],
+    },
     author="Olav Vahtras",
     author_email="vahtras@kth.se",
-    install_requires = ["daltools"],
-    description = 'LoProp implementation for Dalton',
+    install_requires=["daltools"],
+    description='LoProp implementation for Dalton',
     )
