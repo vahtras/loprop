@@ -4,11 +4,16 @@ import os
 import argparse
 import tempfile
 
+
 try:
-    from loprop import MolFrag, timing, penalty_function, shift_function
+    from loprop import MolFragDalton, timing, penalty_function, shift_function
 except ImportError:
     sys.path.append(os.path.dirname(os.path.dirname(__file__)))
     from loprop import MolFrag, timing, penalty_function
+
+implementations = {
+    'dalton': MolFragDalton,
+}
 
 
 def main():
@@ -115,6 +120,13 @@ def main():
           help='Complex polarizabilities (damping); response vectors from ABSVECS',
           )
 
+    parser.add_argument(
+          '--driver',
+          default= 'dalton',
+          choices = ['dalton'],
+          help='Quantum Chemistry interface software'
+          )
+
     args = parser.parse_args()
 
     #
@@ -165,7 +177,8 @@ def main():
 
 
     t = timing.timing('Loprop')
-    molfrag = MolFrag(
+    #molfrag = implementations[args.driver](
+    molfrag = MolFragDalton(
         args.tmpdir, args.max_l, pf=penalty_function(args.alpha), gc=gc, freqs=freqs,
         damping=args.damping, real_pol=(args.damping == 'real'), imag_pol=(args.damping == 'imag')
         )
