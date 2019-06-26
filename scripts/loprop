@@ -179,7 +179,7 @@ def main():
     t = timing.timing('Loprop')
     #molfrag = implementations[args.driver](
     molfrag = MolFragDalton(
-        args.tmpdir, args.max_l, pf=penalty_function(args.alpha), gc=gc, freqs=freqs,
+        args.tmpdir, max_l=args.max_l, pf=penalty_function(args.alpha), gc=gc, freqs=freqs,
         damping=args.damping, real_pol=(args.damping == 'real'), imag_pol=(args.damping == 'imag')
         )
     print(molfrag.output_potential_file(
