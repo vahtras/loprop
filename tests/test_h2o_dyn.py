@@ -14,6 +14,7 @@ exec('from . import %s_data as ref'%case)
 from . import h2o_data
 
 from loprop.core import penalty_function, AU2ANG, pairs
+from loprop.dalton import MolFragDalton
 
 
 @pytest.fixture
@@ -21,7 +22,11 @@ def molfrag(request):
      cls = request.param
      return cls(tmpdir, freqs=(0., 0.15), pf=penalty_function(2.0/AU2ANG**2))
 
-@pytest.mark.parametrize('molfrag', [MolFrag], ids=['dalton'], indirect=True)
+@pytest.mark.parametrize('molfrag',
+    [MolFragDalton],
+    ids=['dalton'],
+    indirect=True
+)
 class TestNew(LoPropTestCase):
 
     #def setup(self, molfrag):
@@ -44,7 +49,7 @@ class TestNew(LoPropTestCase):
         self.assert_allclose(molfrag.Rc, ref.Rc)
 
     def test_defined_gauge(self, molfrag):
-        m = MolFrag(tmpdir, gc=[1,2,3])
+        m = molfrag.__class__(tmpdir, gc=[1,2,3])
         self.assert_allclose(m.Rc, [1,2,3])
 
     def test_total_charge(self, molfrag):

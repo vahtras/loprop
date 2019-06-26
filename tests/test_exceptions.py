@@ -1,7 +1,7 @@
 import pytest
 import os
 from pathlib import Path
-from loprop.core import MolFrag
+from loprop.dalton import MolFragDalton as molfrag
 
 
 class TestException:
@@ -10,4 +10,4 @@ class TestException:
         self.thisdir = Path(__file__).parent
         self.tmpdir = self.thisdir/'h2o_sym'/'tmp'
         with pytest.raises(AssertionError):
-            MolFrag(self.tmpdir)
+            molfrag(self.tmpdir)

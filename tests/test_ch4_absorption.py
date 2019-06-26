@@ -4,6 +4,8 @@ import pytest
 import numpy as np
 
 from loprop.core import penalty_function, AU2ANG, pairs, MolFrag
+from loprop.dalton import MolFragDalton
+from loprop.veloxchem import MolFragVeloxChem
 from util import full
 
 import re
@@ -17,7 +19,11 @@ def mf(request):
     cls = request.param
     return cls(tmpdir, freqs=(0.4425,), damping=0.004556, pf=penalty_function(2.0/AU2ANG**2))
 
-@pytest.mark.parametrize('mf', [MolFrag, MolFrag], ids=['foo', 'bar'], indirect=True)
+@pytest.mark.parametrize('mf',
+    [MolFragDalton],#, MolFragVeloxchem],
+    ids=['dalton'],#, 'veloxchem'],
+    indirect=True
+)
 class TestCH4Absorption:
 
     def test_nuclear_charge(self, mf):

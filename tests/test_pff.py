@@ -3,6 +3,7 @@ from .common import LoPropTestCase
 from . import pff_data as ref
 import os
 from loprop.core import MolFrag, penalty_function, shift_function
+from loprop.dalton import MolFragDalton
 
 case = "pff"
 DIR = os.path.join(case, 'tmp')
@@ -21,7 +22,12 @@ def molfrag(request):
     )
 
 
-@pytest.mark.parametrize('molfrag', [MolFrag], ids=['dalton'], indirect=True)
+@pytest.mark.parametrize(
+    'molfrag',
+    [MolFragDalton],
+    ids=['dalton'],
+    indirect=True
+)
 class TestSulphur(LoPropTestCase):
 
     def test_dir(self, molfrag):

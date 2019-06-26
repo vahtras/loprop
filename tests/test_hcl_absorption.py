@@ -2,6 +2,7 @@ import pytest
 import os 
 import numpy as np
 from loprop.core import penalty_function, AU2ANG, pairs, MolFrag
+from loprop.dalton import MolFragDalton
 from util import full
 
 import re
@@ -16,7 +17,12 @@ def molfrag(request):
     cls = request.param
     return  cls(tmpdir, freqs=(0.4425,), damping=0.004556, pf=penalty_function(2.0/AU2ANG**2))
 
-@pytest.mark.parametrize('molfrag', [MolFrag], ids=['dalton'], indirect=True)
+@pytest.mark.parametrize(
+    'molfrag',
+    [MolFragDalton],
+    ids=['dalton'],
+    indirect=True
+)
 class Test:
 
     #def setup(self):

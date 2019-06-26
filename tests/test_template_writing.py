@@ -1,6 +1,7 @@
 import pytest
 import os
 from loprop.core import MolFrag, penalty_function, shift_function
+from loprop.dalton import MolFragDalton
 
 DIR = "h2o_beta/tmp"
 
@@ -16,7 +17,12 @@ def molfrag(request):
         gc=None
     )
 
-@pytest.mark.parametrize('molfrag', [MolFrag], ids=['dalton'], indirect=True)
+@pytest.mark.parametrize(
+    'molfrag',
+    [MolFragDalton],
+    ids=['dalton'],
+    indirect=True
+)
 class TestTemplate:
 
     def _setup(self, molfrag):

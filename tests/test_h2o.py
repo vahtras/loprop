@@ -6,6 +6,8 @@ from util import full
 
 from loprop.core import MolFrag, LoPropTransformer, penalty_function, AU2ANG,\
     pairs
+from loprop.dalton import MolFragDalton
+from loprop.veloxchem import MolFragVeloxChem
 
 from .common import LoPropTestCase
 from . import h2o_data as ref
@@ -14,10 +16,12 @@ case = "h2o"
 thisdir = os.path.dirname(__file__)
 tmpdir = os.path.join(thisdir, case, 'tmp')
 
+
 @pytest.fixture
 def molfrag(request):
     cls = request.param
     return cls(tmpdir, freqs=(0, ), pf=penalty_function(2.0/AU2ANG**2))
+
 
 @pytest.fixture
 def transformer(request):
@@ -28,18 +32,14 @@ def transformer(request):
     T = LoPropTransformer(S, cpa, opa)
     return T
 
-@pytest.mark.parametrize('transformer', [MolFrag, MolFrag], ids=['foo', 'bar'], indirect=True)
+
+@pytest.mark.parametrize(
+    'transformer',
+    [MolFragDalton],# MolFragVeloxChem],
+    ids=['dalton'],#, 'veloxchem'],
+    indirect=True
+)
 class TestTransform(LoPropTestCase):
-
-    #def _setup(self):
-    #    self.maxDiff = None
-    #    self.S = MolFrag(tmpdir).S()
-    #    self.cpa = (30, 14, 14)
-    #    self.opa = ((0, 1, 4, 5, 6), (0,), (0,))
-    #    self.T = LoPropTransformer(self.S, self.cpa, self.opa)
-
-    #def _tearDown(self, mf):
-    #    pass
 
     def test_created(self, transformer):
         T = transformer
@@ -63,8 +63,8 @@ class TestTransform(LoPropTestCase):
 
     def test_opa(self, transformer):
         transformer.set_opa(((1, 2, 3),))
-        for this, ref in zip(transformer.opa, ((1, 2, 3),)):
-            assert this == ref
+        for this, that in zip(transformer.opa, ((1, 2, 3),)):
+            assert this == that
 
     def test_opa_non_iterable(self, transformer):
         with pytest.raises(TypeError):
@@ -111,15 +111,14 @@ class TestTransform(LoPropTestCase):
         S4 = T.T*transformer.S*T
         self.assert_allclose(S4, full.unit(58))
 
-@pytest.mark.parametrize('molfrag', [MolFrag, MolFrag], ids=['foo', 'bar'], indirect=True)
+
+@pytest.mark.parametrize(
+    'molfrag',
+    [MolFragDalton],#, MolFragVeloxChem],
+    ids=['dalton'],#, 'veloxchem'],
+    indirect=True
+)
 class TestH2O(LoPropTestCase):
-
-    #def setup(self):
-        #self.m = MolFrag(tmpdir, freqs=(0, ), pf=penalty_function(2.0/AU2ANG**2))
-        #self.maxDiff = None
-
-    #def teardown(self, molfrag):
-        #pass
 
     def test_nuclear_charge(self, molfrag):
         Z = molfrag.Z
@@ -133,14 +132,12 @@ class TestH2O(LoPropTestCase):
         self.assert_allclose(molfrag.Rc, ref.Rc)
 
     def test_defined_gauge(self, molfrag):
-        m = MolFrag(tmpdir, gc=[1,2,3])
+        m = molfrag.__class__(tmpdir, gc=[1,2,3])
         self.assert_allclose(m.Rc, [1,2,3])
 
     def test_total_charge(self, molfrag):
         Qtot = molfrag.Qab.sum()
-        #self.assertAlmostEqual(Qtot, ref.Qtot)
         assert Qtot == pytest.approx(ref.Qtot)
-        
 
     def test_charge(self, molfrag):
         Qaa = molfrag.Qa

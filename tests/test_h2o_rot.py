@@ -13,6 +13,7 @@ tmpdir=os.path.join(thisdir, case, 'tmp')
 exec('from . import %s_data as ref'%case)
 
 from loprop.core import penalty_function, AU2ANG, pairs
+from loprop.dalton import MolFragDalton
 
 
 @pytest.fixture
@@ -20,7 +21,11 @@ def molfrag(request):
      cls = request.param
      return cls(tmpdir, freqs=(0.0,), pf=penalty_function(2.0/AU2ANG**2))
 
-@pytest.mark.parametrize('molfrag', [MolFrag], ids=['dalton'], indirect=True)
+@pytest.mark.parametrize('molfrag',
+    [MolFragDalton],
+    ids=['dalton'],
+    indirect=True
+)
 class TestNew(LoPropTestCase):
 
     #def setup(self):

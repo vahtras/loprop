@@ -2,13 +2,12 @@
 """
 Loprop model implementation (J. Chem. Phys. 121, 4494 (2004))
 """
+import abc
 import os
-import sys
-import math
 import numpy
 from functools import reduce
 from collections import defaultdict
-from daltools import one, mol, dens, prop, lr, qr, sirifc
+#from daltools import one, mol, dens, prop, lr, qr, sirifc
 from util import full, blocked, subblocked, timing
 
 AU2ANG = 0.5291772108
@@ -114,7 +113,7 @@ def output_beta(beta, dip=None, fmt="%12.6f"):
         betapar = 0.2*(betakk & dip)/dip.norm2()
         print("beta//dip  " + (fmt) % betapar)
 
-class LoPropTransformer(object):
+class LoPropTransformer:
 
     def __init__(self, S, cpa, opa):
         self.S = S
@@ -296,7 +295,7 @@ class LoPropTransformer(object):
         T4 = T4b.unblock()
         return T4
 
-class MolFrag:
+class MolFrag(abc.ABC):
     """An instance of the MolFrag class is created and populated with
     data from a Dalton runtime scratch directory"""
 
@@ -324,20 +323,13 @@ class MolFrag:
         self.pf = pf
         self.sf = sf
         self.gc = gc
-        #
-        # Dalton files
-        #
-        self.aooneint = os.path.join(tmpdir,'AOONEINT')
-        self.dalton_bas = os.path.join(tmpdir,'DALTON.BAS')
-        self.sirifc = os.path.join(tmpdir,'SIRIFC')
-        assert sirifc.sirifc(name=self.sirifc).nsym == 1
 
         self._T = None
         self._D = None
         self._Dk = None
         self._D2k = None
-        self.get_basis_info()
-        self.get_isordk()
+        #self.get_basis_info() moved
+        #self.get_isordk()
         self._x = None
 
         self._Rc = None
@@ -385,66 +377,33 @@ class MolFrag:
         self._imag_pol = True
 
 
+    @abc.abstractmethod
     def get_basis_info(self):
         """ Obtain basis set info from DALTON.BAS """
-        molecule = mol.readin(self.dalton_bas)
-        self.cpa = mol.contracted_per_atom(molecule)
-        self.cpa_l = mol.contracted_per_atom_l(molecule)
-        self.opa = mol.occupied_per_atom(molecule)
-        self.noa = len(self.opa)
+        #molecule = mol.readin(self.dalton_bas)
+        #self.cpa = mol.contracted_per_atom(molecule)
+        #self.cpa_l = mol.contracted_per_atom_l(molecule)
+        #self.opa = mol.occupied_per_atom(molecule)
+        #self.noa = len(self.opa)
 #
 # Total number of basis functions and occpied orbitals
 #
-        self.nbf = sum(self.cpa)
-        self.noc = 0
-        for o in self.opa:
-            self.noc += len(o)
+        #self.nbf = sum(self.cpa)
+        #self.noc = 0
+        #for o in self.opa:
+        #    self.noc += len(o)
 
+    @abc.abstractmethod
     def S(self):
         """
         Get overlap, nuclear charges and coordinates from AOONEINT
         """
-        S = one.read("OVERLAP", self.aooneint)
-        return  S.unpack().unblock()
-        
 
+    @abc.abstractmethod
     def get_isordk(self):
         """
-        Get overlap, nuclear charges and coordinates from AOONEINT
+        Molecular info: nuclear charges, coordinates
         """
-        #
-        # Data from the ISORDK section in AOONEINT
-        #
-        isordk = one.readisordk(filename=self.aooneint)
-        #
-        # Number of nuclei
-        #
-        N = isordk["nucdep"]
-        #
-        # MXCENT , Fix dimension defined in nuclei.h
-        #
-        mxcent = len(isordk["chrn"]) 
-        #
-        # Nuclear charges
-        #
-        self.Z = full.matrix((N,))
-        self.Z[:] = isordk["chrn"][:N]
-        #
-        # Nuclear coordinates
-        #
-        R = full.matrix((mxcent*3,))
-        R[:] = isordk["cooo"][:]
-        self.R = R.reshape((mxcent, 3), order='F')[:N, :]
-       #
-       # Bond center matrix and half bond vector
-       #
-        noa = self.noa
-        self.Rab = full.matrix((noa, noa, 3))
-        self.dRab = full.matrix((noa, noa, 3))
-        for a in range(noa):
-            for b in range(noa):
-                self.Rab[a, b, :] = (self.R[a, :] + self.R[b, :])/2
-                self.dRab[a, b, :] = (self.R[a, :] - self.R[b, :])/2
 
     @property
     def Rc(self):
@@ -460,18 +419,11 @@ class MolFrag:
         return self._Rc
 
 
-    @property
+    @abc.abstractmethod
     def D(self):
         """ 
         Density from SIRIFC in blocked loprop basis
         """
-        if self._D is not None:
-            return self._D
-
-        D = sum(dens.Dab(filename=self.sirifc))
-        Ti = self.T.I
-        self._D = ( Ti * D * Ti.T ).subblocked(self.cpa, self.cpa)
-        return self._D
 
     @property
     def T(self):
@@ -780,26 +732,9 @@ class MolFrag:
         self._Dk = _Dk
         return self._Dk
 
-    @property
+    @abc.abstractmethod
     def D2k(self):
         """Read perturbed densities"""
-
-        if self._D2k is not None:
-            return self._D2k
-
-        lab = ['XDIPLEN ', "YDIPLEN ", "ZDIPLEN "]
-        qrlab = [lab[j]+lab[i] for i in range(3) for j in range(i,3)]
-        prp = os.path.join(self.tmpdir, "AOPROPER")
-        T = self.T
-        cpa = self.cpa
-
-        Dkao = qr.D2k(*qrlab, freqs=self.freqs, tmpdir=self.tmpdir)
-        #print("Dkao.keys", Dkao.keys())
-        _D2k = {lw:(T.I*Dkao[lw]*T.I.T).subblocked(cpa, cpa) for lw in Dkao}
-
-        self._D2k = _D2k
-        return self._D2k
-
     @property
     def x(self):
         """Read dipole matrices to blocked loprop basis"""
@@ -923,13 +858,12 @@ class MolFrag:
         self._d2Qab = d2Qab
         return self._d2Qab
 
-
     @property
     def Aab(self):
         """Localized polariziabilities:
 
         Contribution from change in localized dipole moment
-        - d (r - R(AB)):D(AB) = - r:dD(AB) + dQ(A) R(A) \delta(A,B)
+        - d (r - R(AB)):D(AB) = - r:dD(AB) + dQ(A) R(A) Δ(A,B)
         """
         if self._Aab is not None: return self._Aab
 
@@ -993,7 +927,7 @@ class MolFrag:
         polarizabilties one has to reexpand in terms of an arbitrary but common 
         origin leading to the correction term below
 
-        d<-r> = - sum(A,B) (r-R(A,B))dD(A,B) + R(A) dQ(A) \delta(A,B)
+        d<-r> = - sum(A,B) (r-R(A,B))dD(A,B) + R(A) dQ(A) Δ(A,B)
         """
 
         if self._Am is not None: return self._Am
