@@ -1,16 +1,17 @@
 import pytest
 from .common import loprop, LoPropTestCase
-import os 
+import os
 import sys
 import numpy as np
 from loprop.core import MolFrag
 from util import full
 
 import re
-thisdir  = os.path.dirname(__file__)
+
+thisdir = os.path.dirname(__file__)
 case = "h2o_dyn"
-tmpdir=os.path.join(thisdir, case, 'tmp')
-exec('from . import %s_data as ref'%case)
+tmpdir = os.path.join(thisdir, case, "tmp")
+exec("from . import %s_data as ref" % case)
 from . import h2o_data
 
 from loprop.core import penalty_function, AU2ANG, pairs
@@ -19,23 +20,19 @@ from loprop.dalton import MolFragDalton
 
 @pytest.fixture
 def molfrag(request):
-     cls = request.param
-     return cls(tmpdir, freqs=(0., 0.15), pf=penalty_function(2.0/AU2ANG**2))
+    cls = request.param
+    return cls(tmpdir, freqs=(0.0, 0.15), pf=penalty_function(2.0 / AU2ANG ** 2))
 
-@pytest.mark.parametrize('molfrag',
-    [MolFragDalton],
-    ids=['dalton'],
-    indirect=True
-)
+
+@pytest.mark.parametrize("molfrag", [MolFragDalton], ids=["dalton"], indirect=True)
 class TestNew(LoPropTestCase):
 
-    #def setup(self, molfrag):
+    # def setup(self, molfrag):
     #    molfrag = MolFrag(tmpdir, freqs=(0., 0.15), pf=penalty_function(2.0/AU2ANG**2))
     #    molfragaxDiff = None
 
-    #def teardown(self, molfrag):
+    # def teardown(self, molfrag):
     #    pass
-
 
     def test_nuclear_charge(self, molfrag):
         Z = molfrag.Z
@@ -49,8 +46,8 @@ class TestNew(LoPropTestCase):
         self.assert_allclose(molfrag.Rc, ref.Rc)
 
     def test_defined_gauge(self, molfrag):
-        m = molfrag.__class__(tmpdir, gc=[1,2,3])
-        self.assert_allclose(m.Rc, [1,2,3])
+        m = molfrag.__class__(tmpdir, gc=[1, 2, 3])
+        self.assert_allclose(m.Rc, [1, 2, 3])
 
     def test_total_charge(self, molfrag):
         Qtot = molfrag.Qab.sum()
@@ -67,8 +64,9 @@ class TestNew(LoPropTestCase):
         D = full.matrix(ref.D.shape)
         Dab = molfrag.Dab
         for ab, a, b in pairs(molfrag.noa):
-            D[:, ab] += Dab[:, a, b ] 
-            if a != b: D[:, ab] += Dab[:, b, a] 
+            D[:, ab] += Dab[:, a, b]
+            if a != b:
+                D[:, ab] += Dab[:, b, a]
         self.assert_allclose(D, ref.D)
 
     def test_dipole_allbonds_sym(self, molfrag):
@@ -82,7 +80,7 @@ class TestNew(LoPropTestCase):
     def test_quadrupole_total(self, molfrag):
         QUc = molfrag.QUc
         self.assert_allclose(QUc, ref.QUc)
-    
+
     def test_nuclear_quadrupole(self, molfrag):
         QUN = molfrag.QUN
         self.assert_allclose(QUN, ref.QUN)
@@ -91,8 +89,9 @@ class TestNew(LoPropTestCase):
         QU = full.matrix(ref.QU.shape)
         QUab = molfrag.QUab
         for ab, a, b in pairs(molfrag.noa):
-            QU[:, ab] += QUab[:, a, b ] 
-            if a != b: QU[:, ab] += QUab[:, b, a] 
+            QU[:, ab] += QUab[:, a, b]
+            if a != b:
+                QU[:, ab] += QUab[:, b, a]
         self.assert_allclose(QU, ref.QU)
 
     def test_quadrupole_allbonds_sym(self, molfrag):
@@ -113,7 +112,7 @@ class TestNew(LoPropTestCase):
 
     def test_total_charge_shift(self, molfrag):
         dQ = molfrag.dQa[0].sum(axis=0).view(full.matrix)
-        dQref = [0., 0., 0.]
+        dQref = [0.0, 0.0, 0.0]
         self.assert_allclose(dQref, dQ)
 
     def test_polarizability_total(self, molfrag):
@@ -123,7 +122,7 @@ class TestNew(LoPropTestCase):
     def test_dyn_polarizability_total(self, molfrag):
         Amw = molfrag.Am[1]
         self.assert_allclose(Amw, ref.Amw, 0.015)
-            
+
     def test_potfile_PAn00_angstrom(self, molfrag):
         PAn0 = molfrag.output_potential_file(maxl=-1, pol=0, hyper=0, angstrom=True)
         self.assert_str(PAn0, ref.POTFILE_BY_ATOM_n0_ANGSTROM)
@@ -149,7 +148,9 @@ class TestNew(LoPropTestCase):
         self.assert_str(PA22, ref.PA22)
 
     def test_potfile_PAn0b(self, molfrag):
-        PAn0b = molfrag.output_potential_file(maxl=-1, pol=0, hyper=0, bond_centers=True)
+        PAn0b = molfrag.output_potential_file(
+            maxl=-1, pol=0, hyper=0, bond_centers=True
+        )
         self.assert_str(PAn0b, h2o_data.PAn0b)
 
     def test_potfile_PA00b(self, molfrag):
@@ -162,7 +163,9 @@ class TestNew(LoPropTestCase):
 
     def test_potfile_PA20b(self, molfrag):
         with pytest.raises(NotImplementedError):
-            PA20b = molfrag.output_potential_file(maxl=2, pol=0, hyper=0, bond_centers=True)
+            PA20b = molfrag.output_potential_file(
+                maxl=2, pol=0, hyper=0, bond_centers=True
+            )
 
     def test_potfile_PA01b(self, molfrag):
         PA01b = molfrag.output_potential_file(maxl=0, pol=1, hyper=0, bond_centers=True)
@@ -182,7 +185,9 @@ class TestNew(LoPropTestCase):
 
     def test_outfile_PAn0_atom_domain_angstrom(self, molfrag):
         molfrag.max_l = -1
-        self.assert_str(molfrag.print_atom_domain(0, angstrom=True), h2o_data.OUTPUT_n0_1_ANGSTROM)
+        self.assert_str(
+            molfrag.print_atom_domain(0, angstrom=True), h2o_data.OUTPUT_n0_1_ANGSTROM
+        )
 
     def test_outfile_PA00_atom_domain(self, molfrag):
         molfrag.max_l = 0

@@ -9,23 +9,31 @@ from loprop.veloxchem import MolFragVeloxChem
 from util import full
 
 import re
-thisdir  = os.path.dirname(__file__)
+
+thisdir = os.path.dirname(__file__)
 case = "ch4_absorption"
-tmpdir=os.path.join(thisdir, case, 'tmp')
+tmpdir = os.path.join(thisdir, case, "tmp")
 from . import ch4_absorption_data as ref
+
 
 @pytest.fixture
 def mf(request):
     cls = request.param
-    return cls(tmpdir, freqs=(0.4425,), damping=0.004556, pf=penalty_function(2.0/AU2ANG**2))
+    return cls(
+        tmpdir,
+        freqs=(0.4425,),
+        damping=0.004556,
+        pf=penalty_function(2.0 / AU2ANG ** 2),
+    )
 
-@pytest.mark.parametrize('mf',
-    [MolFragDalton],#, MolFragVeloxchem],
-    ids=['dalton'],#, 'veloxchem'],
-    indirect=True
+
+@pytest.mark.parametrize(
+    "mf",
+    [MolFragDalton],  # , MolFragVeloxchem],
+    ids=["dalton"],  # , 'veloxchem'],
+    indirect=True,
 )
 class TestCH4Absorption:
-
     def test_nuclear_charge(self, mf):
         Z = mf.Z
         np.testing.assert_allclose(Z, ref.Z)
@@ -57,21 +65,25 @@ class TestCH4Absorption:
     def test_real_polarizability_total(self, mf):
 
         mf.set_real_pol()
-        ref_Am = full.init([
-            [30.854533, -0.000004,  0.000000],
-            [-0.000004, 30.854527,  0.000000],
-            [0.000000,  0.000000, 30.854522]
-            ])
+        ref_Am = full.init(
+            [
+                [30.854533, -0.000004, 0.000000],
+                [-0.000004, 30.854527, 0.000000],
+                [0.000000, 0.000000, 30.854522],
+            ]
+        )
         Am = mf.Am[0]
         np.testing.assert_allclose(Am, ref_Am, rtol=1e-6, atol=1e-6)
 
     def test_imag_polarizability_total(self, mf):
 
         mf.set_imag_pol()
-        ref_Am = full.init([
-            [1.228334, 0.000000, 0.000000],
-            [0.000000, 1.228335, 0.000000],
-            [0.000000, 0.000000, 1.228333]]
+        ref_Am = full.init(
+            [
+                [1.228334, 0.000000, 0.000000],
+                [0.000000, 1.228335, 0.000000],
+                [0.000000, 0.000000, 1.228333],
+            ]
         )
         Am = mf.Am[0]
         np.testing.assert_allclose(Am, ref_Am, rtol=1e-6, atol=1e-6)

@@ -4,8 +4,7 @@ import os
 import numpy as np
 from util import full
 
-from loprop.core import MolFrag, LoPropTransformer, penalty_function, AU2ANG,\
-    pairs
+from loprop.core import MolFrag, LoPropTransformer, penalty_function, AU2ANG, pairs
 from loprop.dalton import MolFragDalton
 from loprop.veloxchem import MolFragVeloxChem
 
@@ -14,13 +13,13 @@ from . import h2o_data as ref
 
 case = "h2o"
 thisdir = os.path.dirname(__file__)
-tmpdir = os.path.join(thisdir, case, 'tmp')
+tmpdir = os.path.join(thisdir, case, "tmp")
 
 
 @pytest.fixture
 def molfrag(request):
     cls = request.param
-    return cls(tmpdir, freqs=(0, ), pf=penalty_function(2.0/AU2ANG**2))
+    return cls(tmpdir, freqs=(0,), pf=penalty_function(2.0 / AU2ANG ** 2))
 
 
 @pytest.fixture
@@ -34,13 +33,12 @@ def transformer(request):
 
 
 @pytest.mark.parametrize(
-    'transformer',
-    [MolFragDalton],# MolFragVeloxChem],
-    ids=['dalton'],#, 'veloxchem'],
-    indirect=True
+    "transformer",
+    [MolFragDalton],  # MolFragVeloxChem],
+    ids=["dalton"],  # , 'veloxchem'],
+    indirect=True,
 )
 class TestTransform(LoPropTestCase):
-
     def test_created(self, transformer):
         T = transformer
         assert isinstance(T, LoPropTransformer)
@@ -108,18 +106,17 @@ class TestTransform(LoPropTestCase):
 
     def test_S4(self, transformer):
         T = transformer.T
-        S4 = T.T*transformer.S*T
+        S4 = T.T * transformer.S * T
         self.assert_allclose(S4, full.unit(58))
 
 
 @pytest.mark.parametrize(
-    'molfrag',
-    [MolFragDalton],#, MolFragVeloxChem],
-    ids=['dalton'],#, 'veloxchem'],
-    indirect=True
+    "molfrag",
+    [MolFragDalton],  # , MolFragVeloxChem],
+    ids=["dalton"],  # , 'veloxchem'],
+    indirect=True,
 )
 class TestH2O(LoPropTestCase):
-
     def test_nuclear_charge(self, molfrag):
         Z = molfrag.Z
         self.assert_allclose(Z, ref.Z)
@@ -132,8 +129,8 @@ class TestH2O(LoPropTestCase):
         self.assert_allclose(molfrag.Rc, ref.Rc)
 
     def test_defined_gauge(self, molfrag):
-        m = molfrag.__class__(tmpdir, gc=[1,2,3])
-        self.assert_allclose(m.Rc, [1,2,3])
+        m = molfrag.__class__(tmpdir, gc=[1, 2, 3])
+        self.assert_allclose(m.Rc, [1, 2, 3])
 
     def test_total_charge(self, molfrag):
         Qtot = molfrag.Qab.sum()
@@ -150,8 +147,9 @@ class TestH2O(LoPropTestCase):
         D = full.matrix(ref.D.shape)
         Dab = molfrag.Dab
         for ab, a, b in pairs(molfrag.noa):
-            D[:, ab] += Dab[:, a, b ] 
-            if a != b: D[:, ab] += Dab[:, b, a] 
+            D[:, ab] += Dab[:, a, b]
+            if a != b:
+                D[:, ab] += Dab[:, b, a]
         self.assert_allclose(D, ref.D)
 
     def test_dipole_allbonds_sym(self, molfrag):
@@ -165,7 +163,7 @@ class TestH2O(LoPropTestCase):
     def test_quadrupole_total(self, molfrag):
         QUc = molfrag.QUc
         self.assert_allclose(QUc, ref.QUc)
-    
+
     def test_nuclear_quadrupole(self, molfrag):
         QUN = molfrag.QUN
         self.assert_allclose(QUN, ref.QUN)
@@ -174,8 +172,9 @@ class TestH2O(LoPropTestCase):
         QU = full.matrix(ref.QU.shape)
         QUab = molfrag.QUab
         for ab, a, b in pairs(molfrag.noa):
-            QU[:, ab] += QUab[:, a, b ] 
-            if a != b: QU[:, ab] += QUab[:, b, a] 
+            QU[:, ab] += QUab[:, a, b]
+            if a != b:
+                QU[:, ab] += QUab[:, b, a]
         self.assert_allclose(QU, ref.QU)
 
     def test_quadrupole_allbonds_sym(self, molfrag):
@@ -196,49 +195,46 @@ class TestH2O(LoPropTestCase):
 
     def test_total_charge_shift(self, molfrag):
         dQ = molfrag.dQa[0].sum(axis=0).view(full.matrix)
-        dQref = [0., 0., 0.]
+        dQref = [0.0, 0.0, 0.0]
         self.assert_allclose(dQref, dQ)
 
     def test_atomic_charge_shift(self, molfrag):
         dQa = molfrag.dQa[0]
-        dQaref = (ref.dQa[:, 1::2] - ref.dQa[:, 2::2])/(2*ref.ff)
+        dQaref = (ref.dQa[:, 1::2] - ref.dQa[:, 2::2]) / (2 * ref.ff)
 
-        self.assert_allclose(dQa, dQaref, atol=.006)
+        self.assert_allclose(dQa, dQaref, atol=0.006)
 
     def test_lagrangian(self, molfrag):
-    # values per "perturbation" as in atomic_charge_shift below
+        # values per "perturbation" as in atomic_charge_shift below
         la = molfrag.la[0]
-        laref = (ref.la[:,0:6:2] - ref.la[:,1:6:2])/(2*ref.ff)
-    # The sign difference is because mocas sets up rhs with opposite sign
+        laref = (ref.la[:, 0:6:2] - ref.la[:, 1:6:2]) / (2 * ref.ff)
+        # The sign difference is because mocas sets up rhs with opposite sign
         self.assert_allclose(-laref, la, atol=100)
 
     def test_bond_charge_shift(self, molfrag):
         dQab = molfrag.dQab[0]
         noa = molfrag.noa
 
-
-        dQabref = (ref.dQab[:, 1:7:2] - ref.dQab[:, 2:7:2])/(2*ref.ff)
+        dQabref = (ref.dQab[:, 1:7:2] - ref.dQab[:, 2:7:2]) / (2 * ref.ff)
         dQabcmp = full.matrix((3, 3))
         ab = 0
         for a in range(noa):
             for b in range(a):
                 dQabcmp[ab, :] = dQab[a, b, :]
                 ab += 1
-    # The sign difference is because mocas sets up rhs with opposite sign
+        # The sign difference is because mocas sets up rhs with opposite sign
         self.assert_allclose(-dQabref, dQabcmp, atol=0.006)
 
     def test_bond_charge_shift_sum(self, molfrag):
-        dQa  = molfrag.dQab[0].sum(axis=1).view(full.matrix)
+        dQa = molfrag.dQab[0].sum(axis=1).view(full.matrix)
         dQaref = molfrag.dQa[0]
         self.assert_allclose(dQa, dQaref)
-
 
     def test_polarizability_total(self, molfrag):
 
         Am = molfrag.Am[0]
         self.assert_allclose(Am, ref.Am, 0.015)
 
-            
     def test_polarizability_allbonds_molcas_internal(self, molfrag):
 
         O = ref.O
@@ -253,105 +249,175 @@ class TestH2O(LoPropTestCase):
         ROx, ROy, ROz = RO
         RH1x, RH1y, RH1z = RH1
         RH2x, RH2y, RH2z = RH2
-        
 
-        ihff = 1/(2*ref.ff)
+        ihff = 1 / (2 * ref.ff)
 
         q, x, y, z = range(4)
         dx1, dx2, dy1, dy2, dz1, dz2 = 1, 2, 3, 4, 5, 6
         o, h1o, h1, h2o, h2h1, h2 = range(6)
 
-        Oxx = ihff*(rMP[x, dx1, o] - rMP[x, dx2, o])
-        Oyx = ihff*(rMP[y, dx1, o] - rMP[y, dx2, o]
-            +       rMP[x, dy1, o] - rMP[x, dy2, o])/2
-        Oyy = ihff*(rMP[y, dy1, o] - rMP[y, dy2, o])
-        Ozx = ihff*(rMP[z, dx1, o] - rMP[z, dx2, o]
-            +       rMP[x, dz1, o] - rMP[x, dz2, o])/2
-        Ozy = ihff*(rMP[z, dy1, o] - rMP[z, dy2, o]
-            +       rMP[y, dz1, o] - rMP[y, dz2, o])/2
-        Ozz = ihff*(rMP[z, dz1, o] - rMP[z, dz2, o])
-        H1Oxx = ihff*(rMP[x, dx1, h1o] - rMP[x, dx2, h1o] \
-              - (rMP[q, dx1, h1o] - rMP[q, dx2, h1o])*(RH1x-ROx))
-        H1Oyx = ihff*(
-             (rMP[y, dx1, h1o] - rMP[y, dx2, h1o] 
-            + rMP[x, dy1, h1o] - rMP[x, dy2, h1o])/2
-           - (rMP[q, dx1, h1o] - rMP[q, dx2, h1o])*(RH1y-ROy)
-    #      - (rMP[0, dy1, h1o] - rMP[0, dy2, h1o])*(RH1x-ROx) THIS IS REALLY... A BUG?
-           )
-        H1Oyy = ihff*(rMP[y, dy1, h1o] - rMP[y, dy2, h1o] - (rMP[q, dy1, h1o] - rMP[q, dy2, h1o])*(RH1y-ROy))
-        H1Ozx = ihff*(
-            (rMP[z, dx1, h1o] - rMP[z, dx2, h1o]
-           + rMP[x, dz1, h1o] - rMP[x, dz2, h1o])/2
-          - (rMP[q, dx1, h1o] - rMP[q, dx2, h1o])*(RH1z-ROz)
-    #             - (rMP[q, dz1, h1o] - rMP[q, dz2, h1o])*(RH1x-ROx) #THIS IS REALLY... A BUG?
-                )
-        H1Ozy = ihff*(
-            (rMP[z, dy1, h1o] - rMP[z, dy2, h1o]
-           + rMP[y, dz1, h1o] - rMP[y, dz2, h1o])/2
-          - (rMP[q, dy1, h1o] - rMP[q, dy2, h1o])*(RH1z-ROz)
-    #     - (rMP[q, dz1, h1o] - rMP[q, dz2, h1o])*(RH1y-ROy) THIS IS REALLY... A BUG?
+        Oxx = ihff * (rMP[x, dx1, o] - rMP[x, dx2, o])
+        Oyx = (
+            ihff
+            * (rMP[y, dx1, o] - rMP[y, dx2, o] + rMP[x, dy1, o] - rMP[x, dy2, o])
+            / 2
+        )
+        Oyy = ihff * (rMP[y, dy1, o] - rMP[y, dy2, o])
+        Ozx = (
+            ihff
+            * (rMP[z, dx1, o] - rMP[z, dx2, o] + rMP[x, dz1, o] - rMP[x, dz2, o])
+            / 2
+        )
+        Ozy = (
+            ihff
+            * (rMP[z, dy1, o] - rMP[z, dy2, o] + rMP[y, dz1, o] - rMP[y, dz2, o])
+            / 2
+        )
+        Ozz = ihff * (rMP[z, dz1, o] - rMP[z, dz2, o])
+        H1Oxx = ihff * (
+            rMP[x, dx1, h1o]
+            - rMP[x, dx2, h1o]
+            - (rMP[q, dx1, h1o] - rMP[q, dx2, h1o]) * (RH1x - ROx)
+        )
+        H1Oyx = ihff * (
+            (rMP[y, dx1, h1o] - rMP[y, dx2, h1o] + rMP[x, dy1, h1o] - rMP[x, dy2, h1o])
+            / 2
+            - (rMP[q, dx1, h1o] - rMP[q, dx2, h1o]) * (RH1y - ROy)
+            #      - (rMP[0, dy1, h1o] - rMP[0, dy2, h1o])*(RH1x-ROx) THIS IS REALLY... A BUG?
+        )
+        H1Oyy = ihff * (
+            rMP[y, dy1, h1o]
+            - rMP[y, dy2, h1o]
+            - (rMP[q, dy1, h1o] - rMP[q, dy2, h1o]) * (RH1y - ROy)
+        )
+        H1Ozx = ihff * (
+            (rMP[z, dx1, h1o] - rMP[z, dx2, h1o] + rMP[x, dz1, h1o] - rMP[x, dz2, h1o])
+            / 2
+            - (rMP[q, dx1, h1o] - rMP[q, dx2, h1o]) * (RH1z - ROz)
+            #             - (rMP[q, dz1, h1o] - rMP[q, dz2, h1o])*(RH1x-ROx) #THIS IS REALLY... A BUG?
+        )
+        H1Ozy = ihff * (
+            (rMP[z, dy1, h1o] - rMP[z, dy2, h1o] + rMP[y, dz1, h1o] - rMP[y, dz2, h1o])
+            / 2
+            - (rMP[q, dy1, h1o] - rMP[q, dy2, h1o]) * (RH1z - ROz)
+            #     - (rMP[q, dz1, h1o] - rMP[q, dz2, h1o])*(RH1y-ROy) THIS IS REALLY... A BUG?
+        )
+        H1Ozz = ihff * (
+            rMP[z, dz1, h1o]
+            - rMP[z, dz2, h1o]
+            - (rMP[q, dz1, h1o] - rMP[q, dz2, h1o]) * (RH1z - ROz)
+        )
+        H1xx = ihff * (rMP[x, dx1, h1] - rMP[x, dx2, h1])
+        H1yx = (
+            ihff * (rMP[y, dx1, h1] - rMP[y, dx2, h1])
+            + ihff * (rMP[x, dy1, h1] - rMP[x, dy2, h1])
+        ) / 2
+        H1yy = ihff * (rMP[y, dy1, h1] - rMP[y, dy2, h1])
+        H1zx = (
+            ihff * (rMP[z, dx1, h1] - rMP[z, dx2, h1])
+            + ihff * (rMP[x, dz1, h1] - rMP[x, dz2, h1])
+        ) / 2
+        H1zy = (
+            ihff * (rMP[z, dy1, h1] - rMP[z, dy2, h1])
+            + ihff * (rMP[y, dz1, h1] - rMP[y, dz2, h1])
+        ) / 2
+        H1zz = ihff * (rMP[z, dz1, h1] - rMP[z, dz2, h1])
+        H2Oxx = ihff * (
+            rMP[x, dx1, h2o]
+            - rMP[x, dx2, h2o]
+            - (rMP[q, dx1, h2o] - rMP[q, dx2, h2o]) * (RH2x - ROx)
+        )
+        H2Oyx = ihff * (
+            (rMP[y, dx1, h2o] - rMP[y, dx2, h2o] + rMP[x, dy1, h2o] - rMP[x, dy2, h2o])
+            / 2
+            - (rMP[q, dx1, h2o] - rMP[q, dx2, h2o]) * (RH2y - ROy)
+            #      - (rMP[q, dy1, h1o] - rMP[q, dy2, h1o])*(RH2x-ROx) THIS IS REALLY... A BUG?
+        )
+        H2Oyy = ihff * (
+            rMP[y, dy1, h2o]
+            - rMP[y, dy2, h2o]
+            - (rMP[q, dy1, h2o] - rMP[q, dy2, h2o]) * (RH2y - ROy)
+        )
+        H2Ozx = ihff * (
+            (rMP[z, dx1, h2o] - rMP[z, dx2, h2o] + rMP[x, dz1, h2o] - rMP[x, dz2, h2o])
+            / 2
+            - (rMP[q, dx1, h2o] - rMP[q, dx2, h2o]) * (RH2z - ROz)
+            #             - (rMP[q, dz1, h1o] - rMP[q, dz2, h1o])*(RH2x-ROx) #THIS IS REALLY... A BUG?
+        )
+        H2Ozy = ihff * (
+            (rMP[z, dy1, h2o] - rMP[z, dy2, h2o] + rMP[y, dz1, h2o] - rMP[y, dz2, h2o])
+            / 2
+            - (rMP[q, dy1, h2o] - rMP[q, dy2, h2o]) * (RH2z - ROz)
+            #     - (rMP[q, dz1, h2o] - rMP[q, dz2, h2o])*(RH2y-ROy) THIS IS REALLY... A BUG?
+        )
+        H2Ozz = ihff * (
+            rMP[z, dz1, h2o]
+            - rMP[z, dz2, h2o]
+            - (rMP[q, dz1, h2o] - rMP[q, dz2, h2o]) * (RH2z - ROz)
+        )
+        H2H1xx = ihff * (
+            rMP[x, dx1, h2h1]
+            - rMP[x, dx2, h2h1]
+            - (rMP[q, dx1, h2h1] - rMP[q, dx2, h2h1]) * (RH2x - RH1x)
+        )
+        H2H1yx = ihff * (
+            (
+                rMP[y, dx1, h2h1]
+                - rMP[y, dx2, h2h1]
+                + rMP[x, dy1, h2h1]
+                - rMP[x, dy2, h2h1]
             )
-        H1Ozz = ihff*(rMP[z, dz1, h1o] - rMP[z, dz2, h1o] - (rMP[q, dz1, h1o] - rMP[q, dz2, h1o])*(RH1z-ROz))
-        H1xx = ihff*(rMP[x, dx1, h1] - rMP[x, dx2, h1])
-        H1yx = (ihff*(rMP[y, dx1, h1] - rMP[y, dx2, h1])
-             +  ihff*(rMP[x, dy1, h1] - rMP[x, dy2, h1]))/2
-        H1yy = ihff*(rMP[y, dy1, h1] - rMP[y, dy2, h1])
-        H1zx = (ihff*(rMP[z, dx1, h1] - rMP[z, dx2, h1])
-             +  ihff*(rMP[x, dz1, h1] - rMP[x, dz2, h1]))/2
-        H1zy = (ihff*(rMP[z, dy1, h1] - rMP[z, dy2, h1])
-             +  ihff*(rMP[y, dz1, h1] - rMP[y, dz2, h1]))/2
-        H1zz = ihff*(rMP[z, dz1, h1] - rMP[z, dz2, h1])
-        H2Oxx = ihff*(rMP[x, dx1, h2o] - rMP[x, dx2, h2o] - (rMP[q, dx1, h2o] - rMP[q, dx2, h2o])*(RH2x-ROx))
-        H2Oyx = ihff*(
-            (rMP[y, dx1, h2o] - rMP[y, dx2, h2o] 
-           + rMP[x, dy1, h2o] - rMP[x, dy2, h2o])/2
-           - (rMP[q, dx1, h2o] - rMP[q, dx2, h2o])*(RH2y-ROy)
-    #      - (rMP[q, dy1, h1o] - rMP[q, dy2, h1o])*(RH2x-ROx) THIS IS REALLY... A BUG?
-           )
-        H2Oyy = ihff*(rMP[y, dy1, h2o] - rMP[y, dy2, h2o] - (rMP[q, dy1, h2o] - rMP[q, dy2, h2o])*(RH2y-ROy))
-        H2Ozx = ihff*(
-            (rMP[z, dx1, h2o] - rMP[z, dx2, h2o]
-           + rMP[x, dz1, h2o] - rMP[x, dz2, h2o])/2
-          - (rMP[q, dx1, h2o] - rMP[q, dx2, h2o])*(RH2z-ROz)
-    #             - (rMP[q, dz1, h1o] - rMP[q, dz2, h1o])*(RH2x-ROx) #THIS IS REALLY... A BUG?
-                )
-        H2Ozy = ihff*(
-            (rMP[z, dy1, h2o] - rMP[z, dy2, h2o]
-           + rMP[y, dz1, h2o] - rMP[y, dz2, h2o])/2
-          - (rMP[q, dy1, h2o] - rMP[q, dy2, h2o])*(RH2z-ROz)
-    #     - (rMP[q, dz1, h2o] - rMP[q, dz2, h2o])*(RH2y-ROy) THIS IS REALLY... A BUG?
+            / 2
+            - (rMP[q, dx1, h2h1] - rMP[q, dx2, h2h1]) * (RH1y - ROy)
+            #      - (rMP[q, dy1, h2h1] - rMP[q, dy2, h2h1])*(RH1x-ROx) THIS IS REALLY... A BUG?
+        )
+        H2H1yy = ihff * (
+            rMP[y, dy1, h2h1]
+            - rMP[y, dy2, h2h1]
+            - (rMP[q, dy1, h2h1] - rMP[q, dy2, h2h1]) * (RH2y - RH1y)
+        )
+        H2H1zx = ihff * (
+            (
+                rMP[z, dx1, h2h1]
+                - rMP[z, dx2, h2h1]
+                + rMP[x, dz1, h2h1]
+                - rMP[x, dz2, h2h1]
             )
-        H2Ozz = ihff*(rMP[z, dz1, h2o] - rMP[z, dz2, h2o] - (rMP[q, dz1, h2o] - rMP[q, dz2, h2o])*(RH2z-ROz))
-        H2H1xx = ihff*(rMP[x, dx1, h2h1] - rMP[x, dx2, h2h1] - (rMP[q, dx1, h2h1] - rMP[q, dx2, h2h1])*(RH2x-RH1x))
-        H2H1yx = ihff*(
-            (rMP[y, dx1, h2h1] - rMP[y, dx2, h2h1] 
-           + rMP[x, dy1, h2h1] - rMP[x, dy2, h2h1])/2
-           - (rMP[q, dx1, h2h1] - rMP[q, dx2, h2h1])*(RH1y-ROy)
-    #      - (rMP[q, dy1, h2h1] - rMP[q, dy2, h2h1])*(RH1x-ROx) THIS IS REALLY... A BUG?
-           )
-        H2H1yy = ihff*(rMP[y, dy1, h2h1] - rMP[y, dy2, h2h1] - (rMP[q, dy1, h2h1] - rMP[q, dy2, h2h1])*(RH2y-RH1y))
-        H2H1zx = ihff*(
-            (rMP[z, dx1, h2h1] - rMP[z, dx2, h2h1]
-           + rMP[x, dz1, h2h1] - rMP[x, dz2, h2h1])/2
-          - (rMP[q, dx1, h2h1] - rMP[q, dx2, h2h1])*(RH1z-ROz)
-    #     - (rMP[q, dz1, h2h1] - rMP[q, dz2, h2h1])*(RH1x-ROx) #THIS IS REALLY... A BUG?
-                )
-        H2H1zy = ihff*(
-            (rMP[z, dy1, h2h1] - rMP[z, dy2, h2h1]
-           + rMP[y, dz1, h2h1] - rMP[y, dz2, h2h1])/2
-          - (rMP[q, dy1, h2h1] - rMP[q, dy2, h2h1])*(RH1z-ROz)
-    #     - (rMP[q, dz1, h2h1] - rMP[q, dz2, h2h1])*(RH1y-RO[1]) THIS IS REALLY... A BUG?
+            / 2
+            - (rMP[q, dx1, h2h1] - rMP[q, dx2, h2h1]) * (RH1z - ROz)
+            #     - (rMP[q, dz1, h2h1] - rMP[q, dz2, h2h1])*(RH1x-ROx) #THIS IS REALLY... A BUG?
+        )
+        H2H1zy = ihff * (
+            (
+                rMP[z, dy1, h2h1]
+                - rMP[z, dy2, h2h1]
+                + rMP[y, dz1, h2h1]
+                - rMP[y, dz2, h2h1]
             )
-        H2H1zz = ihff*(rMP[z, dz1, h2h1] - rMP[z, dz2, h2h1] - (rMP[q, dz1, h2h1] - rMP[q, dz2, h2h1])*(RH2z-RH1z))
-        H2xx = ihff*(rMP[x, dx1, h2] - rMP[x, dx2, h2])
-        H2yx = (ihff*(rMP[y, dx1, h2] - rMP[y, dx2, h2])
-             +  ihff*(rMP[x, dy1, h2] - rMP[x, dy2, h2]))/2
-        H2yy = ihff*(rMP[y, dy1, h2] - rMP[y, dy2, h2])
-        H2zx = (ihff*(rMP[z, dx1, h2] - rMP[z, dx2, h2])
-             +  ihff*(rMP[x, dz1, h2] - rMP[x, dz2, h2]))/2
-        H2zy = (ihff*(rMP[z, dy1, h2] - rMP[z, dy2, h2])
-             +  ihff*(rMP[y, dz1, h2] - rMP[y, dz2, h2]))/2
-        H2zz = ihff*(rMP[z, dz1, h2] - rMP[z, dz2, h2])
+            / 2
+            - (rMP[q, dy1, h2h1] - rMP[q, dy2, h2h1]) * (RH1z - ROz)
+            #     - (rMP[q, dz1, h2h1] - rMP[q, dz2, h2h1])*(RH1y-RO[1]) THIS IS REALLY... A BUG?
+        )
+        H2H1zz = ihff * (
+            rMP[z, dz1, h2h1]
+            - rMP[z, dz2, h2h1]
+            - (rMP[q, dz1, h2h1] - rMP[q, dz2, h2h1]) * (RH2z - RH1z)
+        )
+        H2xx = ihff * (rMP[x, dx1, h2] - rMP[x, dx2, h2])
+        H2yx = (
+            ihff * (rMP[y, dx1, h2] - rMP[y, dx2, h2])
+            + ihff * (rMP[x, dy1, h2] - rMP[x, dy2, h2])
+        ) / 2
+        H2yy = ihff * (rMP[y, dy1, h2] - rMP[y, dy2, h2])
+        H2zx = (
+            ihff * (rMP[z, dx1, h2] - rMP[z, dx2, h2])
+            + ihff * (rMP[x, dz1, h2] - rMP[x, dz2, h2])
+        ) / 2
+        H2zy = (
+            ihff * (rMP[z, dy1, h2] - rMP[z, dy2, h2])
+            + ihff * (rMP[y, dz1, h2] - rMP[y, dz2, h2])
+        ) / 2
+        H2zz = ihff * (rMP[z, dz1, h2] - rMP[z, dz2, h2])
 
         comp = ("XX", "yx", "yy", "zx", "zy", "zz")
         bond = ("O", "H1O", "H1", "H2O", "H2H1", "H2")
@@ -397,30 +463,40 @@ class TestH2O(LoPropTestCase):
         R = molfrag.R
         rMP = ref.rMP
         diff = [(1, 2), (3, 4), (5, 6)]
-        atoms = (0, 2, 5) 
+        atoms = (0, 2, 5)
         bonds = (1, 3, 4)
         ablab = ("O", "H1O", "H1", "H2O", "H2H1", "H2")
         ijlab = ("xx", "yx", "yy", "zx", "zy", "zz")
 
-        pol = np.zeros((6, molfrag.noa*(molfrag.noa+1)//2))
+        pol = np.zeros((6, molfrag.noa * (molfrag.noa + 1) // 2))
         for ab, a, b in pairs(molfrag.noa):
             for ij, i, j in pairs(3):
-                #from pdb import set_trace; set_trace()
+                # from pdb import set_trace; set_trace()
                 i1, i2 = diff[i]
                 j1, j2 = diff[j]
-                pol[ij, ab] += (rMP[i+1, j1, ab] - rMP[i+1, j2, ab]
-                            +   rMP[j+1, i1, ab] - rMP[j+1, i2, ab])/(4*ref.ff)
+                pol[ij, ab] += (
+                    rMP[i + 1, j1, ab]
+                    - rMP[i + 1, j2, ab]
+                    + rMP[j + 1, i1, ab]
+                    - rMP[j + 1, i2, ab]
+                ) / (4 * ref.ff)
                 if ab in bonds:
-                    pol[ij, ab] -= (R[a][i]-R[b][i])*(rMP[0, j1, ab] - rMP[0, j2, ab])/(2*ref.ff)
-                self.assert_allclose(ref.Aab[ij, ab], pol[ij, ab], text="%s%s"%(ablab[ab], ijlab[ij]))
+                    pol[ij, ab] -= (
+                        (R[a][i] - R[b][i])
+                        * (rMP[0, j1, ab] - rMP[0, j2, ab])
+                        / (2 * ref.ff)
+                    )
+                self.assert_allclose(
+                    ref.Aab[ij, ab], pol[ij, ab], text="%s%s" % (ablab[ab], ijlab[ij])
+                )
 
     def test_polarizability_allbonds_atoms(self, molfrag):
 
-        Aab = molfrag.Aab[0] #+ m.dAab
+        Aab = molfrag.Aab[0]  # + m.dAab
         noa = molfrag.noa
 
-        Acmp=full.matrix(ref.Aab.shape)
-        
+        Acmp = full.matrix(ref.Aab.shape)
+
         ab = 0
         for a in range(noa):
             for b in range(a):
@@ -429,17 +505,17 @@ class TestH2O(LoPropTestCase):
             Acmp[:, ab] = Aab[:, :, a, a].pack()
             ab += 1
         # atoms
-        self.assert_allclose(ref.Aab[:, 0], Acmp[:, 0], atol=.005)
-        self.assert_allclose(ref.Aab[:, 2], Acmp[:, 2], atol=.005)
-        self.assert_allclose(ref.Aab[:, 5], Acmp[:, 5], atol=.005)
+        self.assert_allclose(ref.Aab[:, 0], Acmp[:, 0], atol=0.005)
+        self.assert_allclose(ref.Aab[:, 2], Acmp[:, 2], atol=0.005)
+        self.assert_allclose(ref.Aab[:, 5], Acmp[:, 5], atol=0.005)
 
     def test_polarizability_allbonds_bonds(self, molfrag):
 
-        Aab = molfrag.Aab[0] + molfrag.dAab[0]/2
+        Aab = molfrag.Aab[0] + molfrag.dAab[0] / 2
         noa = molfrag.noa
 
-        Acmp=full.matrix(ref.Aab.shape)
-        
+        Acmp = full.matrix(ref.Aab.shape)
+
         ab = 0
         for a in range(noa):
             for b in range(a):
@@ -448,22 +524,21 @@ class TestH2O(LoPropTestCase):
             Acmp[:, ab] = Aab[:, :, a, a].pack()
             ab += 1
         # atoms
-        self.assert_allclose(ref.Aab[:, 1], Acmp[:, 1], atol=.150)
-        self.assert_allclose(ref.Aab[:, 3], Acmp[:, 3], atol=.150)
-        self.assert_allclose(ref.Aab[:, 4], Acmp[:, 4], atol=.005)
-
+        self.assert_allclose(ref.Aab[:, 1], Acmp[:, 1], atol=0.150)
+        self.assert_allclose(ref.Aab[:, 3], Acmp[:, 3], atol=0.150)
+        self.assert_allclose(ref.Aab[:, 4], Acmp[:, 4], atol=0.005)
 
     def test_polarizability_nobonds(self, molfrag):
 
-        Aab = molfrag.Aab[0] + molfrag.dAab[0]/2
+        Aab = molfrag.Aab[0] + molfrag.dAab[0] / 2
         noa = molfrag.noa
 
-        Acmp = full.matrix((6, noa ))
+        Acmp = full.matrix((6, noa))
         Aa = Aab.sum(axis=3).view(full.matrix)
-        
+
         ab = 0
         for a in range(noa):
-            Acmp[:, a,] = Aa[:, :, a].pack()
+            Acmp[:, a] = Aa[:, :, a].pack()
 
         # atoms
         self.assert_allclose(Acmp, ref.Aa, atol=0.07)
@@ -497,7 +572,9 @@ class TestH2O(LoPropTestCase):
         self.assert_str(PA22, ref.PA22)
 
     def test_potfile_PAn0b(self, molfrag):
-        PAn0b = molfrag.output_potential_file(maxl=-1, pol=0, hyper=0, bond_centers=True)
+        PAn0b = molfrag.output_potential_file(
+            maxl=-1, pol=0, hyper=0, bond_centers=True
+        )
         self.assert_str(PAn0b, ref.PAn0b)
 
     def test_potfile_PA00b(self, molfrag):
@@ -510,7 +587,9 @@ class TestH2O(LoPropTestCase):
 
     def test_potfile_PA20b(self, molfrag):
         with pytest.raises(NotImplementedError):
-            PA20b = molfrag.output_potential_file(maxl=2, pol=0, hyper=0, bond_centers=True)
+            PA20b = molfrag.output_potential_file(
+                maxl=2, pol=0, hyper=0, bond_centers=True
+            )
 
     def test_potfile_PA01b(self, molfrag):
         PA01b = molfrag.output_potential_file(maxl=0, pol=1, hyper=0, bond_centers=True)
@@ -530,7 +609,9 @@ class TestH2O(LoPropTestCase):
 
     def test_outfile_PAn0_atom_domain_angstrom(self, molfrag):
         molfrag.max_l = -1
-        self.assert_str(molfrag.print_atom_domain(0, angstrom=True), ref.OUTPUT_n0_1_ANGSTROM)
+        self.assert_str(
+            molfrag.print_atom_domain(0, angstrom=True), ref.OUTPUT_n0_1_ANGSTROM
+        )
 
     def test_outfile_PA00_atom_domain(self, molfrag):
         molfrag.max_l = 0
@@ -622,4 +703,3 @@ class TestH2O(LoPropTestCase):
         molfrag.output_by_atom(fmt="%12.5f", max_l=-1, pol=2, bond_centers=True)
         print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_BOND_n2)
-

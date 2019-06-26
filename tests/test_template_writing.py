@@ -5,33 +5,35 @@ from loprop.dalton import MolFragDalton
 
 DIR = "h2o_beta/tmp"
 
+
 @pytest.fixture
 def molfrag(request):
-     cls = request.param
-     tmp = os.path.join(os.path.dirname(__file__), DIR)
-     return cls(
-        tmp, max_l=2, pol=2,
+    cls = request.param
+    tmp = os.path.join(os.path.dirname(__file__), DIR)
+    return cls(
+        tmp,
+        max_l=2,
+        pol=2,
         freqs=None,
         pf=penalty_function(2.0),
         sf=shift_function,
-        gc=None
+        gc=None,
     )
 
-@pytest.mark.parametrize(
-    'molfrag',
-    [MolFragDalton],
-    ids=['dalton'],
-    indirect=True
-)
-class TestTemplate:
 
+@pytest.mark.parametrize("molfrag", [MolFragDalton], ids=["dalton"], indirect=True)
+class TestTemplate:
     def _setup(self, molfrag):
-        self.tmp = os.path.join( os.path.dirname( __file__ ), DIR)
-        molfrag = MolFrag( tmpdir = self.tmp, max_l =2, pol = 2,
-                freqs = None,
-                pf = penalty_function(2.0),
-                sf = shift_function,
-                gc = None)
+        self.tmp = os.path.join(os.path.dirname(__file__), DIR)
+        molfrag = MolFrag(
+            tmpdir=self.tmp,
+            max_l=2,
+            pol=2,
+            freqs=None,
+            pf=penalty_function(2.0),
+            sf=shift_function,
+            gc=None,
+        )
         self.maxDiff = None
 
     def test_h2o_beta_dir(self, molfrag):
@@ -56,7 +58,7 @@ class TestTemplate:
 ( 'H3', "beta") : [ -8.671, -0.000, 4.511, -2.783, 0.000, -4.409, -0.000, 1.590, -0.000, 4.585 ],
 """
 
-        string =  molfrag.output_template(2, 2, 2, decimal =3) 
+        string = molfrag.output_template(2, 2, 2, decimal=3)
         # Normalize blanks,zeros
         string = string.replace("-0.000", " 0.000")
         string = " ".join(string.split())
@@ -87,7 +89,7 @@ class TestTemplate:
 ( 'O1', "beta") : [ 0.000, -0.000, 14.741, 0.000, 0.000, -0.000, -0.000, 3.284, -0.000, 9.208 ],
 """
 
-        string =  molfrag.output_template(2, 2, 2, decimal=3, template_full=True)
+        string = molfrag.output_template(2, 2, 2, decimal=3, template_full=True)
         # Normalize blanks,zeros
         string = string.replace("-0.000", " 0.000")
         string = " ".join(string.split())

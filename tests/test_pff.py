@@ -6,7 +6,7 @@ from loprop.core import MolFrag, penalty_function, shift_function
 from loprop.dalton import MolFragDalton
 
 case = "pff"
-DIR = os.path.join(case, 'tmp')
+DIR = os.path.join(case, "tmp")
 
 
 @pytest.fixture
@@ -14,22 +14,18 @@ def molfrag(request):
     tmp = os.path.join(os.path.dirname(__file__), DIR)
     cls = request.param
     return cls(
-       tmpdir=tmp, max_l=0, pol=0,
-       freqs=None,
-       pf=penalty_function(2.0),
-       sf=shift_function,
-       gc=None
+        tmpdir=tmp,
+        max_l=0,
+        pol=0,
+        freqs=None,
+        pf=penalty_function(2.0),
+        sf=shift_function,
+        gc=None,
     )
 
 
-@pytest.mark.parametrize(
-    'molfrag',
-    [MolFragDalton],
-    ids=['dalton'],
-    indirect=True
-)
+@pytest.mark.parametrize("molfrag", [MolFragDalton], ids=["dalton"], indirect=True)
 class TestSulphur(LoPropTestCase):
-
     def test_dir(self, molfrag):
         assert os.path.isdir(molfrag.tmpdir)
 
