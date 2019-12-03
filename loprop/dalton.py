@@ -7,6 +7,7 @@ from .core import MolFrag
 
 
 class MolFragDalton(MolFrag):
+
     def __init__(self, tmpdir, **kwargs):
         super().__init__(tmpdir, **kwargs)
         #
@@ -27,7 +28,7 @@ class MolFragDalton(MolFrag):
         self.opa = mol.occupied_per_atom(molecule)
         self.noa = len(self.opa)
         #
-        # Total number of basis functions and occpied orbitals
+        # Total number of basis functions and occupied orbitals
         #
         self.nbf = sum(self.cpa)
         self.noc = 0
@@ -81,7 +82,7 @@ class MolFragDalton(MolFrag):
 
     @property
     def D(self):
-        """ 
+        """
         Density from SIRIFC in blocked loprop basis
         """
         if self._D is not None:

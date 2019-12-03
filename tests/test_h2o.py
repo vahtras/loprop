@@ -34,8 +34,8 @@ def transformer(request):
 
 @pytest.mark.parametrize(
     "transformer",
-    [MolFragDalton],  # MolFragVeloxChem],
-    ids=["dalton"],  # , 'veloxchem'],
+    [MolFragDalton, MolFragVeloxChem],
+    ids=["dalton", 'veloxchem'],
     indirect=True,
 )
 class TestTransform(LoPropTestCase):
