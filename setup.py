@@ -11,6 +11,6 @@ setup(
     },
     author="Olav Vahtras",
     author_email="vahtras@kth.se",
-    install_requires=["daltools"],
+    install_requires=["h5py", "daltools"],
     description='LoProp implementation for Dalton',
     )
