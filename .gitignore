@@ -1,6 +1,7 @@
 *.pyc
+.tox
 *.swp
-venv*
+*venv*
 
 dist
 build
@@ -11,3 +12,5 @@ build
 errors.err
 *.[0-9]
 .pytest_cache
+conda-build*
+*.ipynb*
