@@ -1,3 +1,8 @@
+import os
+
+import h5py
+from util.full import Matrix
+
 from .core import MolFrag
 
 
@@ -8,6 +13,7 @@ class MolFragVeloxChem(MolFrag):
         #
         # Veloxchem files
         #
+        self.aooneint = os.path.join(tmpdir, 'h2o.integrals.h5')
 
     def get_basis_info(self):
         pass
@@ -23,9 +29,16 @@ class MolFragVeloxChem(MolFrag):
     def D2k(self):
         pass
 
-    @property
     def S(self):
         #
         # read overlap from hd5 file
         #
-        return self.vlx.get_overlap() typ
+        with h5py.File(self.aooneint, 'r') as f:
+            S = f['overlap'][...].view(Matrix)
+        return S
+
+    @property
+    def Z(self):
+        with h5py.File(self.hdf5, 'r') as f:
+            _Z = f['nuc']
+        return _Z

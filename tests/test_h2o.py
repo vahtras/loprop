@@ -4,7 +4,7 @@ import os
 import numpy as np
 from util import full
 
-from loprop.core import MolFrag, LoPropTransformer, penalty_function, AU2ANG, pairs
+from loprop.core import LoPropTransformer, penalty_function, AU2ANG, pairs
 from loprop.dalton import MolFragDalton
 from loprop.veloxchem import MolFragVeloxChem
 
@@ -112,8 +112,8 @@ class TestTransform(LoPropTestCase):
 
 @pytest.mark.parametrize(
     "molfrag",
-    [MolFragDalton],  # , MolFragVeloxChem],
-    ids=["dalton"],  # , 'veloxchem'],
+    [MolFragDalton],
+    ids=["dalton"],
     indirect=True,
 )
 class TestH2O(LoPropTestCase):
