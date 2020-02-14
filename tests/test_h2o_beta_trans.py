@@ -1,5 +1,5 @@
 import pytest
-from .common import loprop, LoPropTestCase
+from .common import LoPropTestCase
 import os
 import numpy as np
 from util import full

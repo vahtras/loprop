@@ -1,11 +1,10 @@
-import unittest
 import pytest
 import numpy
+import numpy.testing as npt
 import os
 import sys
 
 sys.path.insert(0, os.path.abspath(".."))
-import loprop
 
 codes = ["dal", "vlx"]
 
@@ -30,4 +29,11 @@ class LoPropTestCase:  # (unittest.TestCase):
         if "text" in kwargs:
             kwargs["err_msg"] = kwargs.get("text", "")
             del kwargs["text"]
-        numpy.testing.assert_allclose(*(numpy.array(a) for a in args), **kwargs)
+        npt.assert_allclose(*(numpy.array(a) for a in args), **kwargs)
+
+    @staticmethod
+    def skip_if_not_implemented(method, code):
+        if method not in dir(code):
+            pytest.skip(
+                f'Method {method} not implmented in {code.__class__.__name__}'
+            )

@@ -811,18 +811,6 @@ class MolFrag(abc.ABC):
         self._x = self.getprop(*lab)
         return self._x
 
-    def getprop(self, *args):
-        """Read general property matrices to blocked loprop basis"""
-
-        T = self.T
-        cpa = self.cpa
-        prp = os.path.join(self.tmpdir, "AOPROPER")
-
-        return [
-            (T.T * p * T).subblocked(cpa, cpa)
-            for p in prop.read(*args, filename=prp, unpack=True)
-        ]
-
     @property
     def dQa(self):
         """Charge shift per atom"""
