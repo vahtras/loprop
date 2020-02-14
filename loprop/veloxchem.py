@@ -13,17 +13,40 @@ class MolFragVeloxChem(MolFrag):
         #
         # Veloxchem files
         #
-        self.aooneint = os.path.join(tmpdir, 'h2o.integrals.h5')
+        self.interface = os.path.join(tmpdir, 'h2o.loprop.h5')
+        self.scf = os.path.join(tmpdir, 'h2o.scf.h5')
+        self._Z = None
+        self._R = None
+        self._Rab = None
+        self.cpa = []
+        self.opa = []
+        self.noa = 0
+
+        self.get_basis_info()
+        self.get_isordk()
 
     def get_basis_info(self):
-        pass
+        with h5py.File(self.interface, 'r') as f:
+            self.cpa = [int(i) for i in f['contracted_per_atom'][...]]
+            self.opa = [
+                [int(i) for i in v]
+                for v in f['occupied_per_atom'].values()
+            ]
+        self.noa = len(self.cpa)
 
     def get_isordk(self):
-        pass
+        noa = self.noa
+        self.Rab = Matrix((noa, noa, 3))
+        self.dRab = Matrix((noa, noa, 3))
+        for a in range(noa):
+            for b in range(noa):
+                self.Rab[a, b, :] = (self.R[a, :] + self.R[b, :]) / 2
+                self.dRab[a, b, :] = (self.R[a, :] - self.R[b, :]) / 2
 
-    @property
-    def D(self):
-        pass
+    def get_density_matrix(self):
+        with h5py.File(self.interface, 'r') as f:
+            D = f['ao_density_matrix'][...]
+        return D
 
     @property
     def D2k(self):
@@ -33,12 +56,22 @@ class MolFragVeloxChem(MolFrag):
         #
         # read overlap from hd5 file
         #
-        with h5py.File(self.aooneint, 'r') as f:
-            S = f['overlap'][...].view(Matrix)
+        with h5py.File(self.interface, 'r') as f:
+            S = f['ao_overlap_matrix'][...].view(Matrix)
         return S
 
     @property
     def Z(self):
-        with h5py.File(self.hdf5, 'r') as f:
-            _Z = f['nuc']
-        return _Z
+        if self._Z is None:
+            with h5py.File(self.scf, 'r') as f:
+                self._Z = f['nuclear_charges'][...]
+
+        return self._Z
+
+    @property
+    def R(self):
+        if self._R is None:
+            with h5py.File(self.interface, 'r') as f:
+                self._R = f['nuclear_coordinates'][...]
+
+        return self._R

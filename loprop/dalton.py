@@ -80,18 +80,9 @@ class MolFragDalton(MolFrag):
         S = one.read("OVERLAP", self.aooneint)
         return S.unpack().unblock()
 
-    @property
-    def D(self):
-        """
-        Density from SIRIFC in blocked loprop basis
-        """
-        if self._D is not None:
-            return self._D
-
+    def get_density_matrix(self):
         D = sum(dens.Dab(filename=self.sirifc))
-        Ti = self.T.I
-        self._D = (Ti * D * Ti.T).subblocked(self.cpa, self.cpa)
-        return self._D
+        return D
 
     def getprop(self, *args):
         """Read general property matrices to blocked loprop basis"""

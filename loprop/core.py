@@ -442,16 +442,27 @@ class MolFrag(abc.ABC):
         if self._Rc is not None:
             return self._Rc
         if self.gc is None:
-            self._Rc = self.Z * self.R / self.Z.sum()
+            self._Rc = self.Z @ self.R / self.Z.sum()
         else:
             self._Rc = numpy.array(self.gc).view(full.matrix)
         return self._Rc
 
-    @abc.abstractmethod
+    @property
     def D(self):
         """
         Density from SIRIFC in blocked loprop basis
         """
+        if self._D is not None:
+            return self._D
+
+        D = self.get_density_matrix()
+        Ti = self.T.I
+        self._D = (Ti @ D @ Ti.T).subblocked(self.cpa, self.cpa)
+        return self._D
+
+    @abc.abstractmethod
+    def get_density_matrix(self):
+        ...
 
     @property
     def T(self):
@@ -480,8 +491,6 @@ class MolFrag(abc.ABC):
             return self._Qab
 
         D = self.D
-        T = self.T
-        cpa = self.cpa
 
         noa = self.noa
         _Qab = full.matrix((noa, noa))

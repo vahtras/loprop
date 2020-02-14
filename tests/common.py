@@ -30,4 +30,4 @@ class LoPropTestCase:  # (unittest.TestCase):
         if "text" in kwargs:
             kwargs["err_msg"] = kwargs.get("text", "")
             del kwargs["text"]
-        numpy.testing.assert_allclose(*args, **kwargs)
+        numpy.testing.assert_allclose(*(numpy.array(a) for a in args), **kwargs)
