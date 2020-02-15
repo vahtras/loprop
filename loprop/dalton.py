@@ -110,6 +110,27 @@ class MolFragDalton(MolFrag):
             for p in prop.read(*args, filename=prp, unpack=True)
         ]
 
+    def get_dipole_matrices(self):
+        lab = (
+            "XDIPLEN",
+            "YDIPLEN",
+            "ZDIPLEN",
+        )
+        return self.getprop(*lab)
+
+    def get_quadrupole_matrices(self):
+        lab = (
+            "XXSECMOM",
+            "XYSECMOM",
+            "XZSECMOM",
+            "YYSECMOM",
+            "YZSECMOM",
+            "ZZSECMOM"
+        )
+        xy = self.getprop(*lab)
+        return xy
+
+
     @property
     def Dk(self):
         """Read perturbed densities"""

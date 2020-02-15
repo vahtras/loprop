@@ -169,17 +169,14 @@ class TestH2O(LoPropTestCase):
         self.assert_allclose(Daa, ref.Daa)
 
     def test_quadrupole_total(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         QUc = molfrag.QUc
         self.assert_allclose(QUc, ref.QUc)
 
     def test_nuclear_quadrupole(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         QUN = molfrag.QUN
         self.assert_allclose(QUN, ref.QUN)
 
     def test_quadrupole_allbonds(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         QU = full.matrix(ref.QU.shape)
         QUab = molfrag.QUab
         for ab, a, b in pairs(molfrag.noa):
@@ -189,21 +186,17 @@ class TestH2O(LoPropTestCase):
         self.assert_allclose(QU, ref.QU)
 
     def test_quadrupole_allbonds_sym(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         QUsym = molfrag.QUsym
         self.assert_allclose(QUsym, ref.QU)
 
     def test_quadrupole_nobonds(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         self.assert_allclose(molfrag.QUa, ref.QUaa)
 
     def test_Fab(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         Fab = molfrag.Fab
         self.assert_allclose(Fab, ref.Fab)
 
     def test_molcas_shift(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         Fab = molfrag.Fab
         Lab = Fab + molfrag.sf(Fab)
         self.assert_allclose(Lab, ref.Lab)

@@ -466,6 +466,10 @@ class MolFrag(abc.ABC):
     def get_density_matrix(self):
         ...
 
+    @abc.abstractmethod
+    def get_dipole_matrices(self):
+        ...
+
     @property
     def T(self):
         """
@@ -582,9 +586,7 @@ class MolFrag(abc.ABC):
         Qab = self.Qab
         Dab = self.Dab
 
-        lab = ("XXSECMOM", "XYSECMOM", "XZSECMOM", "YYSECMOM", "YZSECMOM", "ZZSECMOM")
-
-        xy = self.getprop(*lab)
+        xy = self.get_quadrupole_matrices()
 
         noa = self.noa
         QUab = full.matrix((6, noa, noa))

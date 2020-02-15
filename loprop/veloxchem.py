@@ -68,6 +68,21 @@ class MolFragVeloxChem(MolFrag):
 
         return tuple(self.ao_to_blocked_loprop(Dx, Dy, Dz))
 
+    def get_quadrupole_matrices(self):
+        with h5py.File(self.interface, 'r') as f:
+            Qxx = f['ao_quadrupole_matrices/xx'][...].view(Matrix)
+            Qxy = f['ao_quadrupole_matrices/xy'][...].view(Matrix)
+            Qxz = f['ao_quadrupole_matrices/xz'][...].view(Matrix)
+            Qyy = f['ao_quadrupole_matrices/yy'][...].view(Matrix)
+            Qyz = f['ao_quadrupole_matrices/yz'][...].view(Matrix)
+            Qzz = f['ao_quadrupole_matrices/zz'][...].view(Matrix)
+
+        return tuple(
+            self.ao_to_blocked_loprop(
+                Qxx, Qxy, Qxz, Qyy, Qyz, Qzz
+            )
+        )
+
     def ao_to_blocked_loprop(self, *aos):
         cpa = self.cpa
         T = self.T
