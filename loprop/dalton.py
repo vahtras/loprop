@@ -18,7 +18,7 @@ class MolFragDalton(MolFrag):
         self.sirifc = os.path.join(tmpdir, "SIRIFC")
         assert sirifc.sirifc(name=self.sirifc).nsym == 1
         self.get_basis_info()
-        self.get_isordk()
+        self.get_molecule_info()
 
     def get_basis_info(self):
         """ Obtain basis set info from DALTON.BAS """
@@ -35,9 +35,9 @@ class MolFragDalton(MolFrag):
         for o in self.opa:
             self.noc += len(o)
 
-    def get_isordk(self):
+    def get_molecule_info(self):
         """
-        Get overlap, nuclear charges and coordinates from AOONEINT
+     `   Get overlap, nuclear charges and coordinates from AOONEINT
         """
         #
         # Data from the ISORDK section in AOONEINT
@@ -97,7 +97,9 @@ class MolFragDalton(MolFrag):
         return self._x
 
     def getprop(self, *args):
-        """Read general property matrices to blocked loprop basis"""
+        """
+        Read general property matrices to blocked loprop basis
+        """
 
         T = self.T
         cpa = self.cpa

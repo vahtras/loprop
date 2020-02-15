@@ -23,7 +23,7 @@ class MolFragVeloxChem(MolFrag):
         self.noa = 0
 
         self.get_basis_info()
-        self.get_isordk()
+        self.get_molecule_info()
 
     def get_basis_info(self):
         with h5py.File(self.interface, 'r') as f:
@@ -34,7 +34,7 @@ class MolFragVeloxChem(MolFrag):
             ]
         self.noa = len(self.cpa)
 
-    def get_isordk(self):
+    def get_molecule_info(self):
         noa = self.noa
         self.Rab = Matrix((noa, noa, 3))
         self.dRab = Matrix((noa, noa, 3))

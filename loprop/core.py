@@ -65,10 +65,6 @@ bond_co.update(
     }
 )
 
-# permute dict items in keypairs
-# for key1, key2 in bond_co.keys():
-#     bond_co[ ( key2, key1 ) ] = bond_co[ (key1, key2) ]
-
 
 def symmetrize_first_beta(beta):
     # naive solution, transforms matrix
@@ -261,7 +257,9 @@ class LoPropTransformer:
         #
         P1 = subblocked.matrix(self.cpa, self.cpa)
         for at in range(self.noa):
-            P1.subblock[at][at][:, :] = full.permute(self.opa[at], self.cpa[at])
+            P1.subblock[at][at][:, :] = full.permute(
+                self.opa[at], self.cpa[at]
+            )
         P1 = P1.unblock()
         return P1
 
@@ -348,7 +346,7 @@ class MolFrag(abc.ABC):
     ):
         """
         Constructur of MolFrag class objects
-        input: tmpdir, scratch directory of Dalton calculation
+        input: tmpdir, scratch directory of Dalton/VeloxChem calculation
         """
         self.max_l = max_l
         self.pol = pol
@@ -419,17 +417,15 @@ class MolFrag(abc.ABC):
         """
         Obtain basis set info
 
-        Sets self.nbf...
+        Sets
+            self.nbf: number of basis functions
+            self.cpa: number of contraced/atom
+            self.opa: lists of occupied/atom
+            self.noa: number of atoms
         """
 
     @abc.abstractmethod
-    def S(self):
-        """
-        Get overlap
-        """
-
-    @abc.abstractmethod
-    def get_isordk(self):
+    def get_molecule_info(self):
         """
         Molecular info: nuclear charges, coordinates
         """
@@ -447,6 +443,12 @@ class MolFrag(abc.ABC):
             self._Rc = numpy.array(self.gc).view(full.matrix)
         return self._Rc
 
+    @abc.abstractmethod
+    def S(self):
+        """
+        Get overlap matrix in AO basis
+
+        """
     @property
     def D(self):
         """
