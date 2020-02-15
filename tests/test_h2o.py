@@ -149,11 +149,9 @@ class TestH2O(LoPropTestCase):
         self.assert_allclose(ref.Q, Qaa)
 
     def test_total_dipole(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         self.assert_allclose(molfrag.Dtot, ref.Dtot)
 
     def test_dipole_allbonds(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         D = full.matrix(ref.D.shape)
         Dab = molfrag.Dab
         for ab, a, b in pairs(molfrag.noa):
@@ -163,12 +161,10 @@ class TestH2O(LoPropTestCase):
         self.assert_allclose(D, ref.D)
 
     def test_dipole_allbonds_sym(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         Dsym = molfrag.Dsym
         self.assert_allclose(Dsym, ref.D)
 
     def test_dipole_nobonds(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         Daa = molfrag.Dab.sum(axis=2).view(full.matrix)
         self.assert_allclose(Daa, ref.Daa)
 

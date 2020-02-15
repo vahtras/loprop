@@ -49,6 +49,32 @@ class MolFragVeloxChem(MolFrag):
         return D
 
     @property
+    def x(self):
+        """
+        Read dipole matrices to blocked loprop basis
+        """
+
+        if self._x is not None:
+            return self._x
+
+        self._x = self.get_dipole_matrices()
+        return self._x
+
+    def get_dipole_matrices(self):
+        with h5py.File(self.interface, 'r') as f:
+            Dx = f['ao_dipole_matrices/x'][...].view(Matrix)
+            Dy = f['ao_dipole_matrices/y'][...].view(Matrix)
+            Dz = f['ao_dipole_matrices/z'][...].view(Matrix)
+
+        return tuple(self.ao_to_blocked_loprop(Dx, Dy, Dz))
+
+    def ao_to_blocked_loprop(self, *aos):
+        cpa = self.cpa
+        T = self.T
+        return ((T.T@ao@T).subblocked(cpa, cpa) for ao in aos)
+
+
+    @property
     def D2k(self):
         pass
 

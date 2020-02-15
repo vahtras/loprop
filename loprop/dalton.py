@@ -84,6 +84,18 @@ class MolFragDalton(MolFrag):
         D = sum(dens.Dab(filename=self.sirifc))
         return D
 
+    @property
+    def x(self):
+        """Read dipole matrices to blocked loprop basis"""
+
+        if self._x is not None:
+            return self._x
+
+        lab = ["XDIPLEN", "YDIPLEN", "ZDIPLEN"]
+
+        self._x = self.getprop(*lab)
+        return self._x
+
     def getprop(self, *args):
         """Read general property matrices to blocked loprop basis"""
 

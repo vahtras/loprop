@@ -505,7 +505,10 @@ class MolFrag(abc.ABC):
 
     @property
     def Dab(self):
-        """Set dipole property"""
+        """
+        Returns localized atom and bond dipole moments
+        d_ab = -<a|x|b> - qa R_a delta(a, b)
+        """
 
         if self._Dab is not None:
             return self._Dab
@@ -563,7 +566,7 @@ class MolFrag(abc.ABC):
     @property
     def Dtot(self):
         _Dtot = self.Da.sum(axis=1).view(full.matrix)
-        _Dtot += self.Qa * self.R - self.Qa.sum() * self.Rc
+        _Dtot += self.Qa @ self.R - self.Qa.sum() * self.Rc
         return _Dtot
 
     @property
@@ -799,17 +802,11 @@ class MolFrag(abc.ABC):
     def D2k(self):
         """Read perturbed densities"""
 
-    @property
+        """
+    @abc.abstractmethod
     def x(self):
-        """Read dipole matrices to blocked loprop basis"""
-
-        if self._x is not None:
-            return self._x
-
-        lab = ["XDIPLEN", "YDIPLEN", "ZDIPLEN"]
-
-        self._x = self.getprop(*lab)
-        return self._x
+        Read dipole matrices to blocked loprop basis
+        """
 
     @property
     def dQa(self):
