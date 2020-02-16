@@ -705,6 +705,22 @@ class MolFrag(abc.ABC):
         self._QUc = QUcab.sum(axis=2).sum(axis=1).view(full.matrix)
         return self._QUc
 
+    def ao_to_blocked_loprop(self, *aos):
+        cpa = self.cpa
+        T = self.T
+        return ((T.T@ao@T).subblocked(cpa, cpa) for ao in aos)
+
+
+    def contravariant_ao_to_blocked_loprop(self, aos: dict) -> dict:
+
+        cpa = self.cpa
+        T = self.T
+        blocked_loprop = {
+            k: (T.I * v * T.I.T).subblocked(cpa, cpa)
+            for k, v in aos.items()
+        }
+        return blocked_loprop
+
     @property
     def Fab(self, **kwargs):
         """Penalty function"""

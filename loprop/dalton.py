@@ -153,19 +153,13 @@ class MolFragDalton(MolFrag):
         if self.damping:
             Re_Dkao, Im_Dkao = Dkao
             if self.real_pol:
-                _Dk = {
-                    lw: (T.I * Re_Dkao[lw] * T.I.T).subblocked(cpa, cpa)
-                    for lw in Re_Dkao
-                }
+                _Dk = self.contravariant_ao_to_blocked_loprop(Re_Dkao)
             elif self.imag_pol:
-                _Dk = {
-                    lw: (T.I * Im_Dkao[lw] * T.I.T).subblocked(cpa, cpa)
-                    for lw in Im_Dkao
-                }
+                _Dk = self.contravariant_ao_to_blocked_loprop(Im_Dkao)
             else:
                 raise ValueError
         else:
-            _Dk = {lw: (T.I * Dkao[lw] * T.I.T).subblocked(cpa, cpa) for lw in Dkao}
+            _Dk = self.contravariant_ao_to_blocked_loprop(Dkao)
 
         self._Dk = _Dk
         return self._Dk

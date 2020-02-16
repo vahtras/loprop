@@ -83,12 +83,6 @@ class MolFragVeloxChem(MolFrag):
             )
         )
 
-    def ao_to_blocked_loprop(self, *aos):
-        cpa = self.cpa
-        T = self.T
-        return ((T.T@ao@T).subblocked(cpa, cpa) for ao in aos)
-
-
     @property
     def D2k(self):
         pass
