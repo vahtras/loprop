@@ -130,4 +130,3 @@ class MolFragVeloxChem(MolFrag):
                 self._R = f['nuclear_coordinates'][...]
 
         return self._R
-

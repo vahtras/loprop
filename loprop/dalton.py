@@ -132,7 +132,6 @@ class MolFragDalton(MolFrag):
         xy = self.getprop(*lab)
         return xy
 
-
     @property
     def Dk(self):
         """Read perturbed densities"""
@@ -141,9 +140,6 @@ class MolFragDalton(MolFrag):
             return self._Dk
 
         lab = ["XDIPLEN", "YDIPLEN", "ZDIPLEN"]
-        prp = os.path.join(self.tmpdir, "AOPROPER")
-        T = self.T
-        cpa = self.cpa
 
         Dkao = lr.Dk(
             *lab,
@@ -175,13 +171,14 @@ class MolFragDalton(MolFrag):
 
         lab = ["XDIPLEN ", "YDIPLEN ", "ZDIPLEN "]
         qrlab = [lab[j] + lab[i] for i in range(3) for j in range(i, 3)]
-        prp = os.path.join(self.tmpdir, "AOPROPER")
         T = self.T
         cpa = self.cpa
 
         Dkao = qr.D2k(*qrlab, freqs=self.freqs, tmpdir=self.tmpdir)
         # print("Dkao.keys", Dkao.keys())
-        _D2k = {lw: (T.I * Dkao[lw] * T.I.T).subblocked(cpa, cpa) for lw in Dkao}
+        _D2k = {
+            lw: (T.I * Dkao[lw] * T.I.T).subblocked(cpa, cpa) for lw in Dkao
+        }
 
         self._D2k = _D2k
         return self._D2k
