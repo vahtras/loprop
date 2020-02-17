@@ -8,6 +8,8 @@ from .core import MolFrag
 
 class MolFragVeloxChem(MolFrag):
 
+    dipole_labels = ('x', 'y', 'z')
+
     def __init__(self, tmpdir, **kwargs):
         super().__init__(tmpdir, **kwargs)
         #
@@ -82,6 +84,24 @@ class MolFragVeloxChem(MolFrag):
                 Qxx, Qxy, Qxz, Qyy, Qyz, Qzz
             )
         )
+
+    @property
+    def Dk(self):
+        """
+        Read perturbed ao density matrices from file
+        """
+
+        if self._Dk is not None:
+            return self._Dk
+
+        Dk = {}
+        freq = 0.0
+        with h5py.File(self.interface, 'r') as f:
+            for c in 'x', 'y', 'z':
+                Dk[(c, freq)] = f[f'ao_lr_density_matrix/{c}/{freq}'][...]
+        self._Dk = self.contravariant_ao_to_blocked_loprop(Dk)
+
+        return self._Dk
 
     @property
     def D2k(self):

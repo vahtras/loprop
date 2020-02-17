@@ -202,20 +202,17 @@ class TestH2O(LoPropTestCase):
         self.assert_allclose(Lab, ref.Lab)
 
     def test_total_charge_shift(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         dQ = molfrag.dQa[0].sum(axis=0).view(full.matrix)
         dQref = [0.0, 0.0, 0.0]
         self.assert_allclose(dQref, dQ)
 
     def test_atomic_charge_shift(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         dQa = molfrag.dQa[0]
         dQaref = (ref.dQa[:, 1::2] - ref.dQa[:, 2::2]) / (2 * ref.ff)
 
         self.assert_allclose(dQa, dQaref, atol=0.006)
 
     def test_lagrangian(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         # values per "perturbation" as in atomic_charge_shift below
         la = molfrag.la[0]
         laref = (ref.la[:, 0:6:2] - ref.la[:, 1:6:2]) / (2 * ref.ff)
@@ -223,7 +220,6 @@ class TestH2O(LoPropTestCase):
         self.assert_allclose(-laref, la, atol=100)
 
     def test_bond_charge_shift(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         dQab = molfrag.dQab[0]
         noa = molfrag.noa
 
@@ -238,19 +234,16 @@ class TestH2O(LoPropTestCase):
         self.assert_allclose(-dQabref, dQabcmp, atol=0.006)
 
     def test_bond_charge_shift_sum(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         dQa = molfrag.dQab[0].sum(axis=1).view(full.matrix)
         dQaref = molfrag.dQa[0]
         self.assert_allclose(dQa, dQaref)
 
     def test_polarizability_total(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
 
         Am = molfrag.Am[0]
         self.assert_allclose(Am, ref.Am, 0.015)
 
     def test_polarizability_allbonds_molcas_internal(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
 
         O = ref.O
         H1O = ref.H1O
@@ -475,7 +468,6 @@ class TestH2O(LoPropTestCase):
         self.assert_allclose(H2[5], H2zz, text="H2zz")
 
     def test_altint(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         R = molfrag.R
         rMP = ref.rMP
         diff = [(1, 2), (3, 4), (5, 6)]
@@ -507,7 +499,6 @@ class TestH2O(LoPropTestCase):
                 )
 
     def test_polarizability_allbonds_atoms(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
 
         Aab = molfrag.Aab[0]  # + m.dAab
         noa = molfrag.noa
@@ -527,7 +518,6 @@ class TestH2O(LoPropTestCase):
         self.assert_allclose(ref.Aab[:, 5], Acmp[:, 5], atol=0.005)
 
     def test_polarizability_allbonds_bonds(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
 
         Aab = molfrag.Aab[0] + molfrag.dAab[0] / 2
         noa = molfrag.noa
@@ -547,7 +537,6 @@ class TestH2O(LoPropTestCase):
         self.assert_allclose(ref.Aab[:, 4], Acmp[:, 4], atol=0.005)
 
     def test_polarizability_nobonds(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
 
         Aab = molfrag.Aab[0] + molfrag.dAab[0] / 2
         noa = molfrag.noa
@@ -563,194 +552,161 @@ class TestH2O(LoPropTestCase):
         self.assert_allclose(Acmp, ref.Aa, atol=0.07)
 
     def test_potfile_PAn0(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         PAn0 = molfrag.output_potential_file(maxl=-1, pol=0, hyper=0)
         self.assert_str(PAn0, ref.PAn0)
 
     def test_potfile_PAn0_angstrom(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         PAn0 = molfrag.output_potential_file(maxl=-1, pol=0, hyper=0, angstrom=True)
         self.assert_str(PAn0, ref.POTFILE_BY_ATOM_n0_ANGSTROM)
 
     def test_potfile_PA00(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         PA00 = molfrag.output_potential_file(maxl=0, pol=0, hyper=0)
         self.assert_str(PA00, ref.PA00)
 
     def test_potfile_PA10(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         PA10 = molfrag.output_potential_file(maxl=1, pol=0, hyper=0)
         self.assert_str(PA10, ref.PA10)
 
     def test_potfile_PA20(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         PA20 = molfrag.output_potential_file(maxl=2, pol=0, hyper=0)
         self.assert_str(PA20, ref.PA20)
 
     def test_potfile_PA21(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         PA21 = molfrag.output_potential_file(maxl=2, pol=1, hyper=0)
         self.assert_str(PA21, ref.PA21)
 
     def test_potfile_PA22(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         PA22 = molfrag.output_potential_file(maxl=2, pol=2, hyper=0)
         self.assert_str(PA22, ref.PA22)
 
     def test_potfile_PAn0b(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         PAn0b = molfrag.output_potential_file(
             maxl=-1, pol=0, hyper=0, bond_centers=True
         )
         self.assert_str(PAn0b, ref.PAn0b)
 
     def test_potfile_PA00b(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         PA00b = molfrag.output_potential_file(maxl=0, pol=0, hyper=0, bond_centers=True)
         self.assert_str(PA00b, ref.PA00b)
 
     def test_potfile_PA10b(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         PA10b = molfrag.output_potential_file(maxl=1, pol=0, hyper=0, bond_centers=True)
         self.assert_str(PA10b, ref.PA10b)
 
     def test_potfile_PA20b(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         with pytest.raises(NotImplementedError):
             PA20b = molfrag.output_potential_file(
                 maxl=2, pol=0, hyper=0, bond_centers=True
             )
 
     def test_potfile_PA01b(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         PA01b = molfrag.output_potential_file(maxl=0, pol=1, hyper=0, bond_centers=True)
         self.assert_str(PA01b, ref.PA01b)
 
     def test_potfile_PA02(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         this = molfrag.output_potential_file(maxl=0, pol=2, hyper=0)
         self.assert_str(this, ref.PA02)
 
     def test_potfile_PA02b(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         this = molfrag.output_potential_file(maxl=0, pol=2, hyper=0, bond_centers=True)
         self.assert_str(this, ref.PA02b)
 
     def test_outfile_PAn0_atom_domain(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         molfrag.max_l = -1
         self.assert_str(molfrag.print_atom_domain(0), ref.OUTPUT_n0_1)
 
     def test_outfile_PAn0_atom_domain_angstrom(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         molfrag.max_l = -1
         self.assert_str(
             molfrag.print_atom_domain(0, angstrom=True), ref.OUTPUT_n0_1_ANGSTROM
         )
 
     def test_outfile_PA00_atom_domain(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         molfrag.max_l = 0
         self.assert_str(molfrag.print_atom_domain(0), ref.OUTPUT_00_1)
 
     def test_outfile_PA10_atom_domain(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         molfrag.max_l = 1
         self.assert_str(molfrag.print_atom_domain(0), ref.OUTPUT_10_1)
 
     def test_outfile_PA20_atom_domain(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         molfrag.max_l = 2
         self.assert_str(molfrag.print_atom_domain(0), ref.OUTPUT_20_1)
 
     def test_outfile_PA01_atom_domain(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         molfrag.max_l = 0
         molfrag.pol = 1
         self.assert_str(molfrag.print_atom_domain(0), ref.OUTPUT_01_1)
 
     def test_outfile_PA02_atom_domain(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         molfrag.max_l = 0
         molfrag.pol = 2
         self.assert_str(molfrag.print_atom_domain(0), ref.OUTPUT_02_1)
 
     def test_outfile_PAn0_by_atom(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         molfrag.max_l = -1
         molfrag.output_by_atom(fmt="%12.5f")
         print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_ATOM_n0)
 
     def test_outfile_PAn0_by_atom_Angstrom(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         molfrag.max_l = -1
         molfrag.output_by_atom(fmt="%12.5f", angstrom=True)
         print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_ATOM_n0_ANGSTROM)
 
     def test_outfile_PA00_by_atom(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         molfrag.output_by_atom(fmt="%12.5f", max_l=0)
         print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_ATOM_00)
 
     def test_outfile_PA10_by_atom(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         molfrag.max_l = 1
         molfrag.output_by_atom(fmt="%12.5f", max_l=1)
         print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_ATOM_10)
 
     def test_outfile_PA20_by_atom(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         molfrag.max_l = 2
         molfrag.output_by_atom(fmt="%12.5f", max_l=2)
         print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_ATOM_20)
 
     def test_outfile_PA01_by_atom(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         molfrag.max_l = 0
         molfrag.output_by_atom(fmt="%12.5f", max_l=0, pol=1)
         print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_ATOM_01)
 
     def test_outfile_PAn0_by_bond(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         molfrag.max_l = -1
         molfrag.output_by_atom(fmt="%12.5f", max_l=-1, bond_centers=True)
         print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_BOND_n0)
 
     def test_outfile_PA00_by_bond(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         molfrag.max_l = 0
         molfrag.output_by_atom(fmt="%12.5f", max_l=0, bond_centers=True)
         print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_BOND_00)
 
     def test_outfile_PA10_by_bond(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         molfrag.max_l = 1
         molfrag.output_by_atom(fmt="%12.5f", max_l=1, bond_centers=True)
         print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_BOND_10)
 
     def test_outfile_PA10_by_bond_error_for_quad(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         with pytest.raises(NotImplementedError):
             molfrag.output_by_atom(fmt="%12.5f", max_l=2, bond_centers=True)
 
     def test_outfile_PAn1_by_bond(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         molfrag.max_l = -1
         molfrag.output_by_atom(fmt="%12.5f", max_l=-1, pol=1, bond_centers=True)
         print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_BOND_n1)
 
     def test_outfile_PAn2_by_bond(self, molfrag):
-        self.skip_if_not_implemented('getprop', molfrag)
         molfrag.max_l = -1
         molfrag.output_by_atom(fmt="%12.5f", max_l=-1, pol=2, bond_centers=True)
         print_output = self.capfd.readouterr().out.strip()

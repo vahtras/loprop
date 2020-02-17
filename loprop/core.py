@@ -710,13 +710,12 @@ class MolFrag(abc.ABC):
         T = self.T
         return ((T.T@ao@T).subblocked(cpa, cpa) for ao in aos)
 
-
     def contravariant_ao_to_blocked_loprop(self, aos: dict) -> dict:
 
         cpa = self.cpa
         T = self.T
         blocked_loprop = {
-            k: (T.I * v * T.I.T).subblocked(cpa, cpa)
+            k: (T.I @ v @ T.I.T).subblocked(cpa, cpa)
             for k, v in aos.items()
         }
         return blocked_loprop
@@ -779,50 +778,18 @@ class MolFrag(abc.ABC):
         self._l2a = [rhs / Lab for rhs in d2Qa]
         return self._l2a
 
-    @property
+    @abc.abstractmethod
     def Dk(self):
-        """Read perturbed densities"""
-
-        if self._Dk is not None:
-            return self._Dk
-
-        lab = ["XDIPLEN", "YDIPLEN", "ZDIPLEN"]
-        prp = os.path.join(self.tmpdir, "AOPROPER")
-        T = self.T
-        cpa = self.cpa
-
-        Dkao = lr.Dk(
-            *lab,
-            freqs=self.freqs,
-            tmpdir=self.tmpdir,
-            absorption=self.damping,
-            lr_vecs=True
-        )
-        if self.damping:
-            Re_Dkao, Im_Dkao = Dkao
-            if self.real_pol:
-                _Dk = {
-                    lw: (T.I * Re_Dkao[lw] * T.I.T).subblocked(cpa, cpa)
-                    for lw in Re_Dkao
-                }
-            elif self.imag_pol:
-                _Dk = {
-                    lw: (T.I * Im_Dkao[lw] * T.I.T).subblocked(cpa, cpa)
-                    for lw in Im_Dkao
-                }
-            else:
-                raise ValueError
-        else:
-            _Dk = {lw: (T.I * Dkao[lw] * T.I.T).subblocked(cpa, cpa) for lw in Dkao}
-
-        self._Dk = _Dk
-        return self._Dk
+        """
+        Read linear response perturbed densities
+        """
 
     @abc.abstractmethod
     def D2k(self):
-        """Read perturbed densities"""
-
         """
+        Read quadratic response perturbed densities"""
+        """
+
     @abc.abstractmethod
     def x(self):
         Read dipole matrices to blocked loprop basis
@@ -839,7 +806,7 @@ class MolFrag(abc.ABC):
         noa = self.noa
 
         Dk = self.Dk
-        labs = ("XDIPLEN", "YDIPLEN", "ZDIPLEN")
+        labs = self.dipole_labels
 
         dQa = full.matrix((self.nfreqs, noa, 3))
         for a in range(noa):
@@ -950,7 +917,7 @@ class MolFrag(abc.ABC):
         x = self.x
 
         noa = len(cpa)
-        labs = ("XDIPLEN", "YDIPLEN", "ZDIPLEN")
+        labs = self.dipole_labels
         Aab = full.matrix((self.nfreqs, 3, 3, noa, noa))
 
         # correction term for shifting origin from O to Rab
@@ -1238,7 +1205,7 @@ class MolFrag(abc.ABC):
             Qtot = Qa.sum()
         if self.max_l >= 1:
             Dm = self.Da.sum(axis=1).view(full.matrix)
-            Dc = Qa * (R - Rc)
+            Dc = Qa @ (R - Rc)
             DT = Dm + Dc
         if self._QUab is not None:
             QUm = self.QUc
@@ -1332,7 +1299,7 @@ class MolFrag(abc.ABC):
         if maxl >= 1:
             if template_full:
                 Dm = self.Da.sum(axis=1).view(full.matrix)
-                Dc = self.Qab.diagonal() * (self.R - self.Rc)
+                Dc = self.Qab.diagonal() @ (self.R - self.Rc)
                 DT = Dm + Dc
                 line += "( '%s%d', " % (
                     elem_dict[self.Z[full_loc]],

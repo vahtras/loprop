@@ -8,6 +8,8 @@ from .core import MolFrag
 
 class MolFragDalton(MolFrag):
 
+    dipole_labels = ('XDIPLEN', 'YDIPLEN', 'ZDIPLEN')
+
     def __init__(self, tmpdir, **kwargs):
         super().__init__(tmpdir, **kwargs)
         #
