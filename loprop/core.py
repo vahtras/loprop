@@ -343,6 +343,7 @@ class MolFrag(abc.ABC):
         damping=False,
         real_pol=False,
         imag_pol=False,
+        **kwargs
     ):
         """
         Constructur of MolFrag class objects

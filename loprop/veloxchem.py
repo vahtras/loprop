@@ -15,7 +15,7 @@ class MolFragVeloxChem(MolFrag):
         #
         # Veloxchem files
         #
-        self.interface = os.path.join(tmpdir, 'h2o.loprop.h5')
+        self.interface = kwargs['checkpoint_file']
         self.scf = os.path.join(tmpdir, 'h2o.scf.h5')
         self._Z = None
         self._R = None

@@ -3,6 +3,7 @@ import os
 
 import numpy as np
 from util import full
+from util.full import Matrix
 
 from loprop.core import LoPropTransformer, penalty_function, AU2ANG, pairs
 from loprop.dalton import MolFragDalton
@@ -14,18 +15,23 @@ from . import h2o_data as ref
 case = "h2o"
 thisdir = os.path.dirname(__file__)
 tmpdir = os.path.join(thisdir, case, "tmp")
+settings = dict(
+    freqs=(0,),
+    pf=penalty_function(2.0 / AU2ANG ** 2),
+    checkpoint_file=os.path.join(tmpdir, 'h2o.loprop.h5')
+)
 
 
 @pytest.fixture
 def molfrag(request):
     cls = request.param
-    return cls(tmpdir, freqs=(0,), pf=penalty_function(2.0 / AU2ANG ** 2))
+    return cls(tmpdir, **settings)
 
 
 @pytest.fixture
 def transformer(request):
     cls = request.param
-    S = cls(tmpdir).S()
+    S = cls(tmpdir, **settings).S()
     cpa = (30, 14, 14)
     opa = ((0, 1, 4, 5, 6), (0,), (0,))
     T = LoPropTransformer(S, cpa, opa)
@@ -97,7 +103,7 @@ class TestTransform(LoPropTestCase):
         self.assert_allclose(T2, ref.T2)
 
     def test_T3(self, transformer):
-        T3 = transformer.project_occupied_from_virtual(ref.S2.view(full.matrix))
+        T3 = transformer.project_occupied_from_virtual(ref.S2.view(Matrix))
         self.assert_allclose(T3, ref.T3)
 
     def test_T4(self, transformer):
@@ -137,7 +143,7 @@ class TestH2O(LoPropTestCase):
         self.assert_allclose(molfrag.Rc, ref.Rc)
 
     def test_defined_gauge(self, molfrag):
-        m = molfrag.__class__(tmpdir, gc=[1, 2, 3])
+        m = molfrag.__class__(tmpdir, gc=[1, 2, 3], **settings)
         self.assert_allclose(m.Rc, [1, 2, 3])
 
     def test_total_charge(self, molfrag):
