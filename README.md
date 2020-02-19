@@ -1,5 +1,4 @@
 [![CircleCI](https://circleci.com/gh/vahtras/loprop.svg?style=svg)](https://circleci.com/gh/vahtras/loprop)
-[![Build Status](https://travis-ci.org/vahtras/loprop.svg?branch=master)](https://travis-ci.org/vahtras/loprop)
 [![Coverage Status](https://coveralls.io/repos/github/vahtras/loprop/badge.svg?branch=master)](https://coveralls.io/github/vahtras/loprop?branch=master)
 
 # Loprop for Dalton
