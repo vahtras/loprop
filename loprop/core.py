@@ -174,7 +174,7 @@ class LoPropTransformer:
     @staticmethod
     def assert_nonneg_ints(arr):
         for a in arr:
-            assert type(a) == int and a >= 0
+            assert type(a) in [int, numpy.int64] and a >= 0
 
     @property
     def T(self):

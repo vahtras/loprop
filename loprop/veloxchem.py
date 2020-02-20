@@ -31,8 +31,8 @@ class MolFragVeloxChem(MolFrag):
         with h5py.File(self.interface, 'r') as f:
             self.cpa = [int(i) for i in f['contracted_per_atom'][...]]
             self.opa = [
-                [int(i) for i in v]
-                for v in f['occupied_per_atom'].values()
+                occ[...]
+                for occ in f[f'occupied_per_atom'].values()
             ]
         self.noa = len(self.cpa)
 
