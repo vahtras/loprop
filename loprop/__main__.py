@@ -231,7 +231,7 @@ def main():
     else:
         gc = None
 
-    t = timing.timing("Loprop")
+    t = timing.timing(f"Loprop-{args.implementation}")
 
     MolFrag = implementations[args.implementation]
     molfrag = MolFrag(
