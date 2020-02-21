@@ -1,21 +1,30 @@
 #!/usr/bin/env python
-import sys
-import os
 import argparse
+import os
+import pathlib
+import sys
+import tarfile
 import tempfile
 
 
 try:
-    from loprop import MolFragDalton, timing, penalty_function
+    from loprop import MolFragDalton, MolFragVeloxChem, timing, penalty_function
 except ImportError:
     sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-    from loprop import MolFragDalton, timing, penalty_function
+    from loprop import MolFragDalton, MolFragVeloxChem, timing, penalty_function
 
-implementations = {"dalton": MolFragDalton}
+implementations = {"dalton": MolFragDalton, "veloxchem": MolFragVeloxChem}
 
 
 def main():
     parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "-i",
+        "--implementation",
+        choices=implementations,
+        default="dalton",
+    )
 
     parser.add_argument(
         "-v",
@@ -28,6 +37,14 @@ def main():
     parser.add_argument(
         "-t", "--tmpdir", dest="tmpdir", default=None, help="scratch directory"
     )
+
+    parser.add_argument(
+        "-c",
+        "--checkpoint-file",
+        default=None,
+        help="Checkpoint file tag",
+    )
+
     parser.add_argument(
         "-f",
         "--daltgz",
@@ -120,7 +137,7 @@ def main():
         default=False,
         help=(
             "Write atomic properties in templated format," +
-            "centered on first atom",
+            "centered on first atom"
         ),
     )
 
@@ -144,7 +161,7 @@ def main():
         choices=["real", "imag"],
         help=(
             "Complex polarizabilities (damping);" +
-            "response vectors from ABSVECS",
+            "response vectors from ABSVECS"
         ),
     )
 
@@ -157,9 +174,9 @@ def main():
 
     args = parser.parse_args()
 
-    #
-    # Check consistency: present Dalton files
-    #
+    with_dalton = args.implementation == 'dalton'
+    with_veloxchem = args.implementation == 'veloxchem'
+
     if args.tmpdir is None:
         tmpdir = tempfile.TemporaryDirectory()
         args.tmpdir = tmpdir.name
@@ -167,30 +184,42 @@ def main():
         print("%s: Directory not found: %s" % (sys.argv[0], args.tmpdir))
         raise SystemExit
 
-    import tarfile
+    #
+    # Check consistency: present Dalton files
+    #
+    if with_dalton:
+        if args.daltgz:
+            tgz = tarfile.open(args.daltgz, "r:gz")
+            tgz.extractall(path=args.tmpdir)
 
-    if args.daltgz:
-        tgz = tarfile.open(args.daltgz, "r:gz")
-        tgz.extractall(path=args.tmpdir)
+        needed_files = ["AOONEINT", "DALTON.BAS", "SIRIFC", "AOPROPER"]
+        if args.damping:
+            needed_files.append("ABSVECS")
+        elif args.pol:
+            needed_files.append("RSPVEC")
+
+        for file_ in needed_files:
+            df = os.path.join(args.tmpdir, file_)
+            if not os.path.isfile(df):
+                print("%s: %s does not exists" % (sys.argv[0], df))
+                print("Needed Dalton files to run loprop.py:")
+                print("\n".join(needed_files))
+                raise SystemExit
+
+    if with_veloxchem:
+        checkpoint_file = pathlib.Path(args.checkpoint_file)
+        checkpoint_dir = checkpoint_file.parent
+        name = checkpoint_file.name.split('.')[0]
+        scf = f"{name}.scf.h5"
+        scf_checkpoint_file = checkpoint_dir/scf
+    else:
+        checkpoint_file = None
+        scf_checkpoint_file = None
 
     if args.freqs:
         freqs = map(float, args.freqs.split())
     else:
         freqs = (0.0,)
-
-    needed_files = ["AOONEINT", "DALTON.BAS", "SIRIFC", "AOPROPER"]
-    if args.damping:
-        needed_files.append("ABSVECS")
-    elif args.pol:
-        needed_files.append("RSPVEC")
-
-    for file_ in needed_files:
-        df = os.path.join(args.tmpdir, file_)
-        if not os.path.isfile(df):
-            print("%s: %s does not exists" % (sys.argv[0], df))
-            print("Needed Dalton files to run loprop.py:")
-            print("\n".join(needed_files))
-            raise SystemExit
 
     if args.gc is not None:
         # Gauge center
@@ -203,7 +232,9 @@ def main():
         gc = None
 
     t = timing.timing("Loprop")
-    molfrag = MolFragDalton(
+
+    MolFrag = implementations[args.implementation]
+    molfrag = MolFrag(
         args.tmpdir,
         max_l=args.max_l,
         pf=penalty_function(args.alpha),
@@ -212,7 +243,10 @@ def main():
         damping=args.damping,
         real_pol=(args.damping == "real"),
         imag_pol=(args.damping == "imag"),
+        checkpoint_file=checkpoint_file,
+        scf_checkpoint_file=scf_checkpoint_file,
     )
+
     print(
         molfrag.output_potential_file(
             args.max_l,
@@ -223,6 +257,7 @@ def main():
             decimal=args.decimal,
         )
     )
+
     if args.template:
         print(
             molfrag.output_template(
