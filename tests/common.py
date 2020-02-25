@@ -34,6 +34,4 @@ class LoPropTestCase:  # (unittest.TestCase):
     @staticmethod
     def skip_if_not_implemented(method, code):
         if method not in dir(code):
-            pytest.skip(
-                f'Method {method} not implmented in {code.__class__.__name__}'
-            )
+            pytest.skip(f"Method {method} not implmented in {code.__class__.__name__}")
