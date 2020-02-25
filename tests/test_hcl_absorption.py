@@ -10,7 +10,8 @@ import re
 thisdir = os.path.dirname(__file__)
 case = "hcl_absorption"
 tmpdir = os.path.join(thisdir, case, "tmp")
-exec("from . import %s_data as ref" % case)
+
+from . import hcl_absorption_data as ref
 
 
 @pytest.fixture
@@ -93,7 +94,3 @@ class Test:
         molfrag._imag_pol = False
         with pytest.raises(ValueError):
             Dk = molfrag.Dk
-
-
-if __name__ == "__main__":  # pragma: no cover
-    unittest.main()

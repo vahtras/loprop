@@ -10,7 +10,8 @@ import re
 thisdir = os.path.dirname(__file__)
 case = "h2o_beta"
 tmpdir = os.path.join(thisdir, case, "tmp")
-exec("from . import %s_data as ref" % case)
+from . import h2o_beta_data as ref
+
 
 from loprop.core import penalty_function, AU2ANG, pairs, MolFrag
 from loprop.dalton import MolFragDalton
