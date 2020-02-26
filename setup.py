@@ -2,9 +2,11 @@
 
 from setuptools import setup
 
+from loprop import __version__
+
 setup(
     name="LoProp",
-    version="0.2.3",
+    version=__version__,
     packages=["loprop"],
     entry_points={
         'console_scripts': ['loprop=loprop.__main__:main'],
