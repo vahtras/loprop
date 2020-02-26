@@ -6,12 +6,13 @@ import sys
 import tarfile
 import tempfile
 
+from util import timing
 
 try:
-    from loprop import MolFragDalton, MolFragVeloxChem, timing, penalty_function
+    from loprop import MolFragDalton, MolFragVeloxChem, penalty_function
 except ImportError:
     sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-    from loprop import MolFragDalton, MolFragVeloxChem, timing, penalty_function
+    from loprop import MolFragDalton, MolFragVeloxChem, penalty_function
 
 implementations = {"dalton": MolFragDalton, "veloxchem": MolFragVeloxChem}
 
