@@ -6,7 +6,7 @@ from loprop import __version__
 
 setup(
     name="LoProp",
-    version=__version__,
+    version="0.2.4",
     packages=["loprop"],
     entry_points={
         'console_scripts': ['loprop=loprop.__main__:main'],
