@@ -2,8 +2,6 @@
 
 from setuptools import setup
 
-from loprop import __version__
-
 setup(
     name="LoProp",
     version="0.2.4",
