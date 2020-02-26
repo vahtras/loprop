@@ -1,5 +1,6 @@
 [![CircleCI](https://circleci.com/gh/vahtras/loprop.svg?style=svg)](https://circleci.com/gh/vahtras/loprop)
 [![Coverage Status](https://coveralls.io/repos/github/vahtras/loprop/badge.svg?branch=master)](https://coveralls.io/github/vahtras/loprop?branch=master)
+![Python application](https://github.com/vahtras/loprop/workflows/Python%20application/badge.svg?event=push)
 
 # Loprop for Dalton
 
