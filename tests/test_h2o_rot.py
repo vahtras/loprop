@@ -1,20 +1,18 @@
-import pytest
-from .common import LoPropTestCase
-import os
-import sys
+import pathlib
+
 import numpy as np
-from loprop.core import MolFrag, penalty_function, AU2ANG, pairs
+import pytest
 from util import full
-
-import re
-
-thisdir = os.path.dirname(__file__)
-case = "h2o_rot"
-tmpdir = os.path.join(thisdir, case, "tmp")
-from . import h2o_rot_data as ref
 
 from loprop.core import penalty_function, AU2ANG, pairs
 from loprop.dalton import MolFragDalton
+
+from .common import LoPropTestCase
+from . import h2o_rot_data as ref
+
+thisdir = pathlib.Path(__file__).parent
+case = "h2o_rot"
+tmpdir = thisdir/case/"tmp"
 
 
 @pytest.fixture

@@ -1,14 +1,16 @@
+import os
+import pathlib
+
 import pytest
 from .common import LoPropTestCase
-import os
 import numpy as np
 from util import full
 
 import re
 
-thisdir = os.path.dirname(__file__)
+thisdir = pathlib.Path(__file__).parent
 case = "h2o_beta_trans"
-tmpdir = os.path.join(thisdir, case, "tmp")
+tmpdir = thisdir/case/"tmp"
 from . import h2o_beta_trans_data as ref
 
 from loprop.core import penalty_function, AU2ANG, pairs, MolFrag

@@ -1,17 +1,18 @@
-import pytest
-import os
+import pathlib
+
 import numpy as np
-from loprop.core import penalty_function, AU2ANG, pairs, MolFrag
-from loprop.dalton import MolFragDalton
+import pytest
+
 from util import full
 
-import re
-
-thisdir = os.path.dirname(__file__)
-case = "hcl_absorption"
-tmpdir = os.path.join(thisdir, case, "tmp")
+from loprop.core import penalty_function, AU2ANG
+from loprop.dalton import MolFragDalton
 
 from . import hcl_absorption_data as ref
+
+thisdir = pathlib.Path(__file__).parent
+case = "hcl_absorption"
+tmpdir = thisdir/case/"tmp"
 
 
 @pytest.fixture

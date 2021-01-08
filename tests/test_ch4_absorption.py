@@ -1,19 +1,18 @@
-import os
+import pathlib
 
 import pytest
 import numpy as np
 
-from loprop.core import penalty_function, AU2ANG, pairs, MolFrag
+from loprop.core import penalty_function, AU2ANG
 from loprop.dalton import MolFragDalton
-from loprop.veloxchem import MolFragVeloxChem
+# from loprop.veloxchem import MolFragVeloxChem
 from util import full
 
-import re
-
-thisdir = os.path.dirname(__file__)
-case = "ch4_absorption"
-tmpdir = os.path.join(thisdir, case, "tmp")
 from . import ch4_absorption_data as ref
+
+thisdir = pathlib.Path(__file__).parent
+case = "ch4_absorption"
+tmpdir = thisdir/case/"tmp"
 
 
 @pytest.fixture
@@ -92,4 +91,4 @@ class TestCH4Absorption:
         mf._real_pol = False
         mf._imag_pol = False
         with pytest.raises(ValueError):
-            Dk = mf.Dk
+            _ = mf.Dk

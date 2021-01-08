@@ -1,15 +1,17 @@
+import os
+import pathlib
+import sys
+
 import pytest
 from .common import LoPropTestCase
-import os
-import sys
 import numpy as np
 from util import full
 
 import re
 
-thisdir = os.path.dirname(__file__)
+thisdir = pathlib.Path(__file__).parent
 case = "h2o_beta"
-tmpdir = os.path.join(thisdir, case, "tmp")
+tmpdir = thisdir/case/"tmp"
 from . import h2o_beta_data as ref
 
 

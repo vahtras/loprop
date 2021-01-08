@@ -1,5 +1,7 @@
-import pytest
 import os
+import pathlib
+
+import pytest
 from loprop.core import MolFrag, penalty_function, shift_function
 from loprop.dalton import MolFragDalton
 
@@ -9,7 +11,7 @@ DIR = "h2o_beta/tmp"
 @pytest.fixture
 def molfrag(request):
     cls = request.param
-    tmp = os.path.join(os.path.dirname(__file__), DIR)
+    tmp = pathlib.Path(__file__).parent/DIR
     return cls(
         tmp,
         max_l=2,
@@ -21,10 +23,12 @@ def molfrag(request):
     )
 
 
-@pytest.mark.parametrize("molfrag", [MolFragDalton], ids=["dalton"], indirect=True)
+@pytest.mark.parametrize(
+    "molfrag", [MolFragDalton], ids=["dalton"], indirect=True
+)
 class TestTemplate:
     def _setup(self, molfrag):
-        self.tmp = os.path.join(os.path.dirname(__file__), DIR)
+        self.tmp = pathlib.Path(__file__).parent/DIR
         molfrag = MolFrag(
             tmpdir=self.tmp,
             max_l=2,

@@ -1,22 +1,19 @@
+import pathlib
+
 import pytest
-from .common import LoPropTestCase
-import os
-import sys
-import numpy as np
-from loprop.core import MolFrag
 from util import full
-
-import re
-
-thisdir = os.path.dirname(__file__)
-case = "h2o_dyn"
-tmpdir = os.path.join(thisdir, case, "tmp")
-# exec("from . import %s_data as ref" % case)
-from . import h2o_dyn_data as ref
-from . import h2o_data
 
 from loprop.core import penalty_function, AU2ANG, pairs
 from loprop.dalton import MolFragDalton
+
+from .common import LoPropTestCase
+from . import h2o_dyn_data as ref
+from . import h2o_data
+
+thisdir = pathlib.Path(__file__).parent
+case = "h2o_dyn"
+tmpdir = thisdir/case/"tmp"
+# exec("from . import %s_data as ref" % case)
 
 
 @pytest.fixture
