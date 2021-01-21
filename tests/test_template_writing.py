@@ -2,7 +2,8 @@ import os
 import pathlib
 
 import pytest
-from loprop.core import MolFrag, penalty_function, shift_function
+
+from loprop.core import penalty_function, shift_function
 from loprop.dalton import MolFragDalton
 
 DIR = "h2o_beta/tmp"
@@ -11,7 +12,7 @@ DIR = "h2o_beta/tmp"
 @pytest.fixture
 def molfrag(request):
     cls = request.param
-    tmp = pathlib.Path(__file__).parent/DIR
+    tmp = pathlib.Path(__file__).parent / DIR
     return cls(
         tmp,
         max_l=2,
@@ -27,18 +28,6 @@ def molfrag(request):
     "molfrag", [MolFragDalton], ids=["dalton"], indirect=True
 )
 class TestTemplate:
-    def _setup(self, molfrag):
-        self.tmp = pathlib.Path(__file__).parent/DIR
-        molfrag = MolFrag(
-            tmpdir=self.tmp,
-            max_l=2,
-            pol=2,
-            freqs=None,
-            pf=penalty_function(2.0),
-            sf=shift_function,
-            gc=None,
-        )
-        self.maxDiff = None
 
     def test_h2o_beta_dir(self, molfrag):
         assert os.path.isdir(molfrag.tmpdir)
@@ -73,15 +62,15 @@ class TestTemplate:
 
     def test_h2o_template_wrong_l(self, molfrag):
         with pytest.raises(RuntimeError):
-            str_ = molfrag.output_template(maxl=3)
+            _ = molfrag.output_template(maxl=3)
 
     def test_h2o_template_wrong_a(self, molfrag):
         with pytest.raises(RuntimeError):
-            str_ = molfrag.output_template(pol=3)
+            _ = molfrag.output_template(pol=3)
 
     def test_h2o_template_wrong_b(self, molfrag):
         with pytest.raises(RuntimeError):
-            str_ = molfrag.output_template(hyper=3)
+            _ = molfrag.output_template(hyper=3)
 
     def test_h2o_template_full(self, molfrag):
 

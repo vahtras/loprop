@@ -18,8 +18,8 @@ tmpdir = pathlib.Path(thisdir) / case / "tmp"
 settings = dict(
     freqs=(0,),
     pf=penalty_function(2.0 / AU2ANG ** 2),
-    checkpoint_file=tmpdir/"h2o.loprop.h5",
-    scf_checkpoint_file=tmpdir/"h2o.scf.h5",
+    checkpoint_file=tmpdir / "h2o.loprop.h5",
+    scf_checkpoint_file=tmpdir / "h2o.scf.h5",
 )
 
 

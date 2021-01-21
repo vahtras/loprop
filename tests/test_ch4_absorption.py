@@ -12,7 +12,7 @@ from . import ch4_absorption_data as ref
 
 thisdir = pathlib.Path(__file__).parent
 case = "ch4_absorption"
-tmpdir = thisdir/case/"tmp"
+tmpdir = thisdir / case / "tmp"
 
 
 @pytest.fixture

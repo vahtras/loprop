@@ -1,4 +1,6 @@
 import os
+
+import numpy as np
 from util.full import init
 
 Z = [8.0, 1.0, 1.0]
@@ -1261,11 +1263,9 @@ Nuclear charge:          10.00000
 Polarizability av (0)        6.61822
 Polarizability (0)           8.18677    -0.00000     5.10275    -0.00000    -0.00000     6.56513"""
 
-import numpy
-
 
 def load(filename):
-    return numpy.loadtxt(os.path.join(os.path.dirname(__file__), "h2o", filename))
+    return np.loadtxt(os.path.join(os.path.dirname(__file__), "h2o", filename))
 
 
 T1 = load("T1")

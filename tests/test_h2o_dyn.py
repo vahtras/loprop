@@ -12,7 +12,7 @@ from . import h2o_data
 
 thisdir = pathlib.Path(__file__).parent
 case = "h2o_dyn"
-tmpdir = thisdir/case/"tmp"
+tmpdir = thisdir / case / "tmp"
 # exec("from . import %s_data as ref" % case)
 
 
@@ -161,7 +161,7 @@ class TestNew(LoPropTestCase):
 
     def test_potfile_PA20b(self, molfrag):
         with pytest.raises(NotImplementedError):
-            PA20b = molfrag.output_potential_file(
+            _ = molfrag.output_potential_file(
                 maxl=2, pol=0, hyper=0, bond_centers=True
             )
 

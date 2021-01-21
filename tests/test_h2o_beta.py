@@ -1,22 +1,18 @@
-import os
 import pathlib
-import sys
 
-import pytest
-from .common import LoPropTestCase
 import numpy as np
+import pytest
 from util import full
 
-import re
+from loprop.core import penalty_function, AU2ANG, pairs
+from loprop.dalton import MolFragDalton
+
+from . import h2o_beta_data as ref
+from .common import LoPropTestCase
 
 thisdir = pathlib.Path(__file__).parent
 case = "h2o_beta"
-tmpdir = thisdir/case/"tmp"
-from . import h2o_beta_data as ref
-
-
-from loprop.core import penalty_function, AU2ANG, pairs, MolFrag
-from loprop.dalton import MolFragDalton
+tmpdir = thisdir / case / "tmp"
 
 
 @pytest.fixture
@@ -212,7 +208,6 @@ class TestH2OBeta(LoPropTestCase):
 
     def test_hyperpolarizability_total(self, molfrag):
         Bm = molfrag.Bm[0]
-        Bab = molfrag.Bab.sum(axis=4).sum(axis=3)
         ref.Bm
         self.assert_allclose(Bm, ref.Bm, atol=0.005)
 
@@ -399,9 +394,6 @@ class TestH2OBeta(LoPropTestCase):
         ) / 2
         H2zz = ihff * (rMP[z, dz1, h2] - rMP[z, dz2, h2])
 
-        comp = ("XX", "yx", "yy", "zx", "zy", "zz")
-        bond = ("O", "H1O", "H1", "H2O", "H2H1", "H2")
-
         self.assert_allclose(O[0], Oxx, text="Oxx")
         self.assert_allclose(O[1], Oyx, text="Oyx")
         self.assert_allclose(O[2], Oyy, text="Oyy")
@@ -443,7 +435,6 @@ class TestH2OBeta(LoPropTestCase):
         R = molfrag.R
         rMP = ref.rMP
         diff = [(1, 2), (3, 4), (5, 6)]
-        atoms = (0, 2, 5)
         bonds = (1, 3, 4)
         ablab = ("O", "H1O", "H1", "H2O", "H2H1", "H2")
         ijlab = ("xx", "yx", "yy", "zx", "zy", "zz")
@@ -561,14 +552,14 @@ class TestH2OBeta(LoPropTestCase):
 
     def test_outfile_PAn0_by_atom(self, molfrag):
         molfrag.max_l = -1
-        Da = molfrag.Da  # use for beta internally and will be set in output
+        _ = molfrag.Da  # use for beta internally and will be set in output
         molfrag.output_by_atom(fmt="%12.5f", hyperpol=1)
         print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_ATOM_n0)
 
     def test_outfile_PAn0_by_bond(self, molfrag):
         molfrag.max_l = 1
-        Da = molfrag.Da  # use for beta internally and will be set in output
+        _ = molfrag.Da  # use for beta internally and will be set in output
         molfrag.output_by_atom(fmt="%12.5f", max_l=1, hyperpol=1, bond_centers=True)
         print_output = self.capfd.readouterr().out.strip()
         self.assert_str(print_output, ref.OUTPUT_BY_BOND_11)

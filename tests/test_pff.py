@@ -1,9 +1,12 @@
-import pytest
-from .common import LoPropTestCase
-from . import pff_data as ref
 import os
-from loprop.core import MolFrag, penalty_function, shift_function
+
+import pytest
+
+from loprop.core import penalty_function, shift_function
 from loprop.dalton import MolFragDalton
+
+from . import pff_data as ref
+from .common import LoPropTestCase
 
 case = "pff"
 DIR = os.path.join(case, "tmp")

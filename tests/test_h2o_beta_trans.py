@@ -1,20 +1,18 @@
-import os
 import pathlib
 
-import pytest
-from .common import LoPropTestCase
 import numpy as np
+import pytest
 from util import full
 
-import re
+from loprop.core import penalty_function, AU2ANG, pairs
+from loprop.dalton import MolFragDalton
+
+from . import h2o_beta_trans_data as ref
+from .common import LoPropTestCase
 
 thisdir = pathlib.Path(__file__).parent
 case = "h2o_beta_trans"
-tmpdir = thisdir/case/"tmp"
-from . import h2o_beta_trans_data as ref
-
-from loprop.core import penalty_function, AU2ANG, pairs, MolFrag
-from loprop.dalton import MolFragDalton
+tmpdir = thisdir / case / "tmp"
 
 
 @pytest.fixture
@@ -216,7 +214,6 @@ class TestNew(LoPropTestCase):
 
     def test_hyperpolarizability_total(self, molfrag):
         Bm = molfrag.Bm[0]
-        Bab = molfrag.Bab.sum(axis=4).sum(axis=3)
         ref.Bm
         self.assert_allclose(Bm, ref.Bm, 0.005)
 
@@ -403,9 +400,6 @@ class TestNew(LoPropTestCase):
         ) / 2
         H2zz = ihff * (rMP[z, dz1, h2] - rMP[z, dz2, h2])
 
-        comp = ("XX", "yx", "yy", "zx", "zy", "zz")
-        bond = ("O", "H1O", "H1", "H2O", "H2H1", "H2")
-
         self.assert_allclose(O[0], Oxx, text="Oxx")
         self.assert_allclose(O[1], Oyx, text="Oyx")
         self.assert_allclose(O[2], Oyy, text="Oyy")
@@ -447,7 +441,6 @@ class TestNew(LoPropTestCase):
         R = molfrag.R
         rMP = ref.rMP
         diff = [(1, 2), (3, 4), (5, 6)]
-        atoms = (0, 2, 5)
         bonds = (1, 3, 4)
         ablab = ("O", "H1O", "H1", "H2O", "H2H1", "H2")
         ijlab = ("xx", "yx", "yy", "zx", "zy", "zz")
@@ -520,7 +513,6 @@ class TestNew(LoPropTestCase):
         Acmp = full.matrix((6, noa))
         Aa = Aab.sum(axis=3).view(full.matrix)
 
-        ab = 0
         for a in range(noa):
             Acmp[:, a] = Aa[:, :, a].pack()
 

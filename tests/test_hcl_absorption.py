@@ -12,7 +12,7 @@ from . import hcl_absorption_data as ref
 
 thisdir = pathlib.Path(__file__).parent
 case = "hcl_absorption"
-tmpdir = thisdir/case/"tmp"
+tmpdir = thisdir / case / "tmp"
 
 
 @pytest.fixture
@@ -94,4 +94,4 @@ class Test:
         molfrag._real_pol = False
         molfrag._imag_pol = False
         with pytest.raises(ValueError):
-            Dk = molfrag.Dk
+            _ = molfrag.Dk
