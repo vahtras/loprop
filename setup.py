@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name="LoProp",
-    version="0.3.2",
+    version="0.3.3",
     packages=["loprop"],
     entry_points={
         'console_scripts': ['loprop=loprop.__main__:main'],
