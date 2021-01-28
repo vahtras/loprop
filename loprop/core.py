@@ -169,12 +169,12 @@ class LoPropTransformer:
     @staticmethod
     def assert_pos_ints(arr):
         for a in arr:
-            assert type(a) == int and a > 0
+            assert isinstance(a, (int, numpy.intc, numpy.int32, numpy.int64)) and a > 0
 
     @staticmethod
     def assert_nonneg_ints(arr):
         for a in arr:
-            assert type(a) in [int, numpy.int64] and a >= 0
+            assert isinstance(a, (int, numpy.intc, numpy.int32, numpy.int64)) and a >= 0
 
     @property
     def T(self):
