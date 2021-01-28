@@ -8,6 +8,7 @@ import tempfile
 
 from util import timing
 
+from . import __version__
 from .core import penalty_function
 
 implementations = {}
@@ -26,6 +27,8 @@ except ImportError:
 
 def main():
     parser = argparse.ArgumentParser()
+
+    parser.add_argument("--version", action="store_true")
 
     parser.add_argument(
         "-i",
@@ -181,6 +184,10 @@ def main():
     )
 
     args = parser.parse_args()
+
+    if args.version:
+        print(__version__)
+        exit(0)
 
     with_dalton = args.implementation == 'dalton'
     with_veloxchem = args.implementation == 'veloxchem'

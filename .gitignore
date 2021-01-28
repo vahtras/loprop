@@ -12,5 +12,6 @@ build
 errors.err
 *.[0-9]
 .pytest_cache
-conda-build*
+conda-*
 *.ipynb*
+.flake*
