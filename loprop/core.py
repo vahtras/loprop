@@ -199,28 +199,28 @@ class LoPropTransformer:
         S = self.S
 
         T1 = self.gram_schmidt_atomic_blocks(S)
-        S1 = T1.T * S * T1
+        S1 = T1.T @ S @ T1
 
         P = self.permute_to_occupied_virtual()
-        S1P = P.T * S1 * P
+        S1P = P.T @ S1 @ P
 
         T2 = self.lowdin_occupied_virtual(S1P)
-        S2 = T2.T * S1P * T2
+        S2 = T2.T @ S1P @ T2
 
         T3 = self.project_occupied_from_virtual(S2)
-        S3 = T3.T * S2 * T3
+        S3 = T3.T @ S2 @ T3
 
         T4 = self.lowdin_virtual(S3)
-        S4 = T4.T * S3 * T4
+        S4 = T4.T @ S3 @ T4
 
         #
         # permute back to original basis
         #
-        S4 = P * S4 * P.T
+        S4 = P @ S4 @ P.T
         #
         # Return total transformation
         #
-        T = T1 * P * T2 * T3 * T4 * P.T
+        T = T1 @ P @ T2 @ T3 @ T4 @ P.T
         self._T = T
         return self._T
 
@@ -249,7 +249,7 @@ class LoPropTransformer:
         return T1
 
     def permute_to_occupied_virtual(self):
-        return self.P1() * self.P2()
+        return self.P1() @ self.P2()
 
     def P1(self):
         #
@@ -760,7 +760,7 @@ class MolFrag(abc.ABC):
         dQa = self.dQa
         Fab = self.Fab
         Lab = Fab + self.sf(Fab)
-        self._la = [rhs / Lab for rhs in dQa]
+        self._la = [Lab.solve(rhs) for rhs in dQa]
         return self._la
 
     @property
@@ -779,7 +779,7 @@ class MolFrag(abc.ABC):
         d2Qa = self.d2Qa
         Fab = self.Fab
         Lab = Fab + self.sf(Fab)
-        self._l2a = [rhs / Lab for rhs in d2Qa]
+        self._l2a = [Lab.solve(rhs) for rhs in d2Qa]
         return self._l2a
 
     @abc.abstractmethod

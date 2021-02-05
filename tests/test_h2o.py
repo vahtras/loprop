@@ -113,7 +113,7 @@ class TestTransform(LoPropTestCase):
 
     def test_S4(self, transformer):
         T = transformer.T
-        S4 = T.T * transformer.S * T
+        S4 = T.T @ transformer.S @ T
         self.assert_allclose(S4, full.unit(58))
 
 
