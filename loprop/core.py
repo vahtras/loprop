@@ -2,9 +2,11 @@
 """
 Loprop model implementation (J. Chem. Phys. 121, 4494 (2004))
 """
+
 import abc
 from collections import defaultdict
 from functools import reduce
+from typing import List
 
 import numpy
 
@@ -120,16 +122,26 @@ def pairs(n):
             ij += 1
 
 
-def shift_function(*args):
+def shift_function(F: numpy.ndarray) -> float:
     """
-    Return value twice max value of F
+    Returns value twice max value of F
+
+    Arguments:
+
+    :param F: Matrix-like
+    :type F: numpy.ndarray
+
+    :returns: max(abs(F))
+    :rtype: float
     """
-    F, = args
+
     return 2 * numpy.max(numpy.abs(F))
 
 
 def header(string):
-    """Pretty print header"""
+    """
+    Pretty print header
+    """
     border = "-" * len(string)
     print("\n%s\n%s\n%s" % (border, string, border))
 
@@ -150,48 +162,103 @@ def output_beta(beta, dip=None, fmt="%12.6f"):
 
 
 class LoPropTransformer:
-    def __init__(self, S, cpa, opa):
+    """
+    Class whose instance provide the transformation matrix between 
+    an atomic-orbital basis and its LoProp basis, which defined by the overlap matrix
+    and occupied/contracted per atom
+
+    Arguments:
+
+    :param S: overlap matrix
+    :type S: numpy.ndarray
+
+    :param cpa: contracted per atom
+    :type cpa: list[int]
+
+    :param opa: occupied per atom
+    :type opa: list[int]
+    """
+
+    def __init__(self, S: numpy.ndarray, cpa: List[int], opa: List[int]):
         self.S = S
         self.set_cpa(cpa)
         self.set_opa(opa)
         self._T = None
 
-    def set_cpa(self, cpa):
+    def set_cpa(self, cpa: List[int]):
+        """
+        Sets contracted per atom
+
+        Arguments:
+
+        :param cpa: number of contracted basis functions per atom
+        :type cpa: list[int]
+        """
+
         self.assert_pos_ints(cpa)
         self.cpa = tuple(cpa)
         self.noa = len(self.cpa)
 
-    def set_opa(self, opa):
+    def set_opa(self, opa: List[List[int]]):
+        """
+        Sets occupied  per atom
+
+        Arguments:
+
+        :param opa: list of occupied basis functions per atom
+        :type opa: list[list[int]]
+        """
         for a in opa:
             self.assert_nonneg_ints(a)
         self.opa = tuple(tuple(o for o in a) for a in opa)
 
     @staticmethod
-    def assert_pos_ints(arr):
+    def assert_pos_ints(arr: List[int]):
+        """
+        Assert that we have an array of positive ints
+
+        Arguments:
+
+        :param arr: arr
+        :type arr: list[int]
+        """
+
         for a in arr:
             assert isinstance(a, (int, numpy.intc, numpy.int32, numpy.int64)) and a > 0
 
     @staticmethod
-    def assert_nonneg_ints(arr):
+    def assert_nonneg_ints(arr: List[int]):
+        """
+        Assert that we have an array of non-negative ints
+
+        Arguments:
+
+        :param arr: arr
+        :type arr: list[int]
+        """
+
         for a in arr:
             assert isinstance(a, (int, numpy.intc, numpy.int32, numpy.int64)) and a >= 0
 
     @property
     def T(self):
         """
-        Generate loprop transformation matrix according to the
+        Returns the LoProp transformation matrix generated according to the
         following steps
+
         Given atomic overlap matrix:
-        1. orthogonalize in each atomic block
-        2. a) Lowdin orthogonalize occupied subspace
-           b) Lowdin orthogonalize virtual subspace
+
+        1. Gram-Scmidt orthogonalize in each atomic block
+        2. Lowdin orthogonalize subspaces
+
+           * Lowdin orthogonalize occupied subspace
+           * Lowdin orthogonalize virtual subspace
         3. project occupied out of virtual
         4. Lowdin orthogonalize virtual
-        Input: overlap S (matrix)
-               contracted per atom (list)
-               occupied per atom (nested list)
-        Returns: transformation matrix T
-                 such that T+ST = 1 (unit) """
+
+        :returns: T
+        :rtype: numpy.ndarray
+        """
 
         if self._T is not None:
             return self._T
@@ -225,6 +292,18 @@ class LoPropTransformer:
         return self._T
 
     def gram_schmidt_atomic_blocks(self, S):
+        """
+        Orthogonalize within atomic blocks
+
+        Arguments:
+
+        :param S: overlap matrix
+        :type S: numpy.ndarray
+
+        :returns: Transformation matrix for GS orthonormalization
+        :rtype: numpy.ndarray
+        """
+
         cpa = self.cpa
         opa = self.opa
         #
@@ -249,12 +328,31 @@ class LoPropTransformer:
         return T1
 
     def permute_to_occupied_virtual(self):
+        """
+        Reorder AO-basis to occupied-virtual order in two steps
+
+        Arguments:
+
+        :returns: permutation matrix
+        :rtype: numpy.ndarray
+        """
         return self.P1() @ self.P2()
 
     def P1(self):
-        #
-        # within atom permute occupied first
-        #
+        """
+        Builds a permutation matrix such that,
+        Within an atomic sub-block, the orbitals are permuted
+        to have the occupied listed first
+
+        >>> [o1a1, v1a1, o2a1, v2a2, o1a2, v1a2] @ P1
+        [o1a1, o2a1, v1a1, v2a2, o1a2, v1a2]
+
+        Arguments:
+
+        :returns: Permutation matrix
+        :rtype: numpy.ndarray
+        """
+
         P1 = subblocked.matrix(self.cpa, self.cpa)
         for at in range(self.noa):
             P1.subblock[at][at][:, :] = full.permute(
@@ -264,6 +362,19 @@ class LoPropTransformer:
         return P1
 
     def P2(self):
+        """
+        Builds a permutation matrix to follow the P1 permutaion
+        such that the result is occupied virtual order
+
+        >>> [o1a1, o2a1, v1a1, v2a2, o1a2, v1a2] @ P2
+        [o1a1, o2a1, o1a2, v1a1, v2a2, v1a2]
+
+        Arguments:
+
+        :returns: Permutation matrix
+        :rtype: numpy.mdarray
+        """
+
         vpa = []
         adim = []
         for at in range(self.noa):
@@ -287,39 +398,79 @@ class LoPropTransformer:
         P2 = P2.unblock()
         return P2
 
-    def lowdin_occupied_virtual(self, S1P):
+    def lowdin_occupied_virtual(self, S_ov):
+        """
+        Given overlap in occupied-virtual order basis,
+        Lőwdin orthonormalize occupied and virtual
+        blocks separately, returning corresponding
+        transformation matrix
+
+        (S_oo⁻¹⁄² 0        )
+        (0        S_vv⁻¹⁄² )
+
+
+        Arguments:
+
+        :param S_ov: overlap matrix in occupied-virtual order
+        :type S_ov: numpy.ndarray
+
+        :returns: transformation matrix
+        :rtype: numpy.ndrarray
+        """
+
         vpa = [c - len(o) for c, o in zip(self.cpa, self.opa)]
         nocc = sum(len(occ) for occ in self.opa)
-        occdim = (nocc, sum(vpa))
-        S1Pbl = S1P.block(occdim, occdim)
-        T2bl = S1Pbl.invsqrt()
-        T2 = T2bl.unblock()
-        return T2
+        nvirt = sum(vpa)
+        ov_dim = (nocc, nvirt)
+        S_ov_bl = S_ov.block(ov_dim, ov_dim)
+        T_bl = S_ov_bl.invsqrt()
+        T = T_bl.unblock()
+        return T
 
-    def project_occupied_from_virtual(self, S2):
-        #
-        # Project occupied out of virtual
-        #
+    def project_occupied_from_virtual(self, S_ov):
+        """
+        Project occupied out of virtual
+
+        Arguments:
+
+        :param S_ov: overlap matrix in occupied-virtual order
+        :type S_ov: numpy.ndarray
+
+        :returns: transformation matrix
+        :rtype: numpy.ndrarray
+        """
+
         vpa = [c - len(o) for c, o in zip(self.cpa, self.opa)]
         nocc = sum(len(occ) for occ in self.opa)
-        occdim = (nocc, sum(vpa))
-        S2sb = S2.subblocked(occdim, occdim)
-        nbf = S2.shape[0]
-        T3sb = full.unit(nbf).subblocked(occdim, occdim)
-        T3sb.subblock[0][1] = -S2sb.subblock[0][1]
-        T3 = T3sb.unblock()
-        return T3
+        nvirt = sum(vpa)
+        occdim = (nocc, nvirt)
 
-    def lowdin_virtual(self, S3):
-        #
-        #
-        # 4. Lowdin orthogonalize virtual
-        #
+        S_ov_sb = S_ov.subblocked(occdim, occdim)
+        nbf = S_ov.shape[0]
+
+        T_sb = full.unit(nbf).subblocked(occdim, occdim)
+        T_sb.subblock[0][1] = -S_ov_sb.subblock[0][1]
+        T = T_sb.unblock()
+        return T
+
+    def lowdin_virtual(self, S_ov):
+        """
+
+        Lowdin orthogonalize virtual
+
+        Arguments:
+
+        :param S_ov: overlap in occupied-virtual order
+        :type S_ov: numpy.ndarray
+
+        :returns: transformation matrix
+        :rtype: numpy.ndarray
+        """
         vpa = [c - len(o) for c, o in zip(self.cpa, self.opa)]
         nocc = sum(len(occ) for occ in self.opa)
         occdim = (nocc, sum(vpa))
         T4b = blocked.unit(occdim)
-        S3b = S3.block(occdim, occdim)
+        S3b = S_ov.block(occdim, occdim)
         T4b.subblock[1] = S3b.subblock[1].invsqrt()
         T4 = T4b.unblock()
         return T4
@@ -328,7 +479,7 @@ class LoPropTransformer:
 class MolFrag(abc.ABC):
     """
     An instance of the MolFrag class is created and populated with
-    data from a Dalton runtime scratch directory
+    data from a Dalton/VeloxChem interface files
     """
 
     def __init__(
@@ -439,7 +590,7 @@ class MolFrag(abc.ABC):
         if self._Rc is not None:
             return self._Rc
         if self.gc is None:
-            self._Rc = self.Z @ self.R / self.Z.sum()
+            self._Rc = self.Z @ self.R * (1 / self.Z.sum())
         else:
             self._Rc = numpy.array(self.gc).view(full.matrix)
         return self._Rc
@@ -572,9 +723,16 @@ class MolFrag(abc.ABC):
 
     @property
     def Dtot(self):
-        _Dtot = self.Da.sum(axis=1).view(full.matrix)
-        _Dtot += self.Qa @ self.R - self.Qa.sum() * self.Rc
+        _Dtot = self._Detot() + self._Dntot()
         return _Dtot
+
+    def _Detot(self):
+        Detot = self.Da.sum(axis=1).view(full.matrix)
+        return Detot
+
+    def _Dntot(self):
+        Dntot = self.Qa @ self.R - self.Qa.sum() * self.Rc
+        return Dntot
 
     @property
     def QUab(self):
@@ -604,10 +762,10 @@ class MolFrag(abc.ABC):
                             xy[ij].subblock[a][b] & D.subblock[a][b]
                         )
                         rRab[ij, a, b] = (
-                            Dab[i, a, b]*Rab[a, b, j] +
-                            Dab[j, a, b]*Rab[a, b, i]
+                            Dab[i, a, b] * Rab[a, b, j]
+                            + Dab[j, a, b] * Rab[a, b, i]
                         )
-                        RRab[ij, a, b] = Rab[a, b, i]*Rab[a, b, j]*Qab[a, b]
+                        RRab[ij, a, b] = Rab[a, b, i] * Rab[a, b, j] * Qab[a, b]
                         ij += 1
         QUab = rrab - rRab - RRab
         self._QUab = QUab
@@ -621,8 +779,8 @@ class MolFrag(abc.ABC):
                 for i in range(3):
                     for j in range(i, 3):
                         dQUab[ij, a, b] = (
-                            dRab[a, b, i] * Dab[j, a, b] +
-                            dRab[a, b, j] * Dab[i, a, b]
+                            dRab[a, b, i] * Dab[j, a, b]
+                            + dRab[a, b, j] * Dab[i, a, b]
                         )
                         ij += 1
         self.dQUab = -dQUab
@@ -712,7 +870,7 @@ class MolFrag(abc.ABC):
     def ao_to_blocked_loprop(self, *aos):
         cpa = self.cpa
         T = self.T
-        return ((T.T@ao@T).subblocked(cpa, cpa) for ao in aos)
+        return ((T.T @ ao @ T).subblocked(cpa, cpa) for ao in aos)
 
     def contravariant_ao_to_blocked_loprop(self, aos: dict) -> dict:
 
@@ -791,17 +949,20 @@ class MolFrag(abc.ABC):
     @abc.abstractmethod
     def D2k(self):
         """
-        Read quadratic response perturbed densities"""
+        Read quadratic response perturbed densities
         """
 
     @abc.abstractmethod
     def x(self):
+        """
         Read dipole matrices to blocked loprop basis
         """
 
     @property
     def dQa(self):
-        """Charge shift per atom"""
+        """
+        Charge shift per atom
+        """
         if self._dQa is not None:
             return self._dQa
 
@@ -844,7 +1005,18 @@ class MolFrag(abc.ABC):
 
     @property
     def dQab(self):
-        """Charge transfer matrix"""
+        """
+        Charge transfer matrix
+
+        refers to Eq.22 in Gagliardi et al.
+
+        - (λa - λb)/2(pf(rA, rB))
+
+        where λa is the Lagragian and pf the penalty function
+
+        :returns: charge transfer matrix
+        :rvalue: numpy.ndarray
+        """
         if self._dQab is not None:
             return self._dQab
 
@@ -896,11 +1068,15 @@ class MolFrag(abc.ABC):
 
     @property
     def Aab(self):
-        """Localized polariziabilities:
+        """
+        Localized polariziabilities:
 
         Contribution from change in localized dipole moment
-        - d (r - R(AB)):D(AB) = - r:dD(AB) + dQ(A) R(A) Δ(A,B)
+
+            -Δ(r - R(AB)):D(AB) = - r:ΔD(AB) + ΔQ(A)R(A) δ(A, B)
+
         """
+
         if self._Aab is not None:
             return self._Aab
 
@@ -922,8 +1098,7 @@ class MolFrag(abc.ABC):
                     for b in range(noa):
                         for jw, w in enumerate(self.freqs):
                             Aab[jw, i, j, a, b] = (
-                                -x[i].subblock[a][b] &
-                                Dk[(lj, w)].subblock[a][b]
+                                -x[i].subblock[a][b] & Dk[(lj, w)].subblock[a][b]
                             )
                     for jw in self.rfreqs:
                         Aab[jw, i, j, a, a] -= dQa[jw, a, j] * Rab[a, a, i]
@@ -933,7 +1108,10 @@ class MolFrag(abc.ABC):
 
     @property
     def dAab(self):
-        """Charge transfer contribution to bond polarizability"""
+        """
+        Charge transfer contribution to bond polarizability
+        """
+
         if self._dAab is not None:
             return self._dAab
 
@@ -994,8 +1172,7 @@ class MolFrag(abc.ABC):
                     for b in range(self.noa):
                         for iw, w in enumerate(self.freqs):
                             Bab[iw, i, jk, a, b] = (
-                                -x[i].subblock[a][b] &
-                                D2k[(ljk, w, w)].subblock[a][b]
+                                -x[i].subblock[a][b] & D2k[(ljk, w, w)].subblock[a][b]
                             )
                     for iw in self.rfreqs:
                         Bab[iw, i, jk, a, a] -= d2Qa[iw, a, jk] * Rab[a, a, i]
@@ -1016,7 +1193,7 @@ class MolFrag(abc.ABC):
             for b in range(self.noa):
                 for i in range(3):
                     for j in range(6):
-                        dBab[:, i, j, a, b] = 2*dRab[a, b, i]*d2Qab[:, a, b, j]
+                        dBab[:, i, j, a, b] = 2 * dRab[a, b, i] * d2Qab[:, a, b, j]
         self._dBab = dBab
         return self._dBab
 
@@ -1133,15 +1310,14 @@ class MolFrag(abc.ABC):
                     print("Total charge:        " + fmt % (Z[a] + Qab[a, a]))
                 if self._Dab is not None:
                     print(
-                        "Electronic dipole    " + (3*fmt) % tuple(Dab[:, a, a])
+                        "Electronic dipole    " + (3 * fmt) % tuple(Dab[:, a, a])
                     )
                     print(
                         "Electronic dipole norm" + fmt % Dab[:, a, a].norm2()
                     )
                 if self._QUab is not None:
                     print(
-                        "Electronic quadrupole" +
-                        (6*fmt) % tuple(QUab[:, a, a])
+                        "Electronic quadrupole" + (6 * fmt) % tuple(QUab[:, a, a])
                     )
                 if self._Aab is not None:
                     for iw, w in enumerate(self.freqs):
@@ -1166,8 +1342,7 @@ class MolFrag(abc.ABC):
             for a in range(noa):
                 header("Atomic domain %d" % (a + 1))
                 print(
-                    "Domain center:       " +
-                    (3 * fmt) % tuple(R[a, :] * xconv)
+                    "Domain center:       " + (3 * fmt) % tuple(R[a, :] * xconv)
                 )
                 line = " 0"
                 line += (3 * "%17.10f") % tuple(AU2ANG * R[a, :])
@@ -1177,12 +1352,10 @@ class MolFrag(abc.ABC):
                     print("Total charge:        " + fmt % (Z[a] + Qa[a]))
                 if self._Dab is not None:
                     print(
-                        "Electronic dipole    " +
-                        (3*fmt) % tuple(self.Da[:, a])
+                        "Electronic dipole    " + (3 * fmt) % tuple(self.Da[:, a])
                     )
                     print(
-                        "Electronic dipole norm"
-                        + (fmt) % self.Da[:, a].view(full.matrix).norm2()
+                        "Electronic dipole norm" + (fmt) % self.Da[:, a].view(full.matrix).norm2()
                     )
                 if self._QUab is not None:
                     print(
@@ -1197,7 +1370,7 @@ class MolFrag(abc.ABC):
                         )
                         print(
                             "Electronic polarizability (w=%g)" % w
-                            + (6*fmt) % tuple(Asym.pack().view(Matrix)*xconv3)
+                            + (6 * fmt) % tuple(Asym.pack().view(Matrix) * xconv3)
                         )
                 if self._Bab is not None:
                     for iw, w in enumerate(self.freqs):
@@ -1241,11 +1414,9 @@ class MolFrag(abc.ABC):
             for iw, w in enumerate(self.freqs):
                 Am = self.Am[iw]
                 print(
-                    "Polarizability av (%g)   " % w +
-                    fmt % (Am.trace() / 3 * xconv3))
+                    "Polarizability av (%g)   " % w + fmt % (Am.trace() / 3 * xconv3))
                 print(
-                    "Polarizability (%g)      " % w
-                    + (6 * fmt) % tuple(Am.pack().view(full.matrix) * xconv3)
+                    "Polarizability (%g)      " % w + (6 * fmt) % tuple(Am.pack().view(full.matrix) * xconv3)
                 )
 
         if self._Bab is not None:
@@ -1347,9 +1518,9 @@ class MolFrag(abc.ABC):
                     ) + '"quadrupole") : ' + \
                         '[ %s, %s, %s, %s, %s, %s ],\n' % tuple(
                         [fmt for i in range(6)]
-                        ) % (
+                    ) % (
                             tuple((self.QUab + self.dQUab).sum(axis=2)[:, a])
-                        )
+                    )
         if pol >= 2:
             if template_full:
                 Asym = Aab.sum(axis=(3, 4))[0, :, :].view(full.matrix)
@@ -1482,8 +1653,7 @@ class MolFrag(abc.ABC):
                         if pol > 0:
                             Aab = self.Aab + 0.5 * self.dAab
                             for iw, w in enumerate(self.freqs):
-                                Asym = Aab[iw, :, :, a, b] +\
-                                       Aab[iw, :, :, b, a]
+                                Asym = Aab[iw, :, :, a, b] + Aab[iw, :, :, b, a]
                                 if pol == 1:
                                     line += fmt % (Asym.trace() * xconv3 / 3)
                                 elif (pol % 10) == 2:
@@ -1492,13 +1662,14 @@ class MolFrag(abc.ABC):
                                     line += (6 * fmt) % tuple(out)
                         if hyper > 0:
                             for iw, w in enumerate(self.freqs):
-                                Bsym = Bab[iw, :, :, a, b] +\
-                                       Bab[iw, :, :, b, a]
+                                Bsym = Bab[iw, :, :, a, b] + Bab[iw, :, :, b, a]
                                 Btotsym = symmetrize_first_beta(Bsym)
                                 line += 10 * fmt % tuple(Btotsym)
                         lines.append(line)
+
                 # For atom a, non_bond_pos holds atoms that are not bonded to a
                 # Include only non bonded to atomic prop here
+
                 nbond_pos = numpy.where(bond_mat[a] == 0)[0]
 
                 line = ("1" + 3 * fmt) % tuple(self.Rab[a, a, :])

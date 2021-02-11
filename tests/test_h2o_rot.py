@@ -133,14 +133,14 @@ class TestNew(LoPropTestCase):
 
     def test_atomic_charge_shift(self, molfrag):
         dQa = molfrag.dQa[0]
-        dQaref = (ref.dQa[:, 1::2] - ref.dQa[:, 2::2]) / (2 * ref.ff)
+        dQaref = (ref.dQa[:, 1::2] - ref.dQa[:, 2::2]) * (1 / (2 * ref.ff))
 
         self.assert_allclose(dQa, dQaref, atol=0.006)
 
     def test_lagrangian(self, molfrag):
         # values per "perturbation" as in atomic_charge_shift below
         la = molfrag.la[0]
-        laref = (ref.la[:, 0:6:2] - ref.la[:, 1:6:2]) / (2 * ref.ff)
+        laref = (ref.la[:, 0:6:2] - ref.la[:, 1:6:2]) * (1 / (2 * ref.ff))
         # The sign difference is because mocas sets up rhs with opposite sign
         self.assert_allclose(-laref, la, atol=100)
 
@@ -148,7 +148,7 @@ class TestNew(LoPropTestCase):
         dQab = molfrag.dQab[0]
         noa = molfrag.noa
 
-        dQabref = (ref.dQab[:, 1:7:2] - ref.dQab[:, 2:7:2]) / (2 * ref.ff)
+        dQabref = (ref.dQab[:, 1:7:2] - ref.dQab[:, 2:7:2]) * (1 / (2 * ref.ff))
         dQabcmp = full.matrix((3, 3))
         ab = 0
         for a in range(noa):
@@ -439,7 +439,7 @@ class TestNew(LoPropTestCase):
 
     def test_polarizability_allbonds_bonds(self, molfrag):
 
-        Aab = molfrag.Aab[0] + molfrag.dAab[0] / 2
+        Aab = molfrag.Aab[0] + molfrag.dAab[0] * .5
         noa = molfrag.noa
 
         Acmp = full.matrix(ref.Aab.shape)
@@ -458,7 +458,7 @@ class TestNew(LoPropTestCase):
 
     def test_polarizability_nobonds(self, molfrag):
 
-        Aab = molfrag.Aab[0] + molfrag.dAab[0] / 2
+        Aab = molfrag.Aab[0] + molfrag.dAab[0] * .5
         noa = molfrag.noa
 
         Acmp = full.matrix((6, noa))

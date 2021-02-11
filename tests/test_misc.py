@@ -10,8 +10,10 @@ from .common import LoPropTestCase, codes
 class TestNew(LoPropTestCase):
     def setup_class(cls):
         numpy.random.seed(0)
-        cls.beta = full.matrix((3, 6)).random()
-        cls.dipole = full.matrix(3).random()
+        # cls.beta = full.matrix((3, 6)).random()
+        cls.beta = numpy.random.random((3, 6)).view(full.Matrix)
+        # cls.dipole = full.matrix(3).random()
+        cls.dipole = numpy.random.random(3).view(full.Matrix)
 
     def test_header(self, code):
         header("yo")

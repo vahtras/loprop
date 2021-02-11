@@ -28,6 +28,9 @@ class MolFragVeloxChem(MolFrag):
         self.get_molecule_info()
 
     def get_basis_info(self):
+        """
+        Obtain basis set info from checkpoint file
+        """
         with h5py.File(self.interface, 'r') as f:
             self.cpa = [int(i) for i in f['contracted_per_atom'][...]]
             self.opa = [

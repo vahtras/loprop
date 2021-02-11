@@ -23,7 +23,9 @@ class MolFragDalton(MolFrag):
         self.get_molecule_info()
 
     def get_basis_info(self):
-        """ Obtain basis set info from DALTON.BAS """
+        """
+        Obtain basis set info from DALTON.BAS
+        """
         molecule = mol.readin(self.dalton_bas)
         self.cpa = mol.contracted_per_atom(molecule)
         self.cpa_l = mol.contracted_per_atom_l(molecule)
@@ -72,8 +74,8 @@ class MolFragDalton(MolFrag):
         self.dRab = full.matrix((noa, noa, 3))
         for a in range(noa):
             for b in range(noa):
-                self.Rab[a, b, :] = (self.R[a, :] + self.R[b, :]) / 2
-                self.dRab[a, b, :] = (self.R[a, :] - self.R[b, :]) / 2
+                self.Rab[a, b, :] = (self.R[a, :] + self.R[b, :]) * .5
+                self.dRab[a, b, :] = (self.R[a, :] - self.R[b, :]) * .5
 
     def S(self):
         """
@@ -108,7 +110,7 @@ class MolFragDalton(MolFrag):
         prp = os.path.join(self.tmpdir, "AOPROPER")
 
         return [
-            (T.T * p * T).subblocked(cpa, cpa)
+            (T.T @ p @ T).subblocked(cpa, cpa)
             for p in prop.read(*args, filename=prp, unpack=True)
         ]
 
@@ -177,7 +179,7 @@ class MolFragDalton(MolFrag):
         Dkao = qr.D2k(*qrlab, freqs=self.freqs, tmpdir=self.tmpdir)
         # print("Dkao.keys", Dkao.keys())
         _D2k = {
-            lw: (T.I * Dkao[lw] * T.I.T).subblocked(cpa, cpa) for lw in Dkao
+            lw: (T.I @ Dkao[lw] @ T.I.T).subblocked(cpa, cpa) for lw in Dkao
         }
 
         self._D2k = _D2k
