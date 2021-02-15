@@ -4,8 +4,10 @@ Loprop model implementation (J. Chem. Phys. 121, 4494 (2004))
 """
 
 import abc
+import builtins
 from collections import defaultdict
-from functools import reduce
+from functools import reduce, partial
+import sys
 from typing import List
 
 import numpy
@@ -18,7 +20,7 @@ ANG2AU = 1.0 / AU2ANG
 DEFAULT_CUTOFF = 1.6
 
 # Bragg-Slater radii () converted from Angstrom to Bohr
-rbs = (
+RBS = (
     numpy.array(
         [
             0,
@@ -98,8 +100,8 @@ def penalty_function(alpha=2):
 
         from math import exp
 
-        ra = rbs[int(round(Za))]
-        rb = rbs[int(round(Zb))]
+        ra = RBS[int(round(Za))]
+        rb = RBS[int(round(Zb))]
 
         xa, ya, za = Ra
         xb, yb, zb = Rb
@@ -138,10 +140,28 @@ def shift_function(F: numpy.ndarray) -> float:
     return 2 * numpy.max(numpy.abs(F))
 
 
-def header(string):
+def header(string, output=None):
     """
     Pretty print header
+
+    Arguments:
+
+    :param string: header text
+    :type string: str
+
+    :returns: None
+
+    >>> header(title)
+
+    -----
+    title
+    -----
+    >>>
     """
+    print = builtins.print
+    if output is not None:
+        print = partial(builtins.print, file=output)
+
     border = "-" * len(string)
     print("\n%s\n%s\n%s" % (border, string, border))
 
@@ -355,9 +375,7 @@ class LoPropTransformer:
 
         P1 = subblocked.matrix(self.cpa, self.cpa)
         for at in range(self.noa):
-            P1.subblock[at][at][:, :] = full.permute(
-                self.opa[at], self.cpa[at]
-            )
+            P1.subblock[at][at][:, :] = full.permute(self.opa[at], self.cpa[at])
         P1 = P1.unblock()
         return P1
 
@@ -601,6 +619,7 @@ class MolFrag(abc.ABC):
         Get overlap matrix in AO basis
 
         """
+
     @property
     def D(self):
         """
@@ -665,7 +684,7 @@ class MolFrag(abc.ABC):
     def Dab(self):
         """
         Returns localized atom and bond dipole moments
-        d_ab = -<a|x|b> - qa R_a delta(a, b)
+        d_ab = -<a|x|b> - Qa R_a delta(a, b)
         """
 
         if self._Dab is not None:
@@ -691,7 +710,10 @@ class MolFrag(abc.ABC):
 
     @property
     def Da(self):
-        """Sum up bonds contributions to atom"""
+        """
+        Sum up dipole bond contributions to atom
+        """
+
         if self._Da is not None:
             return self._Da
 
@@ -758,12 +780,9 @@ class MolFrag(abc.ABC):
                 ij = 0
                 for i in range(3):
                     for j in range(i, 3):
-                        rrab[ij, a, b] = -(
-                            xy[ij].subblock[a][b] & D.subblock[a][b]
-                        )
+                        rrab[ij, a, b] = -(xy[ij].subblock[a][b] & D.subblock[a][b])
                         rRab[ij, a, b] = (
-                            Dab[i, a, b] * Rab[a, b, j]
-                            + Dab[j, a, b] * Rab[a, b, i]
+                            Dab[i, a, b] * Rab[a, b, j] + Dab[j, a, b] * Rab[a, b, i]
                         )
                         RRab[ij, a, b] = Rab[a, b, i] * Rab[a, b, j] * Qab[a, b]
                         ij += 1
@@ -779,8 +798,7 @@ class MolFrag(abc.ABC):
                 for i in range(3):
                     for j in range(i, 3):
                         dQUab[ij, a, b] = (
-                            dRab[a, b, i] * Dab[j, a, b]
-                            + dRab[a, b, j] * Dab[i, a, b]
+                            dRab[a, b, i] * Dab[j, a, b] + dRab[a, b, j] * Dab[i, a, b]
                         )
                         ij += 1
         self.dQUab = -dQUab
@@ -877,8 +895,7 @@ class MolFrag(abc.ABC):
         cpa = self.cpa
         T = self.T
         blocked_loprop = {
-            k: (T.I @ v @ T.I.T).subblocked(cpa, cpa)
-            for k, v in aos.items()
+            k: (T.I @ v @ T.I.T).subblocked(cpa, cpa) for k, v in aos.items()
         }
         return blocked_loprop
 
@@ -1218,8 +1235,41 @@ class MolFrag(abc.ABC):
         hyperpol=0,
         bond_centers=False,
         angstrom=False,
+        output=None,
     ):
-        """Print info"""
+        """
+        Printout of localized properties 
+
+        Arguments:
+
+        :param fmt: output format for floats
+        :type fmt: str
+
+        :param max_l: max angular momentum
+        :type max_l: int
+
+        :param pol: polarizability index (0=None, 1=isotropic, 2=anisotropic)
+        :type pol: int
+
+        :param hyperpol: hyperpolarizability index
+        :type hyperpol: int
+
+        :param bond_centers: if True include bond centers in output
+        :type bond_centers: bool
+
+        :param angstrom: if True, output printed in Ångstrőm, default atomic units
+        :type angstrom: bool
+
+        :param output: output stream
+        :type output: file-like
+
+        :returns: None
+        :rtype: NoneType
+        """
+
+        print = builtins.print
+        if output is not None:
+            print = partial(builtins.print, file=output)
 
         if max_l >= 0:
             Qab = self.Qab
@@ -1261,7 +1311,7 @@ class MolFrag(abc.ABC):
         if bond_centers:
             for a in range(noa):
                 for b in range(a):
-                    header("Bond    %d %d" % (a + 1, b + 1))
+                    header("Bond    %d %d" % (a + 1, b + 1), output=output)
                     print(
                         "Bond center:       "
                         + (3 * fmt) % tuple(0.5 * (R[a, :] + R[b, :]) * xconv)
@@ -1291,8 +1341,7 @@ class MolFrag(abc.ABC):
                             if pol > 1:
                                 print("Polarizability (%g)      " % w)
                                 print(
-                                    (6 * fmt)
-                                    % tuple(Asym.pack().view(Matrix) * xconv3)
+                                    (6 * fmt) % tuple(Asym.pack().view(Matrix) * xconv3)
                                 )
 
                     if self._Bab is not None:
@@ -1300,25 +1349,17 @@ class MolFrag(abc.ABC):
                             Bsym = Bab[iw, :, :, a, b] + Bab[iw, :, :, b, a]
                             output_beta(Bsym, self.Da[:, a])
 
-                header("Atom    %d" % (a + 1))
-                print(
-                    "Atom center:       " + (3 * fmt) % tuple(R[a, :] * xconv)
-                )
+                header("Atom    %d" % (a + 1), output=output)
+                print("Atom center:       " + (3 * fmt) % tuple(R[a, :] * xconv))
                 print("Nuclear charge:    " + fmt % Z[a])
                 if max_l >= 0:
                     print("Electronic charge:   " + fmt % Qab[a, a])
                     print("Total charge:        " + fmt % (Z[a] + Qab[a, a]))
                 if self._Dab is not None:
-                    print(
-                        "Electronic dipole    " + (3 * fmt) % tuple(Dab[:, a, a])
-                    )
-                    print(
-                        "Electronic dipole norm" + fmt % Dab[:, a, a].norm2()
-                    )
+                    print("Electronic dipole    " + (3 * fmt) % tuple(Dab[:, a, a]))
+                    print("Electronic dipole norm" + fmt % Dab[:, a, a].norm2())
                 if self._QUab is not None:
-                    print(
-                        "Electronic quadrupole" + (6 * fmt) % tuple(QUab[:, a, a])
-                    )
+                    print("Electronic quadrupole" + (6 * fmt) % tuple(QUab[:, a, a]))
                 if self._Aab is not None:
                     for iw, w in enumerate(self.freqs):
                         Asym = Aab[iw, :, :, a, a]
@@ -1340,10 +1381,8 @@ class MolFrag(abc.ABC):
 
         else:
             for a in range(noa):
-                header("Atomic domain %d" % (a + 1))
-                print(
-                    "Domain center:       " + (3 * fmt) % tuple(R[a, :] * xconv)
-                )
+                header("Atomic domain %d" % (a + 1), output=output)
+                print("Domain center:       " + (3 * fmt) % tuple(R[a, :] * xconv))
                 line = " 0"
                 line += (3 * "%17.10f") % tuple(AU2ANG * R[a, :])
                 print("Nuclear charge:      " + fmt % Z[a])
@@ -1351,16 +1390,13 @@ class MolFrag(abc.ABC):
                     print("Electronic charge:   " + fmt % Qa[a])
                     print("Total charge:        " + fmt % (Z[a] + Qa[a]))
                 if self._Dab is not None:
+                    print("Electronic dipole    " + (3 * fmt) % tuple(self.Da[:, a]))
                     print(
-                        "Electronic dipole    " + (3 * fmt) % tuple(self.Da[:, a])
-                    )
-                    print(
-                        "Electronic dipole norm" + (fmt) % self.Da[:, a].view(full.matrix).norm2()
+                        "Electronic dipole norm"
+                        + (fmt) % self.Da[:, a].view(full.matrix).norm2()
                     )
                 if self._QUab is not None:
-                    print(
-                        "Electronic quadrupole" + (6 * fmt) % tuple(QUa[:, a])
-                    )
+                    print("Electronic quadrupole" + (6 * fmt) % tuple(QUa[:, a]))
                 if self._Aab is not None:
                     for iw, w in enumerate(self.freqs):
                         Asym = Aa[iw, :, :, a].view(full.matrix)
@@ -1392,7 +1428,7 @@ class MolFrag(abc.ABC):
         if self._Bab is not None:
             Dm = self.Da.sum(axis=1).view(full.matrix)
 
-        header("Molecular")
+        header("Molecular", output=output)
         print("Domain center:       " + (3 * fmt) % tuple(Rc * xconv))
         print("Nuclear charge:      " + fmt % Ztot)
 
@@ -1413,10 +1449,10 @@ class MolFrag(abc.ABC):
         if self._Aab is not None:
             for iw, w in enumerate(self.freqs):
                 Am = self.Am[iw]
+                print("Polarizability av (%g)   " % w + fmt % (Am.trace() / 3 * xconv3))
                 print(
-                    "Polarizability av (%g)   " % w + fmt % (Am.trace() / 3 * xconv3))
-                print(
-                    "Polarizability (%g)      " % w + (6 * fmt) % tuple(Am.pack().view(full.matrix) * xconv3)
+                    "Polarizability (%g)      " % w
+                    + (6 * fmt) % tuple(Am.pack().view(full.matrix) * xconv3)
                 )
 
         if self._Bab is not None:
@@ -1468,17 +1504,13 @@ class MolFrag(abc.ABC):
                 line += "( '%s%d', " % (
                     elem_dict[self.Z[full_loc]],
                     full_loc + 1,
-                ) + '"charge") : [ %s ],\n' % fmt % (
-                    self.Z.sum() + self.Qab.sum()
-                )
+                ) + '"charge") : [ %s ],\n' % fmt % (self.Z.sum() + self.Qab.sum())
             else:
                 for a in range(self.noa):
                     line += "( '%s%d', " % (
                         elem_dict[self.Z[a]],
                         a + 1,
-                    ) + '"charge") : [ %s ],\n' % fmt % (
-                        self.Z[a] + self.Qab[a, a]
-                    )
+                    ) + '"charge") : [ %s ],\n' % fmt % (self.Z[a] + self.Qab[a, a])
         if maxl >= 1:
             if template_full:
                 Dm = self.Da.sum(axis=1).view(full.matrix)
@@ -1489,7 +1521,9 @@ class MolFrag(abc.ABC):
                     full_loc + 1,
                 ) + '"dipole") : [ %s, %s, %s ],\n' % tuple(
                     [fmt for i in range(3)]
-                ) % tuple(DT)
+                ) % tuple(
+                    DT
+                )
             else:
                 for a in range(self.noa):
                     line += "( '%s%d', " % (
@@ -1512,14 +1546,12 @@ class MolFrag(abc.ABC):
                 )
             else:
                 for a in range(self.noa):
-                    line += "( '%s%d', " % (
-                        elem_dict[self.Z[a]],
-                        a + 1,
-                    ) + '"quadrupole") : ' + \
-                        '[ %s, %s, %s, %s, %s, %s ],\n' % tuple(
-                        [fmt for i in range(6)]
-                    ) % (
-                            tuple((self.QUab + self.dQUab).sum(axis=2)[:, a])
+                    line += (
+                        "( '%s%d', " % (elem_dict[self.Z[a]], a + 1)
+                        + '"quadrupole") : '
+                        + "[ %s, %s, %s, %s, %s, %s ],\n"
+                        % tuple([fmt for i in range(6)])
+                        % (tuple((self.QUab + self.dQUab).sum(axis=2)[:, a]))
                     )
         if pol >= 2:
             if template_full:
@@ -1553,27 +1585,25 @@ class MolFrag(abc.ABC):
                 Bsym = symmetrize_first_beta(
                     Bab.sum(axis=(3, 4))[0, :, :].view(full.matrix)
                 )
-                line += "( '%s%d', " % (
-                    elem_dict[self.Z[full_loc]],
-                    full_loc + 1,
-                ) + '"beta") : ' +\
-                    '[ %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ],\n' % tuple(
-                    [fmt for i in range(len(Bsym))]
-                ) % tuple(Bsym)
+                line += (
+                    "( '%s%d', " % (elem_dict[self.Z[full_loc]], full_loc + 1)
+                    + '"beta") : '
+                    + "[ %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ],\n"
+                    % tuple([fmt for i in range(len(Bsym))])
+                    % tuple(Bsym)
+                )
             else:
                 for a in range(self.noa):
                     # Only for one frequency for now, todo, fix later if needed
                     Bsym = symmetrize_first_beta(
                         Bab.sum(axis=4)[0, :, :, a].view(full.matrix)
                     )
-                    line += "( '%s%d', " % (
-                        elem_dict[self.Z[a]],
-                        a + 1,
-                    ) + '"beta") : ' +\
-                        '[ %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ],\n' % (
-                        tuple([fmt for i in range(len(Bsym))])
-                    ) % (
-                        tuple(Bsym)
+                    line += (
+                        "( '%s%d', " % (elem_dict[self.Z[a]], a + 1)
+                        + '"beta") : '
+                        + "[ %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ],\n"
+                        % (tuple([fmt for i in range(len(Bsym))]))
+                        % (tuple(Bsym))
                     )
         print(line)
         return line
@@ -1643,13 +1673,9 @@ class MolFrag(abc.ABC):
                         if maxl >= 0:
                             line += fmt % Qab[a, b]
                         if maxl >= 1:
-                            line += (3 * fmt) % tuple(
-                                Dab[:, b, a] + Dab[:, a, b]
-                            )
+                            line += (3 * fmt) % tuple(Dab[:, b, a] + Dab[:, a, b])
                         if maxl >= 2:
-                            line += (6 * fmt) % tuple(
-                                QUab[:, a, b] + QUab[:, b, a]
-                            )
+                            line += (6 * fmt) % tuple(QUab[:, a, b] + QUab[:, b, a])
                         if pol > 0:
                             Aab = self.Aab + 0.5 * self.dAab
                             for iw, w in enumerate(self.freqs):
@@ -1686,8 +1712,7 @@ class MolFrag(abc.ABC):
                         if pol % 10 == 2:
                             out = (
                                 reduce(
-                                    lambda x, y:
-                                    x + Aab[iw, :, :, a, y], nbond_pos, 0.0
+                                    lambda x, y: x + Aab[iw, :, :, a, y], nbond_pos, 0.0
                                 )
                                 .pack()
                                 .view(full.matrix)
@@ -1698,8 +1723,7 @@ class MolFrag(abc.ABC):
                         elif pol == 1:
                             out = (
                                 reduce(
-                                    lambda x, y:
-                                    x + Aab[iw, :, :, a, y], nbond_pos, 0.0
+                                    lambda x, y: x + Aab[iw, :, :, a, y], nbond_pos, 0.0
                                 )
                                 .view(full.matrix)
                                 .trace()
@@ -1710,8 +1734,7 @@ class MolFrag(abc.ABC):
                 if hyper > 0:
                     for iw, w in enumerate(self.freqs):
                         Bsym = reduce(
-                            lambda x, y:
-                            x + Bab[iw, :, :, a, y], nbond_pos, 0.0
+                            lambda x, y: x + Bab[iw, :, :, a, y], nbond_pos, 0.0
                         ).view(full.matrix)
                         Btotsym = symmetrize_first_beta(Bsym)
                         line += 10 * fmt % tuple(Btotsym)
@@ -1788,8 +1811,7 @@ Domain center:       """ % (
         if self.pol == 1:
             Aab = self.Aab + 0.5 * self.dAab
             for iw, w in enumerate(self.freqs):
-                retstr += (
-                    "Isotropic polarizablity (w=%g)" % w + fmt + "\n") % (
+                retstr += ("Isotropic polarizablity (w=%g)" % w + fmt + "\n") % (
                     Aab.sum(axis=4)[iw, :, :, n].trace() / 3
                 )
 

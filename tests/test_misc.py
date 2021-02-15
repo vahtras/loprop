@@ -1,8 +1,12 @@
-import pytest
+import io
+import textwrap
 import unittest
+
+import pytest
 import numpy
-from loprop.core import output_beta, header
 from util import full
+
+from loprop.core import output_beta, header
 from .common import LoPropTestCase, codes
 
 
@@ -15,14 +19,29 @@ class TestNew(LoPropTestCase):
         # cls.dipole = full.matrix(3).random()
         cls.dipole = numpy.random.random(3).view(full.Matrix)
 
-    def test_header(self, code):
+    def test_header_default(self, code):
         header("yo")
-        print_output = self.capfd.readouterr().out.strip()
-        ref_output = """\
---
-yo
---"""
-        # self.assertEqual(print_output, ref_output)
+        print_output = self.capfd.readouterr().out
+        ref_output = textwrap.dedent(
+            """
+            --
+            yo
+            --
+            """
+        )
+        assert print_output == ref_output
+
+    def test_header_output(self, code):
+        print_output = io.StringIO()
+        header("yo", output=print_output)
+        print_output = print_output.getvalue()
+        ref_output = textwrap.dedent(
+            """
+            --
+            yo
+            --
+            """
+        )
         assert print_output == ref_output
 
     def test_output_beta(self, code):
