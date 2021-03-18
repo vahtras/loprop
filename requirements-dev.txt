@@ -1,4 +1,5 @@
-pytest==4.5.0
-pytest-cov==2.7.1
-daltools==1.1.4
-h5py==3.1.0
+pytest
+pytest-cov
+daltools
+h5py
+hypothesis
