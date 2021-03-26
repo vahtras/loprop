@@ -56,7 +56,7 @@ class MolFragVeloxChem(MolFrag):
     @property
     def x(self):
         """
-        Read dipole matrices to blocked loprop basis
+        Read dipole matrices to loprop basis
         """
 
         if self._x is not None:
@@ -66,12 +66,13 @@ class MolFragVeloxChem(MolFrag):
         return self._x
 
     def get_dipole_matrices(self):
+
         with h5py.File(self.interface, 'r') as f:
             Dx = f['ao_dipole_matrices/x'][...].view(Matrix)
             Dy = f['ao_dipole_matrices/y'][...].view(Matrix)
             Dz = f['ao_dipole_matrices/z'][...].view(Matrix)
 
-        return tuple(self.ao_to_blocked_loprop(Dx, Dy, Dz))
+        return tuple(self.ao_to_loprop(Dx, Dy, Dz))
 
     def get_quadrupole_matrices(self):
         with h5py.File(self.interface, 'r') as f:
@@ -82,8 +83,11 @@ class MolFragVeloxChem(MolFrag):
             Qyz = f['ao_quadrupole_matrices/yz'][...].view(Matrix)
             Qzz = f['ao_quadrupole_matrices/zz'][...].view(Matrix)
 
+        T = self.T
+        return tuple(T.T @ op @ T for op in (Qxx, Qxy, Qxz, Qyy, Qyz, Qzz))
+
         return tuple(
-            self.ao_to_blocked_loprop(
+            self.ao_to_loprop(
                 Qxx, Qxy, Qxz, Qyy, Qyz, Qzz
             )
         )
@@ -102,7 +106,7 @@ class MolFragVeloxChem(MolFrag):
         with h5py.File(self.interface, 'r') as f:
             for c in 'x', 'y', 'z':
                 Dk[(c, freq)] = f[f'ao_lr_density_matrix/{c}/{freq}'][...]
-        self._Dk = self.contravariant_ao_to_blocked_loprop(Dk)
+        self._Dk = self.contravariant_ao_to_loprop(Dk)
 
         return self._Dk
 

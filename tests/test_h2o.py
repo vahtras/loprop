@@ -598,11 +598,16 @@ class TestH2O(LoPropTestCase):
         Acmp = full.matrix(ref.Aab.shape)
 
         ab = 0
+        lower = np.tril_indices(3)
         for a in range(noa):
             for b in range(a):
-                Acmp[:, ab] = (Aab[:, :, a, b] + Aab[:, :, b, a]).pack()
+                Asab = (Aab[:, :, a, b] + Aab[:, :, b, a])
+                Asab = .5 * (Asab + Asab.T)
+                Acmp[:, ab] = Asab[lower]
                 ab += 1
-            Acmp[:, ab] = Aab[:, :, a, a].pack()
+            Asaa = Aab[:, :, a, a]
+            Asaa = .5 * (Asaa + Asaa.T)
+            Acmp[:, ab] = Asaa[lower]
             ab += 1
         # atoms
         self.assert_allclose(ref.Aab[:, 0], Acmp[:, 0], atol=0.005)
@@ -617,11 +622,18 @@ class TestH2O(LoPropTestCase):
         Acmp = full.matrix(ref.Aab.shape)
 
         ab = 0
+        lower = np.tril_indices(3)
         for a in range(noa):
             for b in range(a):
-                Acmp[:, ab] = (Aab[:, :, a, b] + Aab[:, :, b, a]).pack()
+                Asab = (Aab[:, :, a, b] + Aab[:, :, b, a])
+                Asab = .5 * (Asab + Asab.T)
+                Acmp[:, ab] = Asab[lower]
+                # Acmp[:, ab] = (Aab[:, :, a, b] + Aab[:, :, b, a]).pack()
                 ab += 1
-            Acmp[:, ab] = Aab[:, :, a, a].pack()
+            Asaa = Aab[:, :, a, a]
+            Asaa = .5 * (Asaa + Asaa.T)
+            Acmp[:, ab] = Asaa[lower]
+            # Acmp[:, ab] = Aab[:, :, a, a].pack()
             ab += 1
         # atoms
         self.assert_allclose(ref.Aab[:, 1], Acmp[:, 1], atol=0.150)
@@ -636,8 +648,9 @@ class TestH2O(LoPropTestCase):
         Acmp = full.matrix((6, noa))
         Aa = Aab.sum(axis=3).view(full.matrix)
 
+        lower = np.tril_indices(3)
         for a in range(noa):
-            Acmp[:, a] = Aa[:, :, a].pack()
+            Acmp[:, a] = .5 * (Aa[:, :, a] + Aa[:, :, a].T)[lower]
 
         # atoms
         self.assert_allclose(Acmp, ref.Aa, atol=0.07)

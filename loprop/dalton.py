@@ -106,11 +106,11 @@ class MolFragDalton(MolFrag):
         """
 
         T = self.T
-        cpa = self.cpa
+        # cpa = self.cpa
         prp = os.path.join(self.tmpdir, "AOPROPER")
 
         return [
-            (T.T @ p @ T).subblocked(cpa, cpa)
+            (T.T @ p @ T)  # .subblocked(cpa, cpa)
             for p in prop.read(*args, filename=prp, unpack=True)
         ]
 
@@ -153,13 +153,13 @@ class MolFragDalton(MolFrag):
         if self.damping:
             Re_Dkao, Im_Dkao = Dkao
             if self.real_pol:
-                _Dk = self.contravariant_ao_to_blocked_loprop(Re_Dkao)
+                _Dk = self.contravariant_ao_to_loprop(Re_Dkao)
             elif self.imag_pol:
-                _Dk = self.contravariant_ao_to_blocked_loprop(Im_Dkao)
+                _Dk = self.contravariant_ao_to_loprop(Im_Dkao)
             else:
                 raise ValueError
         else:
-            _Dk = self.contravariant_ao_to_blocked_loprop(Dkao)
+            _Dk = self.contravariant_ao_to_loprop(Dkao)
 
         self._Dk = _Dk
         return self._Dk
@@ -174,12 +174,11 @@ class MolFragDalton(MolFrag):
         lab = ["XDIPLEN ", "YDIPLEN ", "ZDIPLEN "]
         qrlab = [lab[j] + lab[i] for i in range(3) for j in range(i, 3)]
         Ti = self.Ti
-        cpa = self.cpa
 
         Dkao = qr.D2k(*qrlab, freqs=self.freqs, tmpdir=self.tmpdir)
         # print("Dkao.keys", Dkao.keys())
         _D2k = {
-            lw: (Ti @ Dkao[lw] @ Ti.T).subblocked(cpa, cpa) for lw in Dkao
+            lw: (Ti @ Dkao[lw] @ Ti.T) for lw in Dkao
         }
 
         self._D2k = _D2k

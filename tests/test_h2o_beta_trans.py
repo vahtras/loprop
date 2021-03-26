@@ -167,49 +167,49 @@ class TestNew(LoPropTestCase):
     def test_beta_zxx(self, molfrag):
         r = molfrag.x
         D2k = molfrag.D2k
-        z = r[2].unblock()
-        xx = D2k[("XDIPLEN XDIPLEN ", 0.0, 0.0)].unblock()
-        bzxx = -z & xx
+        z = r[2]  # .unblock()
+        xx = D2k[("XDIPLEN XDIPLEN ", 0.0, 0.0)]  # .unblock()
+        bzxx = -np.einsum('ij,ij', z, xx)
         self.assert_allclose(bzxx, ref.Bm[2, 0], 0.005)
 
     def test_beta_xzx(self, molfrag):
         r = molfrag.x
         D2k = molfrag.D2k
-        x = r[0].unblock()
-        zx = D2k[("ZDIPLEN XDIPLEN ", 0.0, 0.0)].unblock()
-        bxzx = -x & zx
+        x = r[0]  # .unblock()
+        zx = D2k[("ZDIPLEN XDIPLEN ", 0.0, 0.0)]  # .unblock()
+        bxzx = -np.einsum('ij,ij', x, zx)
         self.assert_allclose(bxzx, ref.Bm[0, 2], 0.005)
 
     def test_beta_xxz(self, molfrag):
         r = molfrag.x
         D2k = molfrag.D2k
-        x = r[0].unblock()
-        xz = D2k[("XDIPLEN ZDIPLEN ", 0.0, 0.0)].unblock()
-        bxxz = -x & xz
+        x = r[0]  # .unblock()
+        xz = D2k[("XDIPLEN ZDIPLEN ", 0.0, 0.0)]  # .unblock()
+        bxxz = -np.einsum('ij,ij', x, xz)
         self.assert_allclose(bxxz, ref.Bm[0, 2], 0.005)
 
     def test_beta_yyz(self, molfrag):
         r = molfrag.x
         D2k = molfrag.D2k
-        y = r[1].unblock()
-        yz = D2k[("YDIPLEN ZDIPLEN ", 0.0, 0.0)].unblock()
-        byyz = -y & yz
+        y = r[1]  # .unblock()
+        yz = D2k[("YDIPLEN ZDIPLEN ", 0.0, 0.0)]  # .unblock()
+        byyz = -np.einsum('ij,ij', y, yz)
         self.assert_allclose(byyz, ref.Bm[1, 4], 0.005)
 
     def test_beta_zyy(self, molfrag):
         r = molfrag.x
         D2k = molfrag.D2k
-        z = r[2].unblock()
-        yy = D2k[("YDIPLEN YDIPLEN ", 0.0, 0.0)].unblock()
-        bzyy = -z & yy
+        z = r[2]  # .unblock()
+        yy = D2k[("YDIPLEN YDIPLEN ", 0.0, 0.0)]  # .unblock()
+        bzyy = -np.einsum('ij,ij', z, yy)
         self.assert_allclose(bzyy, ref.Bm[2, 3], 0.005)
 
     def test_beta_zzz(self, molfrag):
         r = molfrag.x
         D2k = molfrag.D2k
-        z = r[2].unblock()
-        zz = D2k[("ZDIPLEN ZDIPLEN ", 0.0, 0.0)].unblock()
-        bzzz = -z & zz
+        z = r[2]  # .unblock()
+        zz = D2k[("ZDIPLEN ZDIPLEN ", 0.0, 0.0)]  # .unblock()
+        bzzz = -np.einsum('ij,ij', z, zz)
         self.assert_allclose(bzzz, ref.Bm[2, 5], 0.005)
 
     def test_hyperpolarizability_total(self, molfrag):
@@ -475,11 +475,18 @@ class TestNew(LoPropTestCase):
         Acmp = full.matrix(ref.Aab.shape)
 
         ab = 0
+        lower = np.tril_indices(3)
         for a in range(noa):
             for b in range(a):
-                Acmp[:, ab] = (Aab[:, :, a, b] + Aab[:, :, b, a]).pack()
+                # Acmp[:, ab] = (Aab[:, :, a, b] + Aab[:, :, b, a]).pack()
+                Asab = (Aab[:, :, a, b] + Aab[:, :, b, a])
+                Asab = .5 * (Asab + Asab.T)
+                Acmp[:, ab] = Asab[lower]
                 ab += 1
-            Acmp[:, ab] = Aab[:, :, a, a].pack()
+            # Acmp[:, ab] = Aab[:, :, a, a].pack()
+            Asaa = Aab[:, :, a, a]
+            Asaa = .5 * (Asaa + Asaa.T)
+            Acmp[:, ab] = Asaa[lower]
             ab += 1
         # atoms
         self.assert_allclose(ref.Aab[:, 0], Acmp[:, 0], atol=0.005)
@@ -494,11 +501,18 @@ class TestNew(LoPropTestCase):
         Acmp = full.matrix(ref.Aab.shape)
 
         ab = 0
+        lower = np.tril_indices(3)
         for a in range(noa):
             for b in range(a):
-                Acmp[:, ab] = (Aab[:, :, a, b] + Aab[:, :, b, a]).pack()
+                # Acmp[:, ab] = (Aab[:, :, a, b] + Aab[:, :, b, a]).pack()
+                Asab = (Aab[:, :, a, b] + Aab[:, :, b, a])
+                Asab = .5 * (Asab + Asab.T)
+                Acmp[:, ab] = Asab[lower]
                 ab += 1
-            Acmp[:, ab] = Aab[:, :, a, a].pack()
+            # Acmp[:, ab] = Aab[:, :, a, a].pack()
+            Asaa = Aab[:, :, a, a]
+            Asaa = .5 * (Asaa + Asaa.T)
+            Acmp[:, ab] = Asaa[lower]
             ab += 1
         # atoms
         self.assert_allclose(ref.Aab[:, 1], Acmp[:, 1], atol=0.150, err_msg="H1O")
@@ -513,8 +527,10 @@ class TestNew(LoPropTestCase):
         Acmp = full.matrix((6, noa))
         Aa = Aab.sum(axis=3).view(full.matrix)
 
+        lower = np.tril_indices(3)
         for a in range(noa):
-            Acmp[:, a] = Aa[:, :, a].pack()
+            # Acmp[:, a] = Aa[:, :, a].pack()
+            Acmp[:, a] = .5 * (Aa[:, :, a] + Aa[:, :, a].T)[lower]
 
         # atoms
         self.assert_allclose(Acmp, ref.Aa, atol=0.07)

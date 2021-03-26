@@ -14,7 +14,7 @@ import numpy
 from util import full, blocked, subblocked
 from util.full import Matrix
 
-from .linalg import Lowdin
+from .linalg import Lowdin, GramSchmidt
 
 AU2ANG = 0.5291772108
 ANG2AU = 1.0 / AU2ANG
@@ -382,13 +382,14 @@ class LoPropTransformer:
         #
 
         unit = numpy.eye(nbf)
+        gs = GramSchmidt(S)
         T1 = numpy.zeros(S.shape)
         for at in range(noa):
             indices = self.get_ao_indices(at)
             selected_columns = numpy.ix_(range(nbf), indices)
             selected_matrix = numpy.ix_(indices, indices)
             rhs = unit[selected_columns]
-            t1 = rhs.view(Matrix).GST(S)
+            t1 = gs.transformer(rhs)
             T1[selected_matrix] = t1
 
         return T1
@@ -542,16 +543,8 @@ class LoPropTransformer:
         :rtype: numpy.ndrarray
         """
 
-        vpa = [c - len(o) for c, o in zip(self.cpa, self.opa)]
-        nocc = sum(len(occ) for occ in self.opa)
-        nvirt = sum(vpa)
-        occdim = (nocc, nvirt)
-
-        S_ov_sb = S_ov.subblocked(occdim, occdim)
         nbf = S_ov.shape[0]
 
-        T_sb = full.unit(nbf).subblocked(occdim, occdim)
-        T_sb.subblock[0][1] = -S_ov_sb.subblock[0][1]
         if self.new:
             T = numpy.zeros(S_ov.shape)
             occupied = self.get_occupied_indices()
@@ -560,6 +553,15 @@ class LoPropTransformer:
             T = numpy.eye(nbf)
             T[ov_ix] = -S_ov[ov_ix]
         else:
+            vpa = [c - len(o) for c, o in zip(self.cpa, self.opa)]
+            nocc = sum(len(occ) for occ in self.opa)
+            nvirt = sum(vpa)
+            occdim = (nocc, nvirt)
+
+            S_ov_sb = S_ov.subblocked(occdim, occdim)
+
+            T_sb = full.unit(nbf).subblocked(occdim, occdim)
+            T_sb.subblock[0][1] = -S_ov_sb.subblock[0][1]
             T = T_sb.unblock()
         return T
 
@@ -639,6 +641,7 @@ class MolFrag(abc.ABC):
         self.sf = sf
         self.gc = gc
 
+        self._transformer = None
         self._T = None
         self._Ti = None
         self._D = None
@@ -734,7 +737,7 @@ class MolFrag(abc.ABC):
 
         D = self.get_density_matrix()
         Ti = self.Ti
-        self._D = (Ti @ D @ Ti.T).view(Matrix).subblocked(self.cpa, self.cpa)
+        self._D = (Ti @ D @ Ti.T)
         return self._D
 
     @abc.abstractmethod
@@ -762,14 +765,29 @@ class MolFrag(abc.ABC):
                  such that T+ST = 1 (unit) """
 
         if self._T is None:
-            self._T = LoPropTransformer(self.S(), self.cpa, self.opa).T
+            self._T = self.transformer.T
         return self._T
+
+    @property
+    def transformer(self):
+        if self._transformer is None:
+            self._transformer = LoPropTransformer(self.S(), self.cpa, self.opa)
+        return self._transformer
 
     @property
     def Ti(self):
         if self._Ti is None:
             self._Ti = numpy.linalg.inv(self.T)
         return self._Ti
+
+    def extract_indices(self, *args):
+        if len(args) == 1:
+            indices = self.transformer.get_ao_indices(args[0])
+            return numpy.ix_(indices)
+        if len(args) == 2:
+            indices_a = self.transformer.get_ao_indices(args[0])
+            indices_b = self.transformer.get_ao_indices(args[1])
+            return numpy.ix_(indices_a, indices_b)
 
     @property
     def Qab(self):
@@ -778,12 +796,15 @@ class MolFrag(abc.ABC):
             return self._Qab
 
         D = self.D
-
         noa = self.noa
         _Qab = full.matrix((noa, noa))
+
         for a in range(noa):
-            _Qab[a, a] = -D.subblock[a][a].tr()
+            in_atom = self.extract_indices(a, a)
+            _Qab[a, a] = -numpy.trace(D[in_atom])
+
         self._Qab = _Qab
+
         return self._Qab
 
     @property
@@ -810,8 +831,9 @@ class MolFrag(abc.ABC):
         for i in range(3):
             for a in range(noa):
                 for b in range(noa):
+                    ab = self.extract_indices(a, b)
                     _Dab[i, a, b] = (
-                        -(x[i].subblock[a][b] & D.subblock[a][b])
+                        -numpy.einsum('ij,ij', x[i][ab], D[ab])
                         - Qab[a, b] * Rab[a, b, i]
                     )
 
@@ -887,10 +909,11 @@ class MolFrag(abc.ABC):
         Rab = self.Rab
         for a in range(noa):
             for b in range(noa):
+                ab = self.extract_indices(a, b)
                 ij = 0
                 for i in range(3):
                     for j in range(i, 3):
-                        rrab[ij, a, b] = -(xy[ij].subblock[a][b] & D.subblock[a][b])
+                        rrab[ij, a, b] = -numpy.einsum('ij,ij', xy[ij][ab], D[ab])
                         rRab[ij, a, b] = (
                             Dab[i, a, b] * Rab[a, b, j] + Dab[j, a, b] * Rab[a, b, i]
                         )
@@ -1000,12 +1023,24 @@ class MolFrag(abc.ABC):
         T = self.T
         return ((T.T @ ao @ T).view(Matrix).subblocked(cpa, cpa) for ao in aos)
 
+    def ao_to_loprop(self, *aos):
+        T = self.T
+        return (T.T @ ao @ T for ao in aos)
+
     def contravariant_ao_to_blocked_loprop(self, aos: dict) -> dict:
 
         cpa = self.cpa
         Ti = self.Ti
         blocked_loprop = {
             k: (Ti @ v @ Ti.T).view(Matrix).subblocked(cpa, cpa) for k, v in aos.items()
+        }
+        return blocked_loprop
+
+    def contravariant_ao_to_loprop(self, aos: dict) -> dict:
+
+        Ti = self.Ti
+        blocked_loprop = {
+            k: (Ti @ v @ Ti.T) for k, v in aos.items()
         }
         return blocked_loprop
 
@@ -1100,9 +1135,10 @@ class MolFrag(abc.ABC):
 
         dQa = full.matrix((self.nfreqs, noa, 3))
         for a in range(noa):
+            aa = self.extract_indices(a, a)
             for il, l in enumerate(labs):
                 for iw, w in enumerate(self.freqs):
-                    dQa[iw, a, il] = -Dk[(l, w)].subblock[a][a].tr()
+                    dQa[iw, a, il] = -numpy.trace(Dk[(l, w)][aa])  # .subblock[a][a].tr()
         self._dQa = dQa
         return self._dQa
 
@@ -1124,9 +1160,10 @@ class MolFrag(abc.ABC):
         qrlab = [lab[j] + lab[i] for i in range(3) for j in range(i, 3)]
 
         for a in range(noa):
+            aa = self.extract_indices(a, a)
             for il, l in enumerate(qrlab):
                 il = qrlab.index(l)
-                d2Qa[0, a, il] = -D2k[(l, wb, wc)].subblock[a][a].tr()
+                d2Qa[0, a, il] = -numpy.trace(D2k[(l, wb, wc)][aa])
         self._d2Qa = d2Qa
         return self._d2Qa
 
@@ -1216,16 +1253,17 @@ class MolFrag(abc.ABC):
 
         noa = len(cpa)
         labs = self.dipole_labels
-        Aab = full.matrix((self.nfreqs, 3, 3, noa, noa))
+        Aab = numpy.zeros((self.nfreqs, 3, 3, noa, noa))
 
         # correction term for shifting origin from O to Rab
         for i, li in enumerate(labs):
             for j, lj in enumerate(labs):
                 for a in range(noa):
                     for b in range(noa):
+                        ab = self.extract_indices(a, b)
                         for jw, w in enumerate(self.freqs):
                             Aab[jw, i, j, a, b] = (
-                                -x[i].subblock[a][b] & Dk[(lj, w)].subblock[a][b]
+                                -numpy.einsum('ij,ij', x[i][ab], Dk[(lj, w)][ab])
                             )
                     for jw in self.rfreqs:
                         Aab[jw, i, j, a, a] -= dQa[jw, a, j] * Rab[a, a, i]
@@ -1297,9 +1335,10 @@ class MolFrag(abc.ABC):
             for jk, ljk in enumerate(qlabs):
                 for a in range(self.noa):
                     for b in range(self.noa):
+                        ab = self.extract_indices(a, b)
                         for iw, w in enumerate(self.freqs):
                             Bab[iw, i, jk, a, b] = (
-                                -x[i].subblock[a][b] & D2k[(ljk, w, w)].subblock[a][b]
+                                -numpy.einsum('ij,ij', x[i][ab], D2k[(ljk, w, w)][ab])
                             )
                     for iw in self.rfreqs:
                         Bab[iw, i, jk, a, a] -= d2Qa[iw, a, jk] * Rab[a, a, i]
@@ -1451,7 +1490,7 @@ class MolFrag(abc.ABC):
                             if pol > 1:
                                 print("Polarizability (%g)      " % w)
                                 print(
-                                    (6 * fmt) % tuple(Asym.pack().view(Matrix) * xconv3)
+                                    (6 * fmt) % tuple(Asym.pack() * xconv3)
                                 )
 
                     if self._Bab is not None:
