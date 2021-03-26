@@ -7,13 +7,14 @@ import abc
 import builtins
 from collections import defaultdict
 from functools import reduce, partial
-import sys
-from typing import List
+from typing import List, Tuple
 
 import numpy
 
 from util import full, blocked, subblocked
 from util.full import Matrix
+
+from .linalg import Lowdin
 
 AU2ANG = 0.5291772108
 ANG2AU = 1.0 / AU2ANG
@@ -204,6 +205,8 @@ class LoPropTransformer:
         self.set_cpa(cpa)
         self.set_opa(opa)
         self._T = None
+        self._permute = False
+        self.new = True
 
     def set_cpa(self, cpa: List[int]):
         """
@@ -231,6 +234,39 @@ class LoPropTransformer:
         for a in opa:
             self.assert_nonneg_ints(a)
         self.opa = tuple(tuple(o for o in a) for a in opa)
+
+    def get_ao_indices(self, atom: int) -> Tuple[int]:
+        """
+        Returns tuple of ao indices given atom number
+        given atomically ordered basis functions
+        """
+        offset = sum(self.cpa[:atom])
+        indices = range(offset, offset + self.cpa[atom])
+
+        return tuple(indices)
+
+    def get_occupied_indices(self) -> Tuple[int]:
+        """
+        Returns tuple of occupied orbital indices
+        """
+        if self._permute:
+            nocc = sum(len(opa) for opa in self.opa)
+            occupied = range(nocc)
+        else:
+            occupied = []
+            for atom in range(len(self.cpa)):
+                occ = numpy.array(self.opa[atom]) + sum(self.cpa[:atom])
+                occupied.extend(occ)
+
+        return tuple(occupied)
+
+    def get_virtual_indices(self) -> Tuple[int]:
+        """
+        Returns tuple of virtual orbital indices
+        """
+        nbf = sum(self.cpa)
+        virtual = set(range(nbf)) - set(self.get_occupied_indices())
+        return tuple(virtual)
 
     @staticmethod
     def assert_pos_ints(arr: List[int]):
@@ -288,7 +324,10 @@ class LoPropTransformer:
         T1 = self.gram_schmidt_atomic_blocks(S)
         S1 = T1.T @ S @ T1
 
-        P = self.permute_to_occupied_virtual()
+        if self._permute:
+            P = self.permute_to_occupied_virtual()
+        else:
+            P = numpy.eye(sum(self.cpa))
         S1P = P.T @ S1 @ P
 
         T2 = self.lowdin_occupied_virtual(S1P)
@@ -337,14 +376,21 @@ class LoPropTransformer:
         nocc = 0
         for at in range(noa):
             nocc += len(opa[at])
-        Ubl = full.unit(nbf).subblocked((nbf,), cpa)
+
         #
         # Diagonalize atom-wise
         #
-        T1 = blocked.BlockDiagonalMatrix(cpa, cpa)
+
+        unit = numpy.eye(nbf)
+        T1 = numpy.zeros(S.shape)
         for at in range(noa):
-            T1.subblock[at] = Ubl.subblock[0][at].GST(S)
-        T1 = T1.unblock()
+            indices = self.get_ao_indices(at)
+            selected_columns = numpy.ix_(range(nbf), indices)
+            selected_matrix = numpy.ix_(indices, indices)
+            rhs = unit[selected_columns]
+            t1 = rhs.view(Matrix).GST(S)
+            T1[selected_matrix] = t1
+
         return T1
 
     def permute_to_occupied_virtual(self):
@@ -373,6 +419,9 @@ class LoPropTransformer:
         :rtype: numpy.ndarray
         """
 
+        if not self._permute:
+            return numpy.eye(sum(self.cpa))
+
         P1 = subblocked.matrix(self.cpa, self.cpa)
         for at in range(self.noa):
             P1.subblock[at][at][:, :] = full.permute(self.opa[at], self.cpa[at])
@@ -392,6 +441,9 @@ class LoPropTransformer:
         :returns: Permutation matrix
         :rtype: numpy.mdarray
         """
+
+        if not self._permute:
+            return numpy.eye(sum(self.cpa))
 
         vpa = []
         adim = []
@@ -436,13 +488,45 @@ class LoPropTransformer:
         :rtype: numpy.ndrarray
         """
 
+        new_algorithm = self.new
+
+        nbf = sum(self.cpa)
+        T = numpy.zeros(S_ov.shape)
+        unit = numpy.eye(nbf)
+        lowdin = Lowdin(S_ov)
+
         vpa = [c - len(o) for c, o in zip(self.cpa, self.opa)]
         nocc = sum(len(occ) for occ in self.opa)
         nvirt = sum(vpa)
         ov_dim = (nocc, nvirt)
         S_ov_bl = S_ov.block(ov_dim, ov_dim)
         T_bl = S_ov_bl.invsqrt()
-        T = T_bl.unblock()
+
+        if new_algorithm:
+            if self._permute:
+                number_of_occupied = sum(len(o) for o in self.opa)
+                occupied = range(number_of_occupied)
+            else:
+                occupied = self.get_occupied_indices()
+
+            selected_columns = numpy.ix_(range(nbf), occupied)
+            selected = numpy.ix_(occupied, occupied)
+
+            T[selected] = lowdin.transformer(unit[selected_columns])
+
+            if self._permute:
+                virtual = range(number_of_occupied, nbf)
+            else:
+                virtual = self.get_virtual_indices()
+
+            selected_columns = numpy.ix_(range(nbf), virtual)
+            selected = numpy.ix_(virtual, virtual)
+
+            T[selected] = lowdin.transformer(unit[selected_columns])
+
+        else:
+            T = T_bl.unblock()
+
         return T
 
     def project_occupied_from_virtual(self, S_ov):
@@ -468,7 +552,15 @@ class LoPropTransformer:
 
         T_sb = full.unit(nbf).subblocked(occdim, occdim)
         T_sb.subblock[0][1] = -S_ov_sb.subblock[0][1]
-        T = T_sb.unblock()
+        if self.new:
+            T = numpy.zeros(S_ov.shape)
+            occupied = self.get_occupied_indices()
+            virtual = self.get_virtual_indices()
+            ov_ix = numpy.ix_(occupied, virtual)
+            T = numpy.eye(nbf)
+            T[ov_ix] = -S_ov[ov_ix]
+        else:
+            T = T_sb.unblock()
         return T
 
     def lowdin_virtual(self, S_ov):
@@ -491,6 +583,17 @@ class LoPropTransformer:
         S3b = S_ov.block(occdim, occdim)
         T4b.subblock[1] = S3b.subblock[1].invsqrt()
         T4 = T4b.unblock()
+
+        if self.new:
+            nbf = sum(self.cpa)
+            T = numpy.eye(sum(self.cpa))
+            virtual = self.get_virtual_indices()
+            selected_columns = numpy.ix_(range(nbf), virtual)
+            selected = numpy.ix_(virtual, virtual)
+            lowdin = Lowdin(S_ov)
+            T[selected] = lowdin.transformer(T[selected_columns])
+            T4 = T
+
         return T4
 
 
@@ -537,6 +640,7 @@ class MolFrag(abc.ABC):
         self.gc = gc
 
         self._T = None
+        self._Ti = None
         self._D = None
         self._Dk = None
         self._D2k = None
@@ -629,8 +733,8 @@ class MolFrag(abc.ABC):
             return self._D
 
         D = self.get_density_matrix()
-        Ti = self.T.I
-        self._D = (Ti @ D @ Ti.T).subblocked(self.cpa, self.cpa)
+        Ti = self.Ti
+        self._D = (Ti @ D @ Ti.T).view(Matrix).subblocked(self.cpa, self.cpa)
         return self._D
 
     @abc.abstractmethod
@@ -660,6 +764,12 @@ class MolFrag(abc.ABC):
         if self._T is None:
             self._T = LoPropTransformer(self.S(), self.cpa, self.opa).T
         return self._T
+
+    @property
+    def Ti(self):
+        if self._Ti is None:
+            self._Ti = numpy.linalg.inv(self.T)
+        return self._Ti
 
     @property
     def Qab(self):
@@ -888,14 +998,14 @@ class MolFrag(abc.ABC):
     def ao_to_blocked_loprop(self, *aos):
         cpa = self.cpa
         T = self.T
-        return ((T.T @ ao @ T).subblocked(cpa, cpa) for ao in aos)
+        return ((T.T @ ao @ T).view(Matrix).subblocked(cpa, cpa) for ao in aos)
 
     def contravariant_ao_to_blocked_loprop(self, aos: dict) -> dict:
 
         cpa = self.cpa
-        T = self.T
+        Ti = self.Ti
         blocked_loprop = {
-            k: (T.I @ v @ T.I.T).subblocked(cpa, cpa) for k, v in aos.items()
+            k: (Ti @ v @ Ti.T).view(Matrix).subblocked(cpa, cpa) for k, v in aos.items()
         }
         return blocked_loprop
 

@@ -173,13 +173,13 @@ class MolFragDalton(MolFrag):
 
         lab = ["XDIPLEN ", "YDIPLEN ", "ZDIPLEN "]
         qrlab = [lab[j] + lab[i] for i in range(3) for j in range(i, 3)]
-        T = self.T
+        Ti = self.Ti
         cpa = self.cpa
 
         Dkao = qr.D2k(*qrlab, freqs=self.freqs, tmpdir=self.tmpdir)
         # print("Dkao.keys", Dkao.keys())
         _D2k = {
-            lw: (T.I @ Dkao[lw] @ T.I.T).subblocked(cpa, cpa) for lw in Dkao
+            lw: (Ti @ Dkao[lw] @ Ti.T).subblocked(cpa, cpa) for lw in Dkao
         }
 
         self._D2k = _D2k

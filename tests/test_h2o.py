@@ -87,31 +87,123 @@ class TestTransform(LoPropTestCase):
         with pytest.raises(AssertionError):
             transformer.set_cpa(((0,),))
 
-    def test_T1(self, transformer):
+    def test_get_ao_indices(self, transformer):
+        assert transformer.get_ao_indices(0) == tuple(range(30))
+        assert transformer.get_ao_indices(1) == tuple(range(30, 30 + 14, ))
+        assert transformer.get_ao_indices(2) == tuple(range(30 + 14, 30 + 14 + 14))
+
+    @pytest.mark.parametrize(
+        'permute, expected',
+        [
+            (True, (0, 1, 2, 3, 4, 5, 6)),
+            (False, (0, 1, 4, 5, 6, 30, 44)),
+        ]
+    ) 
+    def test_get_occ_indices(self, permute, expected, transformer):
+        transformer._permute = permute
+        assert transformer.get_occupied_indices() == expected
+
+    @pytest.mark.parametrize(
+        'permute, expected',
+        [
+            (
+                True,
+                tuple(range(7, 58))
+            ),
+            (
+                False,
+                (
+                    2, 3, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+                    23, 24, 25, 26, 27, 28, 29,
+                    31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43,
+                    45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57,
+                )
+            ),
+        ]
+    ) 
+    def test_get_virt_indices(self, permute, expected, transformer):
+        transformer._permute = permute
+        assert transformer.get_virtual_indices() == expected
+
+    @pytest.mark.parametrize(
+        'permute', [True, False]
+    ) 
+    def test_T1(self, permute, transformer):
+        transformer._permute = permute
         T1 = transformer.gram_schmidt_atomic_blocks(transformer.S)
         self.assert_allclose(T1, ref.T1)
 
-    def test_P1(self, transformer):
+    @pytest.mark.parametrize(
+        'permute, expected',
+        [
+            (True, ref.P1),
+            (False, np.eye(ref.P1.shape[0])),
+        ]
+    ) 
+    def test_P1(self, permute, expected, transformer):
+        transformer._permute = permute
         P1 = transformer.P1()
-        self.assert_allclose(P1, ref.P1)
+        self.assert_allclose(P1, expected)
 
-    def test_P2(self, transformer):
+    @pytest.mark.parametrize(
+        'permute, expected',
+        [
+            (True, ref.P2),
+            (False, np.eye(ref.P1.shape[0])),
+        ]
+    ) 
+    def test_P2(self, permute, expected, transformer):
+        transformer._permute = permute
         P2 = transformer.P2()
-        self.assert_allclose(P2, ref.P2)
+        self.assert_allclose(P2, expected)
 
-    def test_T2(self, transformer):
+    @pytest.mark.parametrize(
+        'permute, expected',
+        [
+            (True, ref.T2),
+            (False, None),
+        ]
+    ) 
+    def test_T2(self, permute, expected, transformer):
+        if not permute:
+            pytest.skip()
+        transformer._permute = permute
         T2 = transformer.lowdin_occupied_virtual(ref.S1P.view(full.matrix))
-        self.assert_allclose(T2, ref.T2)
+        self.assert_allclose(T2, expected)
 
-    def test_T3(self, transformer):
+    @pytest.mark.parametrize(
+        'permute, expected',
+        [
+            (True, ref.T3),
+            (False, None),
+        ]
+    ) 
+    def test_T3(self, permute, expected, transformer):
+        if not permute:
+            pytest.skip()
+        transformer._permute = permute
         T3 = transformer.project_occupied_from_virtual(ref.S2.view(Matrix))
-        self.assert_allclose(T3, ref.T3)
+        self.assert_allclose(T3, expected)
 
-    def test_T4(self, transformer):
+    @pytest.mark.parametrize(
+        'permute, expected',
+        [
+            (True, ref.T4),
+            (False, None),
+        ]
+    ) 
+    def test_T4(self, permute, expected, transformer):
+        if not permute:
+            pytest.skip()
+        transformer._permute = permute
         T4 = transformer.lowdin_virtual(ref.S3.view(full.matrix))
         self.assert_allclose(T4, ref.T4)
 
-    def test_S4(self, transformer):
+    @pytest.mark.parametrize(
+        'permute', [False, None],
+    ) 
+    def test_S4(self, permute, transformer):
+        transformer._permute = permute
         T = transformer.T
         S4 = T.T @ transformer.S @ T
         self.assert_allclose(S4, full.unit(58))
