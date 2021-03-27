@@ -95,7 +95,6 @@ class TestTransform(LoPropTestCase):
     @pytest.mark.parametrize(
         'permute, expected',
         [
-            (True, (0, 1, 2, 3, 4, 5, 6)),
             (False, (0, 1, 4, 5, 6, 30, 44)),
         ]
     ) 
@@ -106,10 +105,6 @@ class TestTransform(LoPropTestCase):
     @pytest.mark.parametrize(
         'permute, expected',
         [
-            (
-                True,
-                tuple(range(7, 58))
-            ),
             (
                 False,
                 (
@@ -136,30 +131,6 @@ class TestTransform(LoPropTestCase):
     @pytest.mark.parametrize(
         'permute, expected',
         [
-            (True, ref.P1),
-            (False, np.eye(ref.P1.shape[0])),
-        ]
-    ) 
-    def test_P1(self, permute, expected, transformer):
-        transformer._permute = permute
-        P1 = transformer.P1()
-        self.assert_allclose(P1, expected)
-
-    @pytest.mark.parametrize(
-        'permute, expected',
-        [
-            (True, ref.P2),
-            (False, np.eye(ref.P1.shape[0])),
-        ]
-    ) 
-    def test_P2(self, permute, expected, transformer):
-        transformer._permute = permute
-        P2 = transformer.P2()
-        self.assert_allclose(P2, expected)
-
-    @pytest.mark.parametrize(
-        'permute, expected',
-        [
             (True, ref.T2),
             (False, None),
         ]
@@ -174,7 +145,6 @@ class TestTransform(LoPropTestCase):
     @pytest.mark.parametrize(
         'permute, expected',
         [
-            (True, ref.T3),
             (False, None),
         ]
     ) 
@@ -188,7 +158,6 @@ class TestTransform(LoPropTestCase):
     @pytest.mark.parametrize(
         'permute, expected',
         [
-            (True, ref.T4),
             (False, None),
         ]
     ) 

@@ -249,14 +249,10 @@ class LoPropTransformer:
         """
         Returns tuple of occupied orbital indices
         """
-        if self._permute:
-            nocc = sum(len(opa) for opa in self.opa)
-            occupied = range(nocc)
-        else:
-            occupied = []
-            for atom in range(len(self.cpa)):
-                occ = numpy.array(self.opa[atom]) + sum(self.cpa[:atom])
-                occupied.extend(occ)
+        occupied = []
+        for atom in range(len(self.cpa)):
+            occ = numpy.array(self.opa[atom]) + sum(self.cpa[:atom])
+            occupied.extend(occ)
 
         return tuple(occupied)
 
@@ -324,29 +320,15 @@ class LoPropTransformer:
         T1 = self.gram_schmidt_atomic_blocks(S)
         S1 = T1.T @ S @ T1
 
-        if self._permute:
-            P = self.permute_to_occupied_virtual()
-        else:
-            P = numpy.eye(sum(self.cpa))
-        S1P = P.T @ S1 @ P
-
-        T2 = self.lowdin_occupied_virtual(S1P)
-        S2 = T2.T @ S1P @ T2
+        T2 = self.lowdin_occupied_virtual(S1)
+        S2 = T2.T @ S1 @ T2
 
         T3 = self.project_occupied_from_virtual(S2)
         S3 = T3.T @ S2 @ T3
 
         T4 = self.lowdin_virtual(S3)
-        S4 = T4.T @ S3 @ T4
 
-        #
-        # permute back to original basis
-        #
-        S4 = P @ S4 @ P.T
-        #
-        # Return total transformation
-        #
-        T = T1 @ P @ T2 @ T3 @ T4 @ P.T
+        T = T1 @ T2 @ T3 @ T4
         self._T = T
         return self._T
 
@@ -393,81 +375,6 @@ class LoPropTransformer:
             T1[selected_matrix] = t1
 
         return T1
-
-    def permute_to_occupied_virtual(self):
-        """
-        Reorder AO-basis to occupied-virtual order in two steps
-
-        Arguments:
-
-        :returns: permutation matrix
-        :rtype: numpy.ndarray
-        """
-        return self.P1() @ self.P2()
-
-    def P1(self):
-        """
-        Builds a permutation matrix such that,
-        Within an atomic sub-block, the orbitals are permuted
-        to have the occupied listed first
-
-        >>> [o1a1, v1a1, o2a1, v2a2, o1a2, v1a2] @ P1
-        [o1a1, o2a1, v1a1, v2a2, o1a2, v1a2]
-
-        Arguments:
-
-        :returns: Permutation matrix
-        :rtype: numpy.ndarray
-        """
-
-        if not self._permute:
-            return numpy.eye(sum(self.cpa))
-
-        P1 = subblocked.matrix(self.cpa, self.cpa)
-        for at in range(self.noa):
-            P1.subblock[at][at][:, :] = full.permute(self.opa[at], self.cpa[at])
-        P1 = P1.unblock()
-        return P1
-
-    def P2(self):
-        """
-        Builds a permutation matrix to follow the P1 permutaion
-        such that the result is occupied virtual order
-
-        >>> [o1a1, o2a1, v1a1, v2a2, o1a2, v1a2] @ P2
-        [o1a1, o2a1, o1a2, v1a1, v2a2, v1a2]
-
-        Arguments:
-
-        :returns: Permutation matrix
-        :rtype: numpy.mdarray
-        """
-
-        if not self._permute:
-            return numpy.eye(sum(self.cpa))
-
-        vpa = []
-        adim = []
-        for at in range(self.noa):
-            vpa.append(self.cpa[at] - len(self.opa[at]))
-            adim.append(len(self.opa[at]))
-            adim.append(vpa[at])
-        #
-        # dimensions for permuted basis
-        #
-        pdim = []
-        for at in range(self.noa):
-            pdim.append(len(self.opa[at]))
-        for at in range(self.noa):
-            pdim.append(vpa[at])
-
-        P2 = subblocked.matrix(adim, pdim)
-        for i in range(0, len(adim), 2):
-            P2.subblock[i][i // 2] = full.unit(adim[i])
-        for i in range(1, len(adim), 2):
-            P2.subblock[i][self.noa + (i - 1) // 2] = full.unit(adim[i])
-        P2 = P2.unblock()
-        return P2
 
     def lowdin_occupied_virtual(self, S_ov):
         """
