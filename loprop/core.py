@@ -11,10 +11,7 @@ from typing import List, Tuple
 
 import numpy as np
 
-from util import full
-from util.full import Matrix
-
-from .linalg import Lowdin, GramSchmidt
+from .linalg import Lowdin, GramSchmidt, triangular_symmetric
 
 AU2ANG = 0.5291772108
 ANG2AU = 1.0 / AU2ANG
@@ -77,7 +74,7 @@ def symmetrize_first_beta(beta):
     # Symmtrized UT array
     # B[ (xxx, xxy, xxz, xyy, xyz, xzz, yyy, yyz, yzz, zzz) ]
 
-    new = full.matrix(10)
+    new = np.zeros(10)
 
     new[0] = beta[0, 0]
     new[1] = (beta[0, 1] + beta[1, 0]) / 2
@@ -178,7 +175,7 @@ def output_beta(beta, dip=None, fmt="%12.6f"):
     betakk = beta[:, 0] + beta[:, 3] + beta[:, 5]
     print("beta(:, kk)" + (3 * fmt) % tuple(betakk))
     if dip is not None:
-        betapar = 0.2 * (betakk & dip) / dip.norm2()
+        betapar = 0.2 * np.dot(betakk, dip) / np.linalg.norm(dip)
         print("beta//dip  " + (fmt) % betapar)
 
 
@@ -416,7 +413,6 @@ class LoPropTransformer:
 
         T[selected] = lowdin.transformer(unit[selected_columns])
 
-
         return T
 
     def project_occupied_from_virtual(self, S_ov):
@@ -593,7 +589,7 @@ class MolFrag(abc.ABC):
         if self.gc is None:
             self._Rc = self.Z @ self.R * (1 / self.Z.sum())
         else:
-            self._Rc = np.array(self.gc).view(full.matrix)
+            self._Rc = np.array(self.gc)
         return self._Rc
 
     @abc.abstractmethod
@@ -673,7 +669,7 @@ class MolFrag(abc.ABC):
 
         D = self.D
         noa = self.noa
-        _Qab = full.matrix((noa, noa))
+        _Qab = np.zeros((noa, noa))
 
         for a in range(noa):
             in_atom = self.extract_indices(a, a)
@@ -703,7 +699,7 @@ class MolFrag(abc.ABC):
         Qab = self.Qab
 
         noa = self.noa
-        _Dab = full.matrix((3, noa, noa))
+        _Dab = np.zeros((3, noa, noa))
         for i in range(3):
             for a in range(noa):
                 for b in range(noa):
@@ -726,7 +722,7 @@ class MolFrag(abc.ABC):
             return self._Da
 
         Dab = self.Dab
-        self._Da = Dab.sum(axis=2).view(full.matrix)
+        self._Da = Dab.sum(axis=2)
         return self._Da
 
     @property
@@ -739,7 +735,7 @@ class MolFrag(abc.ABC):
 
         Dab = self.Dab
         noa = self.noa
-        dsym = full.matrix((3, noa * (noa + 1) // 2))
+        dsym = np.zeros((3, noa * (noa + 1) // 2))
         ab = 0
         for a in range(noa):
             for b in range(a):
@@ -757,7 +753,7 @@ class MolFrag(abc.ABC):
         return _Dtot
 
     def _Detot(self):
-        Detot = self.Da.sum(axis=1).view(full.matrix)
+        Detot = self.Da.sum(axis=1)
         return Detot
 
     def _Dntot(self):
@@ -778,10 +774,10 @@ class MolFrag(abc.ABC):
         xy = self.get_quadrupole_matrices()
 
         noa = self.noa
-        QUab = full.matrix((6, noa, noa))
-        rrab = full.matrix((6, noa, noa))
-        rRab = full.matrix((6, noa, noa))
-        RRab = full.matrix((6, noa, noa))
+        QUab = np.zeros((6, noa, noa))
+        rrab = np.zeros((6, noa, noa))
+        rRab = np.zeros((6, noa, noa))
+        RRab = np.zeros((6, noa, noa))
         Rab = self.Rab
         for a in range(noa):
             for b in range(noa):
@@ -800,7 +796,7 @@ class MolFrag(abc.ABC):
         #
         # Addition term - gauge correction summing up bonds
         #
-        dQUab = full.matrix(self.QUab.shape)
+        dQUab = np.zeros(self.QUab.shape)
         for a in range(noa):
             for b in range(noa):
                 ij = 0
@@ -822,7 +818,7 @@ class MolFrag(abc.ABC):
 
         QUab = self.QUab + self.dQUab
 
-        self._QUa = QUab.sum(axis=2).view(full.matrix)
+        self._QUa = QUab.sum(axis=2)
         return self._QUa
 
     @property
@@ -833,7 +829,7 @@ class MolFrag(abc.ABC):
 
         QUab = self.QUab
         noa = self.noa
-        qusym = full.matrix((6, noa * (noa + 1) // 2))
+        qusym = np.zeros((6, noa * (noa + 1) // 2))
         ab = 0
         for a in range(noa):
             for b in range(a):
@@ -851,7 +847,7 @@ class MolFrag(abc.ABC):
         if self._QUN is not None:
             return self._QUN
 
-        qn = full.matrix(6)
+        qn = np.zeros(6)
         Z = self.Z
         R = self.R
         Rc = self.Rc
@@ -869,8 +865,8 @@ class MolFrag(abc.ABC):
         if self._QUc is not None:
             return self._QUc
 
-        rRab = full.matrix((6, self.noa, self.noa))
-        RRab = full.matrix((6, self.noa, self.noa))
+        rRab = np.zeros((6, self.noa, self.noa))
+        RRab = np.zeros((6, self.noa, self.noa))
         Rabc = 1.0 * self.Rab
         for a in range(self.noa):
             for b in range(self.noa):
@@ -891,26 +887,12 @@ class MolFrag(abc.ABC):
                         )
                         ij += 1
         QUcab = self.QUab + rRab + RRab
-        self._QUc = QUcab.sum(axis=2).sum(axis=1).view(full.matrix)
+        self._QUc = QUcab.sum(axis=2).sum(axis=1)
         return self._QUc
-
-    def ao_to_blocked_loprop(self, *aos):
-        cpa = self.cpa
-        T = self.T
-        return ((T.T @ ao @ T).view(Matrix).subblocked(cpa, cpa) for ao in aos)
 
     def ao_to_loprop(self, *aos):
         T = self.T
         return (T.T @ ao @ T for ao in aos)
-
-    def contravariant_ao_to_blocked_loprop(self, aos: dict) -> dict:
-
-        cpa = self.cpa
-        Ti = self.Ti
-        blocked_loprop = {
-            k: (Ti @ v @ Ti.T).view(Matrix).subblocked(cpa, cpa) for k, v in aos.items()
-        }
-        return blocked_loprop
 
     def contravariant_ao_to_loprop(self, aos: dict) -> dict:
 
@@ -926,7 +908,7 @@ class MolFrag(abc.ABC):
         if self._Fab is not None:
             return self._Fab
 
-        Fab = full.matrix((self.noa, self.noa))
+        Fab = np.zeros((self.noa, self.noa))
         for a in range(self.noa):
             Za = self.Z[a]
             Ra = self.R[a]
@@ -956,7 +938,7 @@ class MolFrag(abc.ABC):
         dQa = self.dQa
         Fab = self.Fab
         Lab = Fab + self.sf(Fab)
-        self._la = [Lab.solve(rhs) for rhs in dQa]
+        self._la = [np.linalg.solve(Lab, rhs) for rhs in dQa]
         return self._la
 
     @property
@@ -975,7 +957,7 @@ class MolFrag(abc.ABC):
         d2Qa = self.d2Qa
         Fab = self.Fab
         Lab = Fab + self.sf(Fab)
-        self._l2a = [Lab.solve(rhs) for rhs in d2Qa]
+        self._l2a = [np.linalg.solve(Lab, rhs) for rhs in d2Qa]
         return self._l2a
 
     @abc.abstractmethod
@@ -1009,12 +991,12 @@ class MolFrag(abc.ABC):
         Dk = self.Dk
         labs = self.dipole_labels
 
-        dQa = full.matrix((self.nfreqs, noa, 3))
+        dQa = np.zeros((self.nfreqs, noa, 3))
         for a in range(noa):
-            aa = self.extract_indices(a, a)
+            a_a = self.extract_indices(a, a)
             for il, l in enumerate(labs):
                 for iw, w in enumerate(self.freqs):
-                    dQa[iw, a, il] = -np.trace(Dk[(l, w)][aa])  # .subblock[a][a].tr()
+                    dQa[iw, a, il] = -np.trace(Dk[(l, w)][a_a])
         self._dQa = dQa
         return self._dQa
 
@@ -1030,16 +1012,16 @@ class MolFrag(abc.ABC):
 
         # static
         wb = wc = 0.0
-        d2Qa = full.matrix((1, noa, 6))
+        d2Qa = np.zeros((1, noa, 6))
 
         lab = ["XDIPLEN ", "YDIPLEN ", "ZDIPLEN "]
         qrlab = [lab[j] + lab[i] for i in range(3) for j in range(i, 3)]
 
         for a in range(noa):
-            aa = self.extract_indices(a, a)
+            a_a = self.extract_indices(a, a)
             for il, l in enumerate(qrlab):
                 il = qrlab.index(l)
-                d2Qa[0, a, il] = -np.trace(D2k[(l, wb, wc)][aa])
+                d2Qa[0, a, il] = -np.trace(D2k[(l, wb, wc)][a_a])
         self._d2Qa = d2Qa
         return self._d2Qa
 
@@ -1063,7 +1045,7 @@ class MolFrag(abc.ABC):
         la = self.la
         noa = self.noa
 
-        dQab = full.matrix((self.nfreqs, noa, noa, 3))
+        dQab = np.zeros((self.nfreqs, noa, noa, 3))
         for field in range(3):
             for a in range(noa):
                 Za = self.Z[a]
@@ -1089,7 +1071,7 @@ class MolFrag(abc.ABC):
         l2a = self.l2a
         noa = self.noa
 
-        d2Qab = full.matrix((self.nfreqs, noa, noa, 6))
+        d2Qab = np.zeros((self.nfreqs, noa, noa, 6))
         for field in range(6):
             for a in range(noa):
                 Za = self.Z[a]
@@ -1159,7 +1141,7 @@ class MolFrag(abc.ABC):
         dQab = self.dQab
         dRab = self.dRab
         noa = self.noa
-        dAab = full.matrix((self.nfreqs, 3, 3, noa, noa))
+        dAab = np.zeros((self.nfreqs, 3, 3, noa, noa))
         for a in range(noa):
             for b in range(noa):
                 for i in range(3):
@@ -1188,7 +1170,7 @@ class MolFrag(abc.ABC):
         Aab = self.Aab
         dAab = self.dAab
 
-        self._Am = (Aab + 0.5 * dAab).sum(axis=4).sum(axis=3).view(full.matrix)
+        self._Am = (Aab + 0.5 * dAab).sum(axis=4).sum(axis=3)
         return self._Am
 
     @property
@@ -1204,7 +1186,7 @@ class MolFrag(abc.ABC):
 
         labs = ("XDIPLEN ", "YDIPLEN ", "ZDIPLEN ")
         qlabs = [labs[i] + labs[j] for i in range(3) for j in range(i, 3)]
-        Bab = full.matrix((self.nfreqs, 3, 6, self.noa, self.noa))
+        Bab = np.zeros((self.nfreqs, 3, 6, self.noa, self.noa))
 
         # correction term for shifting origin from O to Rab
         for i, li in enumerate(labs):
@@ -1230,7 +1212,7 @@ class MolFrag(abc.ABC):
 
         d2Qab = self.d2Qab
         dRab = self.dRab
-        dBab = full.matrix((self.nfreqs, 3, 6, self.noa, self.noa))
+        dBab = np.zeros((self.nfreqs, 3, 6, self.noa, self.noa))
         for a in range(self.noa):
             for b in range(self.noa):
                 for i in range(3):
@@ -1248,7 +1230,7 @@ class MolFrag(abc.ABC):
 
         Bab = self.Bab
         dBab = self.dBab
-        self._Bm = (Bab + 0.5 * dBab).sum(axis=4).sum(axis=3).view(full.matrix)
+        self._Bm = (Bab + 0.5 * dBab).sum(axis=4).sum(axis=3)
 
         return self._Bm
 
@@ -1351,7 +1333,7 @@ class MolFrag(abc.ABC):
                         )
                         print(
                             "Electronic dipole norm"
-                            + fmt % (Dab[:, a, b] + Dab[:, b, a]).norm2()
+                            + fmt % np.linalg.norm(Dab[:, a, b] + Dab[:, b, a])
                         )
                     if self._QUab is not None:
                         raise NotImplementedError
@@ -1366,7 +1348,7 @@ class MolFrag(abc.ABC):
                             if pol > 1:
                                 print("Polarizability (%g)      " % w)
                                 print(
-                                    (6 * fmt) % tuple(Asym.pack() * xconv3)
+                                    (6 * fmt) % tuple(triangular_symmetric(Asym) * xconv3)
                                 )
 
                     if self._Bab is not None:
@@ -1382,7 +1364,7 @@ class MolFrag(abc.ABC):
                     print("Total charge:        " + fmt % (Z[a] + Qab[a, a]))
                 if self._Dab is not None:
                     print("Electronic dipole    " + (3 * fmt) % tuple(Dab[:, a, a]))
-                    print("Electronic dipole norm" + fmt % Dab[:, a, a].norm2())
+                    print("Electronic dipole norm" + fmt % np.linalg.norm(Dab[:, a, a]))
                 if self._QUab is not None:
                     print("Electronic quadrupole" + (6 * fmt) % tuple(QUab[:, a, a]))
                 if self._Aab is not None:
@@ -1397,7 +1379,7 @@ class MolFrag(abc.ABC):
                             print(
                                 "Polarizability (%g)       " % w
                                 + (6 * fmt)
-                                % tuple(Asym.pack().view(full.matrix) * xconv3)
+                                % tuple(triangular_symmetric(Asym) * xconv3)
                             )
                 if self._Bab is not None:
                     for iw, w in enumerate(self.freqs):
@@ -1418,24 +1400,24 @@ class MolFrag(abc.ABC):
                     print("Electronic dipole    " + (3 * fmt) % tuple(self.Da[:, a]))
                     print(
                         "Electronic dipole norm"
-                        + (fmt) % self.Da[:, a].view(full.matrix).norm2()
+                        + (fmt) % np.linalg.norm(self.Da[:, a])
                     )
                 if self._QUab is not None:
                     print("Electronic quadrupole" + (6 * fmt) % tuple(QUa[:, a]))
                 if self._Aab is not None:
                     for iw, w in enumerate(self.freqs):
-                        Asym = Aa[iw, :, :, a].view(full.matrix)
+                        Aaw = Aa[iw, ..., a]
                         print(
                             "Isotropic polarizablity (w=%g)" % w
-                            + fmt % (Aa[iw, :, :, a].trace() / 3 * xconv3)
+                            + fmt % (Aaw.trace() / 3 * xconv3)
                         )
                         print(
                             "Electronic polarizability (w=%g)" % w
-                            + (6 * fmt) % tuple(Asym.pack().view(Matrix) * xconv3)
+                            + (6 * fmt) % tuple(triangular_symmetric(Aaw) * xconv3)
                         )
                 if self._Bab is not None:
                     for iw, w in enumerate(self.freqs):
-                        Bsym = Ba[iw, :, :, a].view(full.matrix)
+                        Bsym = Ba[iw, :, :, a]
                         output_beta(Bsym, self.Da[:, a])
         #
         # Total molecular properties
@@ -1444,14 +1426,14 @@ class MolFrag(abc.ABC):
         if self.max_l >= 0:
             Qtot = Qa.sum()
         if self.max_l >= 1:
-            Dm = self.Da.sum(axis=1).view(full.matrix)
+            Dm = self.Da.sum(axis=1)
             Dc = Qa @ (R - Rc)
             DT = Dm + Dc
         if self._QUab is not None:
             QUm = self.QUc
             QUT = QUm + QUN
         if self._Bab is not None:
-            Dm = self.Da.sum(axis=1).view(full.matrix)
+            Dm = self.Da.sum(axis=1)
 
         header("Molecular", output=output)
         print("Domain center:       " + (3 * fmt) % tuple(Rc * xconv))
@@ -1477,7 +1459,7 @@ class MolFrag(abc.ABC):
                 print("Polarizability av (%g)   " % w + fmt % (Am.trace() / 3 * xconv3))
                 print(
                     "Polarizability (%g)      " % w
-                    + (6 * fmt) % tuple(Am.pack().view(full.matrix) * xconv3)
+                    + (6 * fmt) % tuple(triangular_symmetric(Am) * xconv3)
                 )
 
         if self._Bab is not None:
@@ -1538,7 +1520,7 @@ class MolFrag(abc.ABC):
                     ) + '"charge") : [ %s ],\n' % fmt % (self.Z[a] + self.Qab[a, a])
         if maxl >= 1:
             if template_full:
-                Dm = self.Da.sum(axis=1).view(full.matrix)
+                Dm = self.Da.sum(axis=1)
                 Dc = self.Qab.diagonal() @ (self.R - self.Rc)
                 DT = Dm + Dc
                 line += "( '%s%d', " % (
@@ -1580,8 +1562,8 @@ class MolFrag(abc.ABC):
                     )
         if pol >= 2:
             if template_full:
-                Asym = Aab.sum(axis=(3, 4))[0, :, :].view(full.matrix)
-                A = Asym.pack().view(full.matrix).copy()
+                Asym = Aab.sum(axis=(3, 4))[0, :, :]
+                A = triangular_symmetric(Asym).copy()
                 A[2], A[3] = A[3], A[2]
                 line += "( '%s%d', " % (
                     elem_dict[self.Z[full_loc]],
@@ -1594,8 +1576,8 @@ class MolFrag(abc.ABC):
             else:
                 for a in range(self.noa):
                     # Only for one frequency for now, todo, fix later if needed
-                    Asym = Aab.sum(axis=4)[0, :, :, a].view(full.matrix)
-                    A = Asym.pack().view(full.matrix).copy()
+                    Asym = Aab.sum(axis=4)[0, :, :, a]
+                    A = triangular_symmetric(Asym).copy()
                     A[2], A[3] = A[3], A[2]
                     line += "( '%s%d', " % (
                         elem_dict[self.Z[a]],
@@ -1608,7 +1590,7 @@ class MolFrag(abc.ABC):
         if hyper >= 2:
             if template_full:
                 Bsym = symmetrize_first_beta(
-                    Bab.sum(axis=(3, 4))[0, :, :].view(full.matrix)
+                    Bab.sum(axis=(3, 4))[0, :, :]
                 )
                 line += (
                     "( '%s%d', " % (elem_dict[self.Z[full_loc]], full_loc + 1)
@@ -1621,7 +1603,7 @@ class MolFrag(abc.ABC):
                 for a in range(self.noa):
                     # Only for one frequency for now, todo, fix later if needed
                     Bsym = symmetrize_first_beta(
-                        Bab.sum(axis=4)[0, :, :, a].view(full.matrix)
+                        Bab.sum(axis=4)[0, :, :, a]
                     )
                     line += (
                         "( '%s%d', " % (elem_dict[self.Z[a]], a + 1)
@@ -1708,7 +1690,7 @@ class MolFrag(abc.ABC):
                                 if pol == 1:
                                     line += fmt % (Asym.trace() * xconv3 / 3)
                                 elif (pol % 10) == 2:
-                                    out = Asym.pack().view(Matrix) * xconv3
+                                    out = triangular_symmetric(Asym) * xconv3
                                     out[2:4] = out[3:1:-1]
                                     line += (6 * fmt) % tuple(out)
                         if hyper > 0:
@@ -1736,22 +1718,20 @@ class MolFrag(abc.ABC):
                     for iw, w in enumerate(self.freqs):
                         if pol % 10 == 2:
                             out = (
-                                reduce(
-                                    lambda x, y: x + Aab[iw, :, :, a, y], nbond_pos, 0.0
+                                triangular_symmetric(
+                                    reduce(
+                                        lambda x, y: x + Aab[iw, :, :, a, y], nbond_pos, 0.0
+                                    )
                                 )
-                                .pack()
-                                .view(full.matrix)
                                 * xconv3
                             )
                             out[2:4] = out[3:1:-1]
                             line += (6 * fmt) % tuple(out)
                         elif pol == 1:
                             out = (
-                                reduce(
+                                np.trace(reduce(
                                     lambda x, y: x + Aab[iw, :, :, a, y], nbond_pos, 0.0
-                                )
-                                .view(full.matrix)
-                                .trace()
+                                ))
                                 / 3.0
                                 * xconv3
                             )
@@ -1760,7 +1740,7 @@ class MolFrag(abc.ABC):
                     for iw, w in enumerate(self.freqs):
                         Bsym = reduce(
                             lambda x, y: x + Bab[iw, :, :, a, y], nbond_pos, 0.0
-                        ).view(full.matrix)
+                        )
                         Btotsym = symmetrize_first_beta(Bsym)
                         line += 10 * fmt % tuple(Btotsym)
                 ab += 1
@@ -1776,21 +1756,21 @@ class MolFrag(abc.ABC):
                     line += (6 * fmt) % tuple((QUab + dQUab).sum(axis=2)[:, a])
                 if pol > 0:
                     for iw in range(self.nfreqs):
-                        Asym = Aab.sum(axis=4)[iw, :, :, a].view(full.matrix)
+                        Asym = Aab.sum(axis=4)[iw, :, :, a]
                         if pol == 1:
                             line += fmt % (Asym.trace() / 3 * xconv3)
                         elif pol % 10 == 2:
-                            out = Asym.pack().view(full.matrix)
+                            out = triangular_symmetric(Asym)
                             out[2:4] = out[3:1:-1]
                             line += (6 * fmt) % tuple(out * xconv3)
 
                 if hyper > 0:
                     for iw in range(self.nfreqs):
-                        Bsym = Bab.sum(axis=4)[iw, :, :, a].view(full.matrix)
+                        Bsym = Bab.sum(axis=4)[iw, :, :, a]
                         if hyper == 1:
                             dip = self.Da[:, a]
                             betakk = Bsym[:, 0] + Bsym[:, 3] + Bsym[:, 5]
-                            line += fmt % (0.2 * (betakk & dip) / dip.norm2())
+                            line += fmt % (0.2 * np.dot(betakk, dip) / np.linalg.norm(dip))
                         if hyper == 2:
                             Btotsym = symmetrize_first_beta(Bsym)
                             line += 10 * fmt % tuple(Btotsym)
@@ -1842,11 +1822,9 @@ Domain center:       """ % (
 
         if self.pol == 2:
             for iw, w in enumerate(self.freqs):
-                a_lower = (
+                a_lower = triangular_symmetric(
                     (self.Aab + 0.5 * self.dAab)
                     .sum(axis=4)[iw, :, :, n]
-                    .view(full.matrix)
-                    .pack()
                 )
                 retstr += (
                     "Electronic polarizability (w=%g)" % w + 6 * fmt + "\n"

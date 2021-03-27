@@ -57,3 +57,8 @@ class QR(Normalizer):
         q, r = np.linalg.qr(basis)
         mask = np.max(np.abs(r), axis=1) > self.threshold
         return q[:, mask]
+
+
+def triangular_symmetric(A):
+    indices = np.tril_indices(A.shape[0])
+    return .5 * (A + A.T)[indices]
