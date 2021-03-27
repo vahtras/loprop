@@ -9,9 +9,9 @@ from collections import defaultdict
 from functools import reduce, partial
 from typing import List, Tuple
 
-import numpy
+import numpy as np
 
-from util import full, blocked, subblocked
+from util import full
 from util.full import Matrix
 
 from .linalg import Lowdin, GramSchmidt
@@ -22,7 +22,7 @@ DEFAULT_CUTOFF = 1.6
 
 # Bragg-Slater radii () converted from Angstrom to Bohr
 RBS = (
-    numpy.array(
+    np.array(
         [
             0,
             0.25,
@@ -125,20 +125,20 @@ def pairs(n):
             ij += 1
 
 
-def shift_function(F: numpy.ndarray) -> float:
+def shift_function(F: np.ndarray) -> float:
     """
     Returns value twice max value of F
 
     Arguments:
 
     :param F: Matrix-like
-    :type F: numpy.ndarray
+    :type F: np.ndarray
 
     :returns: max(abs(F))
     :rtype: float
     """
 
-    return 2 * numpy.max(numpy.abs(F))
+    return 2 * np.max(np.abs(F))
 
 
 def header(string, output=None):
@@ -191,7 +191,7 @@ class LoPropTransformer:
     Arguments:
 
     :param S: overlap matrix
-    :type S: numpy.ndarray
+    :type S: np.ndarray
 
     :param cpa: contracted per atom
     :type cpa: list[int]
@@ -200,13 +200,15 @@ class LoPropTransformer:
     :type opa: list[int]
     """
 
-    def __init__(self, S: numpy.ndarray, cpa: List[int], opa: List[int]):
+    def __init__(self, S: np.ndarray, cpa: List[int], opa: List[int]):
         self.S = S
         self.set_cpa(cpa)
         self.set_opa(opa)
         self._T = None
-        self._permute = False
-        self.new = True
+
+    @property
+    def nbf(self):
+        return sum(self.cpa)
 
     def set_cpa(self, cpa: List[int]):
         """
@@ -251,7 +253,7 @@ class LoPropTransformer:
         """
         occupied = []
         for atom in range(len(self.cpa)):
-            occ = numpy.array(self.opa[atom]) + sum(self.cpa[:atom])
+            occ = np.array(self.opa[atom]) + sum(self.cpa[:atom])
             occupied.extend(occ)
 
         return tuple(occupied)
@@ -276,7 +278,7 @@ class LoPropTransformer:
         """
 
         for a in arr:
-            assert isinstance(a, (int, numpy.intc, numpy.int32, numpy.int64)) and a > 0
+            assert isinstance(a, (int, np.intc, np.int32, np.int64)) and a > 0
 
     @staticmethod
     def assert_nonneg_ints(arr: List[int]):
@@ -290,7 +292,7 @@ class LoPropTransformer:
         """
 
         for a in arr:
-            assert isinstance(a, (int, numpy.intc, numpy.int32, numpy.int64)) and a >= 0
+            assert isinstance(a, (int, np.intc, np.int32, np.int64)) and a >= 0
 
     @property
     def T(self):
@@ -309,7 +311,7 @@ class LoPropTransformer:
         4. Lowdin orthogonalize virtual
 
         :returns: T
-        :rtype: numpy.ndarray
+        :rtype: np.ndarray
         """
 
         if self._T is not None:
@@ -339,10 +341,10 @@ class LoPropTransformer:
         Arguments:
 
         :param S: overlap matrix
-        :type S: numpy.ndarray
+        :type S: np.ndarray
 
         :returns: Transformation matrix for GS orthonormalization
-        :rtype: numpy.ndarray
+        :rtype: np.ndarray
         """
 
         cpa = self.cpa
@@ -363,13 +365,13 @@ class LoPropTransformer:
         # Diagonalize atom-wise
         #
 
-        unit = numpy.eye(nbf)
+        unit = np.eye(nbf)
         gs = GramSchmidt(S)
-        T1 = numpy.zeros(S.shape)
+        T1 = np.zeros(S.shape)
         for at in range(noa):
             indices = self.get_ao_indices(at)
-            selected_columns = numpy.ix_(range(nbf), indices)
-            selected_matrix = numpy.ix_(indices, indices)
+            selected_columns = np.ix_(range(nbf), indices)
+            selected_matrix = np.ix_(indices, indices)
             rhs = unit[selected_columns]
             t1 = gs.transformer(rhs)
             T1[selected_matrix] = t1
@@ -390,50 +392,30 @@ class LoPropTransformer:
         Arguments:
 
         :param S_ov: overlap matrix in occupied-virtual order
-        :type S_ov: numpy.ndarray
+        :type S_ov: np.ndarray
 
         :returns: transformation matrix
-        :rtype: numpy.ndrarray
+        :rtype: np.ndrarray
         """
 
-        new_algorithm = self.new
-
-        nbf = sum(self.cpa)
-        T = numpy.zeros(S_ov.shape)
-        unit = numpy.eye(nbf)
+        nbf = self.nbf
+        occupied = self.get_occupied_indices()
+        T = np.zeros(S_ov.shape)
+        unit = np.eye(nbf)
         lowdin = Lowdin(S_ov)
 
-        vpa = [c - len(o) for c, o in zip(self.cpa, self.opa)]
-        nocc = sum(len(occ) for occ in self.opa)
-        nvirt = sum(vpa)
-        ov_dim = (nocc, nvirt)
-        S_ov_bl = S_ov.block(ov_dim, ov_dim)
-        T_bl = S_ov_bl.invsqrt()
+        selected_columns = np.ix_(range(nbf), occupied)
+        selected = np.ix_(occupied, occupied)
 
-        if new_algorithm:
-            if self._permute:
-                number_of_occupied = sum(len(o) for o in self.opa)
-                occupied = range(number_of_occupied)
-            else:
-                occupied = self.get_occupied_indices()
+        T[selected] = lowdin.transformer(unit[selected_columns])
 
-            selected_columns = numpy.ix_(range(nbf), occupied)
-            selected = numpy.ix_(occupied, occupied)
+        virtual = self.get_virtual_indices()
 
-            T[selected] = lowdin.transformer(unit[selected_columns])
+        selected_columns = np.ix_(range(nbf), virtual)
+        selected = np.ix_(virtual, virtual)
 
-            if self._permute:
-                virtual = range(number_of_occupied, nbf)
-            else:
-                virtual = self.get_virtual_indices()
+        T[selected] = lowdin.transformer(unit[selected_columns])
 
-            selected_columns = numpy.ix_(range(nbf), virtual)
-            selected = numpy.ix_(virtual, virtual)
-
-            T[selected] = lowdin.transformer(unit[selected_columns])
-
-        else:
-            T = T_bl.unblock()
 
         return T
 
@@ -444,32 +426,20 @@ class LoPropTransformer:
         Arguments:
 
         :param S_ov: overlap matrix in occupied-virtual order
-        :type S_ov: numpy.ndarray
+        :type S_ov: np.ndarray
 
         :returns: transformation matrix
-        :rtype: numpy.ndrarray
+        :rtype: np.ndrarray
         """
 
         nbf = S_ov.shape[0]
 
-        if self.new:
-            T = numpy.zeros(S_ov.shape)
-            occupied = self.get_occupied_indices()
-            virtual = self.get_virtual_indices()
-            ov_ix = numpy.ix_(occupied, virtual)
-            T = numpy.eye(nbf)
-            T[ov_ix] = -S_ov[ov_ix]
-        else:
-            vpa = [c - len(o) for c, o in zip(self.cpa, self.opa)]
-            nocc = sum(len(occ) for occ in self.opa)
-            nvirt = sum(vpa)
-            occdim = (nocc, nvirt)
-
-            S_ov_sb = S_ov.subblocked(occdim, occdim)
-
-            T_sb = full.unit(nbf).subblocked(occdim, occdim)
-            T_sb.subblock[0][1] = -S_ov_sb.subblock[0][1]
-            T = T_sb.unblock()
+        T = np.zeros(S_ov.shape)
+        occupied = self.get_occupied_indices()
+        virtual = self.get_virtual_indices()
+        ov_ix = np.ix_(occupied, virtual)
+        T = np.eye(nbf)
+        T[ov_ix] = -S_ov[ov_ix]
         return T
 
     def lowdin_virtual(self, S_ov):
@@ -480,28 +450,27 @@ class LoPropTransformer:
         Arguments:
 
         :param S_ov: overlap in occupied-virtual order
-        :type S_ov: numpy.ndarray
+        :type S_ov: np.ndarray
 
         :returns: transformation matrix
-        :rtype: numpy.ndarray
+        :rtype: np.ndarray
         """
-        vpa = [c - len(o) for c, o in zip(self.cpa, self.opa)]
-        nocc = sum(len(occ) for occ in self.opa)
-        occdim = (nocc, sum(vpa))
-        T4b = blocked.unit(occdim)
-        S3b = S_ov.block(occdim, occdim)
-        T4b.subblock[1] = S3b.subblock[1].invsqrt()
-        T4 = T4b.unblock()
+        # vpa = [c - len(o) for c, o in zip(self.cpa, self.opa)]
+        # nocc = sum(len(occ) for occ in self.opa)
+        # occdim = (nocc, sum(vpa))
+        # T4b = blocked.unit(occdim)
+        # S3b = S_ov.block(occdim, occdim)
+        # T4b.subblock[1] = S3b.subblock[1].invsqrt()
+        # T4 = T4b.unblock()
 
-        if self.new:
-            nbf = sum(self.cpa)
-            T = numpy.eye(sum(self.cpa))
-            virtual = self.get_virtual_indices()
-            selected_columns = numpy.ix_(range(nbf), virtual)
-            selected = numpy.ix_(virtual, virtual)
-            lowdin = Lowdin(S_ov)
-            T[selected] = lowdin.transformer(T[selected_columns])
-            T4 = T
+        nbf = sum(self.cpa)
+        T = np.eye(sum(self.cpa))
+        virtual = self.get_virtual_indices()
+        selected_columns = np.ix_(range(nbf), virtual)
+        selected = np.ix_(virtual, virtual)
+        lowdin = Lowdin(S_ov)
+        T[selected] = lowdin.transformer(T[selected_columns])
+        T4 = T
 
         return T4
 
@@ -624,7 +593,7 @@ class MolFrag(abc.ABC):
         if self.gc is None:
             self._Rc = self.Z @ self.R * (1 / self.Z.sum())
         else:
-            self._Rc = numpy.array(self.gc).view(full.matrix)
+            self._Rc = np.array(self.gc).view(full.matrix)
         return self._Rc
 
     @abc.abstractmethod
@@ -684,17 +653,17 @@ class MolFrag(abc.ABC):
     @property
     def Ti(self):
         if self._Ti is None:
-            self._Ti = numpy.linalg.inv(self.T)
+            self._Ti = np.linalg.inv(self.T)
         return self._Ti
 
     def extract_indices(self, *args):
         if len(args) == 1:
             indices = self.transformer.get_ao_indices(args[0])
-            return numpy.ix_(indices)
+            return np.ix_(indices)
         if len(args) == 2:
             indices_a = self.transformer.get_ao_indices(args[0])
             indices_b = self.transformer.get_ao_indices(args[1])
-            return numpy.ix_(indices_a, indices_b)
+            return np.ix_(indices_a, indices_b)
 
     @property
     def Qab(self):
@@ -708,7 +677,7 @@ class MolFrag(abc.ABC):
 
         for a in range(noa):
             in_atom = self.extract_indices(a, a)
-            _Qab[a, a] = -numpy.trace(D[in_atom])
+            _Qab[a, a] = -np.trace(D[in_atom])
 
         self._Qab = _Qab
 
@@ -740,7 +709,7 @@ class MolFrag(abc.ABC):
                 for b in range(noa):
                     ab = self.extract_indices(a, b)
                     _Dab[i, a, b] = (
-                        -numpy.einsum('ij,ij', x[i][ab], D[ab])
+                        -np.einsum('ij,ij', x[i][ab], D[ab])
                         - Qab[a, b] * Rab[a, b, i]
                     )
 
@@ -820,7 +789,7 @@ class MolFrag(abc.ABC):
                 ij = 0
                 for i in range(3):
                     for j in range(i, 3):
-                        rrab[ij, a, b] = -numpy.einsum('ij,ij', xy[ij][ab], D[ab])
+                        rrab[ij, a, b] = -np.einsum('ij,ij', xy[ij][ab], D[ab])
                         rRab[ij, a, b] = (
                             Dab[i, a, b] * Rab[a, b, j] + Dab[j, a, b] * Rab[a, b, i]
                         )
@@ -1045,7 +1014,7 @@ class MolFrag(abc.ABC):
             aa = self.extract_indices(a, a)
             for il, l in enumerate(labs):
                 for iw, w in enumerate(self.freqs):
-                    dQa[iw, a, il] = -numpy.trace(Dk[(l, w)][aa])  # .subblock[a][a].tr()
+                    dQa[iw, a, il] = -np.trace(Dk[(l, w)][aa])  # .subblock[a][a].tr()
         self._dQa = dQa
         return self._dQa
 
@@ -1070,7 +1039,7 @@ class MolFrag(abc.ABC):
             aa = self.extract_indices(a, a)
             for il, l in enumerate(qrlab):
                 il = qrlab.index(l)
-                d2Qa[0, a, il] = -numpy.trace(D2k[(l, wb, wc)][aa])
+                d2Qa[0, a, il] = -np.trace(D2k[(l, wb, wc)][aa])
         self._d2Qa = d2Qa
         return self._d2Qa
 
@@ -1086,7 +1055,7 @@ class MolFrag(abc.ABC):
         where λa is the Lagragian and pf the penalty function
 
         :returns: charge transfer matrix
-        :rvalue: numpy.ndarray
+        :rvalue: np.ndarray
         """
         if self._dQab is not None:
             return self._dQab
@@ -1160,7 +1129,7 @@ class MolFrag(abc.ABC):
 
         noa = len(cpa)
         labs = self.dipole_labels
-        Aab = numpy.zeros((self.nfreqs, 3, 3, noa, noa))
+        Aab = np.zeros((self.nfreqs, 3, 3, noa, noa))
 
         # correction term for shifting origin from O to Rab
         for i, li in enumerate(labs):
@@ -1170,7 +1139,7 @@ class MolFrag(abc.ABC):
                         ab = self.extract_indices(a, b)
                         for jw, w in enumerate(self.freqs):
                             Aab[jw, i, j, a, b] = (
-                                -numpy.einsum('ij,ij', x[i][ab], Dk[(lj, w)][ab])
+                                -np.einsum('ij,ij', x[i][ab], Dk[(lj, w)][ab])
                             )
                     for jw in self.rfreqs:
                         Aab[jw, i, j, a, a] -= dQa[jw, a, j] * Rab[a, a, i]
@@ -1245,7 +1214,7 @@ class MolFrag(abc.ABC):
                         ab = self.extract_indices(a, b)
                         for iw, w in enumerate(self.freqs):
                             Bab[iw, i, jk, a, b] = (
-                                -numpy.einsum('ij,ij', x[i][ab], D2k[(ljk, w, w)][ab])
+                                -np.einsum('ij,ij', x[i][ab], D2k[(ljk, w, w)][ab])
                             )
                     for iw in self.rfreqs:
                         Bab[iw, i, jk, a, a] -= d2Qa[iw, a, jk] * Rab[a, a, i]
@@ -1684,10 +1653,10 @@ class MolFrag(abc.ABC):
 
         if bond_centers:
             # To get number of centers and bonding is on
-            bond_mat = numpy.zeros((noa, noa), dtype=int)
+            bond_mat = np.zeros((noa, noa), dtype=int)
             for a in range(noa):
                 for b in range(a):
-                    r = numpy.sqrt(((self.R[a] - self.R[b]) ** 2).sum())
+                    r = np.sqrt(((self.R[a] - self.R[b]) ** 2).sum())
                     if r < bond_co[(int(self.Z[a]), int(self.Z[b]))] / AU2ANG:
                         bond_mat[a, b] = 1
                         bond_mat[b, a] = 1
@@ -1697,7 +1666,7 @@ class MolFrag(abc.ABC):
             # plus each entry with '1'
             # in the upper triangular of bond_mat
             noc = bond_mat.shape[0] + reduce(
-                lambda a, x: a + len(numpy.where(x == 1)[0]),
+                lambda a, x: a + len(np.where(x == 1)[0]),
                 [row[i + 1:] for i, row in enumerate(bond_mat)],
                 0,
             )
@@ -1752,7 +1721,7 @@ class MolFrag(abc.ABC):
                 # For atom a, non_bond_pos holds atoms that are not bonded to a
                 # Include only non bonded to atomic prop here
 
-                nbond_pos = numpy.where(bond_mat[a] == 0)[0]
+                nbond_pos = np.where(bond_mat[a] == 0)[0]
 
                 line = ("1" + 3 * fmt) % tuple(self.Rab[a, a, :])
                 if maxl >= 0:

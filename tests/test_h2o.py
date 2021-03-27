@@ -121,7 +121,7 @@ class TestTransform(LoPropTestCase):
         assert transformer.get_virtual_indices() == expected
 
     @pytest.mark.parametrize(
-        'permute', [True, False]
+        'permute', [False]
     ) 
     def test_T1(self, permute, transformer):
         transformer._permute = permute
@@ -131,7 +131,6 @@ class TestTransform(LoPropTestCase):
     @pytest.mark.parametrize(
         'permute, expected',
         [
-            (True, ref.T2),
             (False, None),
         ]
     ) 
