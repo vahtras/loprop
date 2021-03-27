@@ -1,7 +1,5 @@
-import os
-
 import h5py
-from util.full import Matrix
+import numpy as np
 
 from .core import MolFrag
 
@@ -35,14 +33,14 @@ class MolFragVeloxChem(MolFrag):
             self.cpa = [int(i) for i in f['contracted_per_atom'][...]]
             self.opa = [
                 occ[...]
-                for occ in f[f'occupied_per_atom'].values()
+                for occ in f['occupied_per_atom'].values()
             ]
         self.noa = len(self.cpa)
 
     def get_molecule_info(self):
         noa = self.noa
-        self.Rab = Matrix((noa, noa, 3))
-        self.dRab = Matrix((noa, noa, 3))
+        self.Rab = np.zeros((noa, noa, 3))
+        self.dRab = np.zeros((noa, noa, 3))
         for a in range(noa):
             for b in range(noa):
                 self.Rab[a, b, :] = (self.R[a, :] + self.R[b, :]) / 2
@@ -68,20 +66,20 @@ class MolFragVeloxChem(MolFrag):
     def get_dipole_matrices(self):
 
         with h5py.File(self.interface, 'r') as f:
-            Dx = f['ao_dipole_matrices/x'][...].view(Matrix)
-            Dy = f['ao_dipole_matrices/y'][...].view(Matrix)
-            Dz = f['ao_dipole_matrices/z'][...].view(Matrix)
+            Dx = f['ao_dipole_matrices/x'][...]
+            Dy = f['ao_dipole_matrices/y'][...]
+            Dz = f['ao_dipole_matrices/z'][...]
 
         return tuple(self.ao_to_loprop(Dx, Dy, Dz))
 
     def get_quadrupole_matrices(self):
         with h5py.File(self.interface, 'r') as f:
-            Qxx = f['ao_quadrupole_matrices/xx'][...].view(Matrix)
-            Qxy = f['ao_quadrupole_matrices/xy'][...].view(Matrix)
-            Qxz = f['ao_quadrupole_matrices/xz'][...].view(Matrix)
-            Qyy = f['ao_quadrupole_matrices/yy'][...].view(Matrix)
-            Qyz = f['ao_quadrupole_matrices/yz'][...].view(Matrix)
-            Qzz = f['ao_quadrupole_matrices/zz'][...].view(Matrix)
+            Qxx = f['ao_quadrupole_matrices/xx'][...]
+            Qxy = f['ao_quadrupole_matrices/xy'][...]
+            Qxz = f['ao_quadrupole_matrices/xz'][...]
+            Qyy = f['ao_quadrupole_matrices/yy'][...]
+            Qyz = f['ao_quadrupole_matrices/yz'][...]
+            Qzz = f['ao_quadrupole_matrices/zz'][...]
 
         T = self.T
         return tuple(T.T @ op @ T for op in (Qxx, Qxy, Qxz, Qyy, Qyz, Qzz))
@@ -119,7 +117,7 @@ class MolFragVeloxChem(MolFrag):
         # read overlap from hd5 file
         #
         with h5py.File(self.interface, 'r') as f:
-            S = f['ao_overlap_matrix'][...].view(Matrix)
+            S = f['ao_overlap_matrix'][...]
         return S
 
     @property

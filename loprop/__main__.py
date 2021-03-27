@@ -6,7 +6,7 @@ import sys
 import tarfile
 import tempfile
 
-from util import timing
+from . import timing
 
 from . import __version__
 from .core import penalty_function

@@ -1,7 +1,7 @@
 import os
 
 from daltools import one, mol, dens, prop, lr, qr, sirifc
-from util import full
+import numpy as np
 
 from .core import MolFrag
 
@@ -58,20 +58,20 @@ class MolFragDalton(MolFrag):
         #
         # Nuclear charges
         #
-        self.Z = full.matrix((N,))
+        self.Z = np.zeros((N,))
         self.Z[:] = isordk["chrn"][:N]
         #
         # Nuclear coordinates
         #
-        R = full.matrix((mxcent * 3,))
+        R = np.zeros((mxcent * 3,))
         R[:] = isordk["cooo"][:]
         self.R = R.reshape((mxcent, 3), order="F")[:N, :]
         #
         # Bond center matrix and half bond vector
         #
         noa = self.noa
-        self.Rab = full.matrix((noa, noa, 3))
-        self.dRab = full.matrix((noa, noa, 3))
+        self.Rab = np.zeros((noa, noa, 3))
+        self.dRab = np.zeros((noa, noa, 3))
         for a in range(noa):
             for b in range(noa):
                 self.Rab[a, b, :] = (self.R[a, :] + self.R[b, :]) * .5

@@ -2,7 +2,6 @@ import pathlib
 
 import numpy as np
 import pytest
-from util import full
 
 from loprop.core import penalty_function, AU2ANG, pairs
 from loprop.dalton import MolFragDalton
@@ -52,14 +51,14 @@ class TestNew(LoPropTestCase):
 
     def test_total_dipole(self, molfrag):
         # molecular dipole moment wrt gauge center gc
-        Dtot = molfrag.Dab.sum(axis=2).sum(axis=1).view(full.matrix)
+        Dtot = molfrag.Dab.sum(axis=2).sum(axis=1)
         Qa = molfrag.Qab.diagonal()
         Q = Qa.sum()
         Dtot += Qa @ molfrag.R - Q * molfrag.Rc
         self.assert_allclose(Dtot, ref.Dtot)
 
     def test_dipole_allbonds(self, molfrag):
-        D = full.matrix(ref.D.shape)
+        D = np.zeros(ref.D.shape)
         Dab = molfrag.Dab
         for ab, a, b in pairs(molfrag.noa):
             D[:, ab] += Dab[:, a, b]
@@ -72,7 +71,7 @@ class TestNew(LoPropTestCase):
         self.assert_allclose(Dsym, ref.D)
 
     def test_dipole_nobonds(self, molfrag):
-        Daa = molfrag.Dab.sum(axis=2).view(full.matrix)
+        Daa = molfrag.Dab.sum(axis=2)
         self.assert_allclose(Daa, ref.Daa)
 
     def test_quadrupole_total(self, molfrag):
@@ -84,7 +83,7 @@ class TestNew(LoPropTestCase):
         self.assert_allclose(QUN, ref.QUN)
 
     def test_quadrupole_allbonds(self, molfrag):
-        QU = full.matrix(ref.QU.shape)
+        QU = np.zeros(ref.QU.shape)
         QUab = molfrag.QUab
         for ab, a, b in pairs(molfrag.noa):
             QU[:, ab] += QUab[:, a, b]
@@ -98,7 +97,7 @@ class TestNew(LoPropTestCase):
 
     def test_quadrupole_nobonds(self, molfrag):
 
-        QUaa = (molfrag.QUab + molfrag.dQUab).sum(axis=2).view(full.matrix)
+        QUaa = (molfrag.QUab + molfrag.dQUab).sum(axis=2)
         self.assert_allclose(QUaa, ref.QUaa)
 
     def test_Fab(self, molfrag):
@@ -113,12 +112,12 @@ class TestNew(LoPropTestCase):
         self.assert_allclose(Lab, ref.Lab)
 
     def test_total_charge_shift(self, molfrag):
-        dQ = molfrag.dQa[0].sum(axis=0).view(full.matrix)
+        dQ = molfrag.dQa[0].sum(axis=0)
         dQref = [0.0, 0.0, 0.0]
         self.assert_allclose(dQref, dQ)
 
     def test_total_charge_shift2(self, molfrag):
-        d2Q = molfrag.d2Qa[0].sum(axis=0).view(full.matrix)
+        d2Q = molfrag.d2Qa[0].sum(axis=0)
         d2Qref = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         self.assert_allclose(d2Qref, d2Q)
 
@@ -139,7 +138,7 @@ class TestNew(LoPropTestCase):
         noa = molfrag.noa
 
         dQabref = (ref.dQab[:, 1:7:2] - ref.dQab[:, 2:7:2]) * (1 / (2 * ref.ff))
-        dQabcmp = full.matrix((3, 3))
+        dQabcmp = np.zeros((3, 3))
         ab = 0
         for a in range(noa):
             for b in range(a):
@@ -149,12 +148,12 @@ class TestNew(LoPropTestCase):
         self.assert_allclose(-dQabref, dQabcmp, atol=0.006)
 
     def test_bond_charge_shift_sum(self, molfrag):
-        dQa = molfrag.dQab[0].sum(axis=1).view(full.matrix)
+        dQa = molfrag.dQab[0].sum(axis=1)
         dQaref = molfrag.dQa[0]
         self.assert_allclose(dQa, dQaref)
 
     def test_bond_charge_shift_sum2(self, molfrag):
-        d2Qa = molfrag.d2Qab[0].sum(axis=1).view(full.matrix)
+        d2Qa = molfrag.d2Qab[0].sum(axis=1)
         d2Qaref = molfrag.d2Qa[0]
         self.assert_allclose(d2Qa, d2Qaref)
 
@@ -472,7 +471,7 @@ class TestNew(LoPropTestCase):
         Aab = molfrag.Aab[0]  # + molfrag.dAab
         noa = molfrag.noa
 
-        Acmp = full.matrix(ref.Aab.shape)
+        Acmp = np.zeros(ref.Aab.shape)
 
         ab = 0
         lower = np.tril_indices(3)
@@ -498,7 +497,7 @@ class TestNew(LoPropTestCase):
         Aab = molfrag.Aab[0] + molfrag.dAab[0] * .5
         noa = molfrag.noa
 
-        Acmp = full.matrix(ref.Aab.shape)
+        Acmp = np.zeros(ref.Aab.shape)
 
         ab = 0
         lower = np.tril_indices(3)
@@ -524,8 +523,8 @@ class TestNew(LoPropTestCase):
         Aab = molfrag.Aab[0] + molfrag.dAab[0] * .5
         noa = molfrag.noa
 
-        Acmp = full.matrix((6, noa))
-        Aa = Aab.sum(axis=3).view(full.matrix)
+        Acmp = np.zeros((6, noa))
+        Aa = Aab.sum(axis=3)
 
         lower = np.tril_indices(3)
         for a in range(noa):

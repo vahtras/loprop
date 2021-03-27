@@ -3,8 +3,6 @@ import pathlib
 import numpy as np
 import pytest
 
-from util import full
-
 from loprop.core import penalty_function, AU2ANG
 from loprop.dalton import MolFragDalton
 
@@ -56,37 +54,37 @@ class Test:
 
     def test_total_charge_shift_real(self, molfrag):
         molfrag.set_real_pol()
-        RedQ = molfrag.dQa[0].sum(axis=0).view(full.matrix)
+        RedQ = molfrag.dQa[0].sum(axis=0)
         np.testing.assert_allclose(RedQ, [0, 0, 0], atol=1e-5)
 
     def test_total_charge_shift_imag(self, molfrag):
         molfrag.set_imag_pol()
-        ImdQ = molfrag.dQa[0].sum(axis=0).view(full.matrix)
+        ImdQ = molfrag.dQa[0].sum(axis=0)
         np.testing.assert_allclose(ImdQ, [0, 0, 0], atol=1e-5)
 
     def test_real_polarizability_total(self, molfrag):
 
         molfrag.set_real_pol()
-        ref_Am = full.init(
+        ref_Am = np.array(
             [
                 [7.626564, 0.000000, 0.000000],
                 [0.000000, 7.626564, 0.000000],
                 [0.000000, 0.000000, 42.786381],
             ]
-        )
+        ).T
         Am = molfrag.Am[0]
         np.testing.assert_allclose(Am, ref_Am, rtol=1e-5, atol=1e-5)
 
     def test_imag_polarizability_total(self, molfrag):
 
         molfrag.set_imag_pol()
-        ref_Am = full.init(
+        ref_Am = np.array(
             [
                 [0.063679, -0.000000, 0.000000],
                 [-0.000004, 0.063679, 0.000000],
                 [0.000000, 0.000000, 2.767574],
             ]
-        )
+        ).T
         Am = molfrag.Am[0]
         np.testing.assert_allclose(Am, ref_Am, rtol=1e-5, atol=1e-5)
 

@@ -6,7 +6,6 @@ import numpy as np
 from loprop.core import penalty_function, AU2ANG
 from loprop.dalton import MolFragDalton
 # from loprop.veloxchem import MolFragVeloxChem
-from util import full
 
 from . import ch4_absorption_data as ref
 
@@ -53,37 +52,37 @@ class TestCH4Absorption:
 
     def test_total_charge_shift_real(self, mf):
         mf.set_real_pol()
-        RedQ = mf.dQa[0].sum(axis=0).view(full.matrix)
+        RedQ = mf.dQa[0].sum(axis=0)
         np.testing.assert_allclose(RedQ, [0, 0, 0], atol=1e-5)
 
     def test_total_charge_shift_imag(self, mf):
         mf.set_imag_pol()
-        ImdQ = mf.dQa[0].sum(axis=0).view(full.matrix)
+        ImdQ = mf.dQa[0].sum(axis=0)
         np.testing.assert_allclose(ImdQ, [0, 0, 0], atol=1e-5)
 
     def test_real_polarizability_total(self, mf):
 
         mf.set_real_pol()
-        ref_Am = full.init(
+        ref_Am = np.array(
             [
                 [30.854533, -0.000004, 0.000000],
                 [-0.000004, 30.854527, 0.000000],
                 [0.000000, 0.000000, 30.854522],
             ]
-        )
+        ).T
         Am = mf.Am[0]
         np.testing.assert_allclose(Am, ref_Am, rtol=1e-6, atol=1e-6)
 
     def test_imag_polarizability_total(self, mf):
 
         mf.set_imag_pol()
-        ref_Am = full.init(
+        ref_Am = np.array(
             [
                 [1.228334, 0.000000, 0.000000],
                 [0.000000, 1.228335, 0.000000],
                 [0.000000, 0.000000, 1.228333],
             ]
-        )
+        ).T
         Am = mf.Am[0]
         np.testing.assert_allclose(Am, ref_Am, rtol=1e-6, atol=1e-6)
 

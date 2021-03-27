@@ -4,7 +4,6 @@ import unittest
 
 import pytest
 import numpy
-from util import full
 
 from loprop.core import output_beta, header
 from .common import LoPropTestCase, codes
@@ -15,9 +14,9 @@ class TestNew(LoPropTestCase):
     def setup_class(cls):
         numpy.random.seed(0)
         # cls.beta = full.matrix((3, 6)).random()
-        cls.beta = numpy.random.random((3, 6)).view(full.Matrix)
+        cls.beta = numpy.random.random((3, 6))
         # cls.dipole = full.matrix(3).random()
-        cls.dipole = numpy.random.random(3).view(full.Matrix)
+        cls.dipole = numpy.random.random(3)
 
     def test_header_default(self, code):
         header("yo")

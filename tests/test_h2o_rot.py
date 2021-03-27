@@ -2,10 +2,10 @@ import pathlib
 
 import numpy as np
 import pytest
-from util import full
 
 from loprop.core import penalty_function, AU2ANG, pairs
 from loprop.dalton import MolFragDalton
+from loprop.linalg import triangular_symmetric
 
 from .common import LoPropTestCase
 from . import h2o_rot_data as ref
@@ -54,7 +54,7 @@ class TestNew(LoPropTestCase):
         self.assert_allclose(molfrag.Dtot, ref.Dtot)
 
     def test_dipole_allbonds(self, molfrag):
-        D = full.matrix(ref.D.shape)
+        D = np.zeros(ref.D.shape)
         Dab = molfrag.Dab
         for ab, a, b in pairs(molfrag.noa):
             D[:, ab] += Dab[:, a, b]
@@ -67,12 +67,12 @@ class TestNew(LoPropTestCase):
         self.assert_allclose(Dsym, ref.D)
 
     def test_dipole_nobonds(self, molfrag):
-        Daa = molfrag.Dab.sum(axis=2).view(full.matrix)
+        Daa = molfrag.Dab.sum(axis=2)
         self.assert_allclose(Daa, ref.Daa)
 
     def test_quadrupole_total(self, molfrag):
-        rRab = full.matrix((6, molfrag.noa, molfrag.noa))
-        RRab = full.matrix((6, molfrag.noa, molfrag.noa))
+        rRab = np.zeros((6, molfrag.noa, molfrag.noa))
+        RRab = np.zeros((6, molfrag.noa, molfrag.noa))
         Rabc = 1.0 * molfrag.Rab
         for a in range(molfrag.noa):
             for b in range(molfrag.noa):
@@ -93,7 +93,7 @@ class TestNew(LoPropTestCase):
                         )
                         ij += 1
         QUcab = molfrag.QUab + rRab + RRab
-        QUc = QUcab.sum(axis=2).sum(axis=1).view(full.matrix)
+        QUc = QUcab.sum(axis=2).sum(axis=1)
         self.assert_allclose(QUc, ref.QUc)
 
     def test_nuclear_quadrupole(self, molfrag):
@@ -101,7 +101,7 @@ class TestNew(LoPropTestCase):
         self.assert_allclose(QUN, ref.QUN)
 
     def test_quadrupole_allbonds(self, molfrag):
-        QU = full.matrix(ref.QU.shape)
+        QU = np.zeros(ref.QU.shape)
         QUab = molfrag.QUab
         for ab, a, b in pairs(molfrag.noa):
             QU[:, ab] += QUab[:, a, b]
@@ -114,7 +114,7 @@ class TestNew(LoPropTestCase):
         self.assert_allclose(QUsym, ref.QU)
 
     def test_quadrupole_nobonds(self, molfrag):
-        QUaa = (molfrag.QUab + molfrag.dQUab).sum(axis=2).view(full.matrix)
+        QUaa = (molfrag.QUab + molfrag.dQUab).sum(axis=2)
         self.assert_allclose(QUaa, ref.QUaa)
 
     def test_Fab(self, molfrag):
@@ -127,7 +127,7 @@ class TestNew(LoPropTestCase):
         self.assert_allclose(Lab, ref.Lab)
 
     def test_total_charge_shift(self, molfrag):
-        dQ = molfrag.dQa[0].sum(axis=0).view(full.matrix)
+        dQ = molfrag.dQa[0].sum(axis=0)
         dQref = [0.0, 0.0, 0.0]
         self.assert_allclose(dQref, dQ)
 
@@ -149,7 +149,7 @@ class TestNew(LoPropTestCase):
         noa = molfrag.noa
 
         dQabref = (ref.dQab[:, 1:7:2] - ref.dQab[:, 2:7:2]) * (1 / (2 * ref.ff))
-        dQabcmp = full.matrix((3, 3))
+        dQabcmp = np.zeros((3, 3))
         ab = 0
         for a in range(noa):
             for b in range(a):
@@ -159,7 +159,7 @@ class TestNew(LoPropTestCase):
         self.assert_allclose(-dQabref, dQabcmp, atol=0.006)
 
     def test_bond_charge_shift_sum(self, molfrag):
-        dQa = molfrag.dQab[0].sum(axis=1).view(full.matrix)
+        dQa = molfrag.dQab[0].sum(axis=1)
         dQaref = molfrag.dQa[0]
         self.assert_allclose(dQa, dQaref)
 
@@ -423,18 +423,16 @@ class TestNew(LoPropTestCase):
         Aab = molfrag.Aab[0]  # + molfrag.dAab[0]
         noa = molfrag.noa
 
-        Acmp = full.matrix(ref.Aab.shape)
+        Acmp = np.zeros(ref.Aab.shape)
 
         ab = 0
         lower = np.tril_indices(3)
         for a in range(noa):
             for b in range(a):
-                # Acmp[:, ab] = (Aab[:, :, a, b] + Aab[:, :, b, a]).pack()
                 Asab = (Aab[:, :, a, b] + Aab[:, :, b, a])
                 Asab = .5 * (Asab + Asab.T)
                 Acmp[:, ab] = Asab[lower]
                 ab += 1
-            # Acmp[:, ab] = Aab[:, :, a, a].pack()
             Asaa = Aab[:, :, a, a]
             Asaa = .5 * (Asaa + Asaa.T)
             Acmp[:, ab] = Asaa[lower]
@@ -449,18 +447,16 @@ class TestNew(LoPropTestCase):
         Aab = molfrag.Aab[0] + molfrag.dAab[0] * .5
         noa = molfrag.noa
 
-        Acmp = full.matrix(ref.Aab.shape)
+        Acmp = np.zeros(ref.Aab.shape)
 
         ab = 0
         lower = np.tril_indices(3)
         for a in range(noa):
             for b in range(a):
-                # Acmp[:, ab] = (Aab[:, :, a, b] + Aab[:, :, b, a]).pack()
                 Asab = (Aab[:, :, a, b] + Aab[:, :, b, a])
                 Asab = .5 * (Asab + Asab.T)
                 Acmp[:, ab] = Asab[lower]
                 ab += 1
-            # Acmp[:, ab] = Aab[:, :, a, a].pack()
             Asaa = Aab[:, :, a, a]
             Asaa = .5 * (Asaa + Asaa.T)
             Acmp[:, ab] = Asaa[lower]
@@ -475,11 +471,11 @@ class TestNew(LoPropTestCase):
         Aab = molfrag.Aab[0] + molfrag.dAab[0] * .5
         noa = molfrag.noa
 
-        Acmp = full.matrix((6, noa))
-        Aa = Aab.sum(axis=3).view(full.matrix)
+        Acmp = np.zeros((6, noa))
+        Aa = Aab.sum(axis=3)
 
         for a in range(noa):
-            Acmp[:, a] = Aa[:, :, a].pack()
+            Acmp[:, a] = triangular_symmetric(Aa[:, :, a])
 
         # atoms
         self.assert_allclose(Acmp, ref.Aa, atol=0.07)

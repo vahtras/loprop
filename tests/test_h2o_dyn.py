@@ -1,7 +1,7 @@
 import pathlib
 
 import pytest
-from util import full
+import numpy as np
 
 from loprop.core import penalty_function, AU2ANG, pairs
 from loprop.dalton import MolFragDalton
@@ -59,7 +59,7 @@ class TestNew(LoPropTestCase):
         self.assert_allclose(molfrag.Dtot, ref.Dtot)
 
     def test_dipole_allbonds(self, molfrag):
-        D = full.matrix(ref.D.shape)
+        D = np.zeros(ref.D.shape)
         Dab = molfrag.Dab
         for ab, a, b in pairs(molfrag.noa):
             D[:, ab] += Dab[:, a, b]
@@ -72,7 +72,7 @@ class TestNew(LoPropTestCase):
         self.assert_allclose(Dsym, ref.D)
 
     def test_dipole_nobonds(self, molfrag):
-        Daa = molfrag.Dab.sum(axis=2).view(full.matrix)
+        Daa = molfrag.Dab.sum(axis=2)
         self.assert_allclose(Daa, ref.Daa)
 
     def test_quadrupole_total(self, molfrag):
@@ -84,7 +84,7 @@ class TestNew(LoPropTestCase):
         self.assert_allclose(QUN, ref.QUN)
 
     def test_quadrupole_allbonds(self, molfrag):
-        QU = full.matrix(ref.QU.shape)
+        QU = np.zeros(ref.QU.shape)
         QUab = molfrag.QUab
         for ab, a, b in pairs(molfrag.noa):
             QU[:, ab] += QUab[:, a, b]
@@ -109,7 +109,7 @@ class TestNew(LoPropTestCase):
         self.assert_allclose(Lab, ref.Lab)
 
     def test_total_charge_shift(self, molfrag):
-        dQ = molfrag.dQa[0].sum(axis=0).view(full.matrix)
+        dQ = molfrag.dQa[0].sum(axis=0)
         dQref = [0.0, 0.0, 0.0]
         self.assert_allclose(dQref, dQ)
 

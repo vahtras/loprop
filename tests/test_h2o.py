@@ -2,8 +2,6 @@ import pytest
 import pathlib
 
 import numpy as np
-from util import full
-from util.full import Matrix
 
 from loprop.core import LoPropTransformer, penalty_function, AU2ANG, pairs
 from loprop.dalton import MolFragDalton
@@ -138,7 +136,7 @@ class TestTransform(LoPropTestCase):
         if not permute:
             pytest.skip()
         transformer._permute = permute
-        T2 = transformer.lowdin_occupied_virtual(ref.S1P.view(full.matrix))
+        T2 = transformer.lowdin_occupied_virtual(ref.S1P)
         self.assert_allclose(T2, expected)
 
     @pytest.mark.parametrize(
@@ -151,7 +149,7 @@ class TestTransform(LoPropTestCase):
         if not permute:
             pytest.skip()
         transformer._permute = permute
-        T3 = transformer.project_occupied_from_virtual(ref.S2.view(Matrix))
+        T3 = transformer.project_occupied_from_virtual(ref.S2)
         self.assert_allclose(T3, expected)
 
     @pytest.mark.parametrize(
@@ -164,7 +162,7 @@ class TestTransform(LoPropTestCase):
         if not permute:
             pytest.skip()
         transformer._permute = permute
-        T4 = transformer.lowdin_virtual(ref.S3.view(full.matrix))
+        T4 = transformer.lowdin_virtual(ref.S3)
         self.assert_allclose(T4, ref.T4)
 
     @pytest.mark.parametrize(
@@ -174,7 +172,7 @@ class TestTransform(LoPropTestCase):
         transformer._permute = permute
         T = transformer.T
         S4 = T.T @ transformer.S @ T
-        self.assert_allclose(S4, full.unit(58))
+        self.assert_allclose(S4, np.eye(58))
 
 
 @pytest.mark.parametrize(
@@ -225,7 +223,7 @@ class TestH2O(LoPropTestCase):
         self.assert_allclose(molfrag._Dntot(), ref.Dntot)
 
     def test_dipole_allbonds(self, molfrag):
-        D = full.matrix(ref.D.shape)
+        D = np.zeros(ref.D.shape)
         Dab = molfrag.Dab
         for ab, a, b in pairs(molfrag.noa):
             D[:, ab] += Dab[:, a, b]
@@ -238,7 +236,7 @@ class TestH2O(LoPropTestCase):
         self.assert_allclose(Dsym, ref.D)
 
     def test_dipole_nobonds(self, molfrag):
-        Daa = molfrag.Dab.sum(axis=2).view(full.matrix)
+        Daa = molfrag.Dab.sum(axis=2)
         self.assert_allclose(Daa, ref.Daa)
 
     def test_quadrupole_total(self, molfrag):
@@ -250,7 +248,7 @@ class TestH2O(LoPropTestCase):
         self.assert_allclose(QUN, ref.QUN)
 
     def test_quadrupole_allbonds(self, molfrag):
-        QU = full.matrix(ref.QU.shape)
+        QU = np.zeros(ref.QU.shape)
         QUab = molfrag.QUab
         for ab, a, b in pairs(molfrag.noa):
             QU[:, ab] += QUab[:, a, b]
@@ -275,7 +273,7 @@ class TestH2O(LoPropTestCase):
         self.assert_allclose(Lab, ref.Lab)
 
     def test_total_charge_shift(self, molfrag):
-        dQ = molfrag.dQa[0].sum(axis=0).view(full.matrix)
+        dQ = molfrag.dQa[0].sum(axis=0)
         dQref = [0.0, 0.0, 0.0]
         self.assert_allclose(dQref, dQ)
 
@@ -297,7 +295,7 @@ class TestH2O(LoPropTestCase):
         noa = molfrag.noa
 
         dQabref = (ref.dQab[:, 1:7:2] - ref.dQab[:, 2:7:2]) * (1 / (2 * ref.ff))
-        dQabcmp = full.matrix((3, 3))
+        dQabcmp = np.zeros((3, 3))
         ab = 0
         for a in range(noa):
             for b in range(a):
@@ -307,7 +305,7 @@ class TestH2O(LoPropTestCase):
         self.assert_allclose(-dQabref, dQabcmp, atol=0.006)
 
     def test_bond_charge_shift_sum(self, molfrag):
-        dQa = molfrag.dQab[0].sum(axis=1).view(full.matrix)
+        dQa = molfrag.dQab[0].sum(axis=1)
         dQaref = molfrag.dQa[0]
         self.assert_allclose(dQa, dQaref)
 
@@ -563,7 +561,7 @@ class TestH2O(LoPropTestCase):
         Aab = molfrag.Aab[0]  # + m.dAab
         noa = molfrag.noa
 
-        Acmp = full.matrix(ref.Aab.shape)
+        Acmp = np.zeros(ref.Aab.shape)
 
         ab = 0
         lower = np.tril_indices(3)
@@ -587,7 +585,7 @@ class TestH2O(LoPropTestCase):
         Aab = molfrag.Aab[0] + molfrag.dAab[0] * .5
         noa = molfrag.noa
 
-        Acmp = full.matrix(ref.Aab.shape)
+        Acmp = np.zeros(ref.Aab.shape)
 
         ab = 0
         lower = np.tril_indices(3)
@@ -613,8 +611,8 @@ class TestH2O(LoPropTestCase):
         Aab = molfrag.Aab[0] + molfrag.dAab[0] * .5
         noa = molfrag.noa
 
-        Acmp = full.matrix((6, noa))
-        Aa = Aab.sum(axis=3).view(full.matrix)
+        Acmp = np.zeros((6, noa))
+        Aa = Aab.sum(axis=3)
 
         lower = np.tril_indices(3)
         for a in range(noa):
