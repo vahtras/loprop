@@ -1,12 +1,13 @@
 import numpy as np
 import numpy.testing as npt
-from hypothesis import given
+from hypothesis import given, settings
 import hypothesis.strategies as st
 
 from loprop.linalg import GramSchmidt, Lowdin, triangular_symmetric
 
 
 @given(st.integers(min_value=2, max_value=100))
+@settings(deadline=None)
 def test_gram_schmidt(n):
 
     # Unitary plus random noise
@@ -24,6 +25,7 @@ def test_gram_schmidt(n):
 
 
 @given(n=st.integers(min_value=2, max_value=100), m=st.integers(min_value=2, max_value=100))
+@settings(deadline=None)
 def test_lowdin(n, m):
 
     if m > n:
