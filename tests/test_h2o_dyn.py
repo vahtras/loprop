@@ -3,10 +3,10 @@ import pathlib
 import pytest
 import numpy as np
 
-from loprop.core import penalty_function, AU2ANG, pairs
+from loprop.core import penalty_function, AU2ANG
 from loprop.dalton import MolFragDalton
 
-from .common import LoPropTestCase
+from .common import LoPropTestCase, pairs
 from . import h2o_dyn_data as ref
 from . import h2o_data
 

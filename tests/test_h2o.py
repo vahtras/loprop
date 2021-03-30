@@ -3,11 +3,11 @@ import pathlib
 
 import numpy as np
 
-from loprop.core import LoPropTransformer, penalty_function, AU2ANG, pairs
+from loprop.core import LoPropTransformer, penalty_function, AU2ANG
 from loprop.dalton import MolFragDalton
 from loprop.veloxchem import MolFragVeloxChem
 
-from .common import LoPropTestCase
+from .common import LoPropTestCase, pairs
 from . import h2o_data as ref
 
 case = "h2o"

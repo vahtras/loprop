@@ -3,11 +3,11 @@ import pathlib
 import numpy as np
 import pytest
 
-from loprop.core import penalty_function, AU2ANG, pairs
+from loprop.core import penalty_function, AU2ANG
 from loprop.dalton import MolFragDalton
 from loprop.linalg import triangular_symmetric
 
-from .common import LoPropTestCase
+from .common import LoPropTestCase, pairs
 from . import h2o_rot_data as ref
 
 thisdir = pathlib.Path(__file__).parent

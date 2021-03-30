@@ -36,3 +36,16 @@ class LoPropTestCase:  # (unittest.TestCase):
     def skip_if_not_implemented(method, code):
         if method not in dir(code):
             pytest.skip(f"Method {method} not implmented in {code.__class__.__name__}")
+
+
+def pairs(n):
+    """
+    Generate index pairs for triangular packed matrices up to n
+    """
+    ij = 0
+    for i in range(n):
+        for j in range(i + 1):
+            yield (ij, i, j)
+            ij += 1
+
+

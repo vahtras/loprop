@@ -111,17 +111,6 @@ def penalty_function(alpha=2):
     return pf
 
 
-def pairs(n):
-    """
-    Generate index pairs for triangular packed matrices up to n
-    """
-    ij = 0
-    for i in range(n):
-        for j in range(i + 1):
-            yield (ij, i, j)
-            ij += 1
-
-
 def shift_function(F: np.ndarray) -> float:
     """
     Returns value twice max value of F

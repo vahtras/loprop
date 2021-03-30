@@ -3,11 +3,11 @@ import pathlib
 import numpy as np
 import pytest
 
-from loprop.core import penalty_function, AU2ANG, pairs
+from loprop.core import penalty_function, AU2ANG
 from loprop.dalton import MolFragDalton
 
 from . import h2o_beta_data as ref
-from .common import LoPropTestCase
+from .common import LoPropTestCase, pairs
 
 thisdir = pathlib.Path(__file__).parent
 case = "h2o_beta"
