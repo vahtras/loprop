@@ -472,7 +472,7 @@ class MolFrag(abc.ABC):
         max_l=0,
         pol=0,
         freqs=None,
-        pf=penalty_function,
+        pf=penalty_function(),
         sf=shift_function,
         gc=None,
         damping=False,
