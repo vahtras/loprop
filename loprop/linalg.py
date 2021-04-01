@@ -62,3 +62,8 @@ class QR(Normalizer):
 def triangular_symmetric(A):
     indices = np.tril_indices(A.shape[0])
     return .5 * (A + A.T)[indices]
+
+
+def upper_triangular_symmetric(A):
+    indices = np.triu_indices(A.shape[0])
+    return .5 * (A + A.T)[indices]

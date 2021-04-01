@@ -11,7 +11,7 @@ from typing import List, Tuple
 
 import numpy as np
 
-from .linalg import Lowdin, GramSchmidt, triangular_symmetric
+from .linalg import Lowdin, GramSchmidt, triangular_symmetric, upper_triangular_symmetric
 
 AU2ANG = 0.5291772108
 ANG2AU = 1.0 / AU2ANG
@@ -1820,3 +1820,39 @@ Domain center:       """ % (
                 ) % tuple(a_lower)
 
         return retstr
+
+    def atoms(self):
+        for atomindex in range(self.noa):
+            yield Atom(self, atomindex)
+
+
+class Atom:
+    def __init__(self, mf, index):
+        self.mf = mf
+        self.index = index
+
+    def coordinates(self):
+        return self.mf.R[self.index, :]
+
+    def charge(self):
+        return self.mf.Qa[self.index] + self.mf.Z[self.index]
+
+    def dipoles(self):
+        return self.mf.Dab[:, self.index, :].sum(axis=-1)
+
+    def quadrupoles(self):
+        return self.mf.QUab[:, self.index, :].sum(axis=-1) \
+            + self.mf.dQUab[:, self.index, :].sum(axis=-1)
+
+    def isotropic_polarizabilities(self):
+        return np.einsum('ijj', self.polarizabilities_sum_bonds()) / 3
+
+    def polarizabilities(self):
+        Aa = self.polarizabilities_sum_bonds()
+        Aat = upper_triangular_symmetric(Aa[0, ...])
+        return Aat
+
+    def polarizabilities_sum_bonds(self):
+        Aab = self.mf.Aab + 0.5 * self.mf.dAab
+        Aa = Aab[..., self.index, :].sum(axis=-1)
+        return Aa

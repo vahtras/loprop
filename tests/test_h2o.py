@@ -621,9 +621,17 @@ class TestH2O(LoPropTestCase):
         # atoms
         self.assert_allclose(Acmp, ref.Aa, atol=0.07)
 
-    def test_potfile_PAn0(self, molfrag):
+    def test_potfile_PAn0_au(self, molfrag):
         PAn0 = molfrag.output_potential_file(maxl=-1, pol=0, hyper=0)
         self.assert_str(PAn0, ref.PAn0)
+
+    def test_potfile_iter_PAn0(self, molfrag):
+        print('AU\n3 -1 0 1')
+        fmt = 3 * "{:10.3f}"
+        for atom in molfrag.atoms():
+            print(1, fmt.format(*atom.coordinates()), sep='')
+        print_output = self.capfd.readouterr().out
+        self.assert_str(print_output, ref.PAn0)
 
     def test_potfile_PAn0_angstrom(self, molfrag):
         PAn0 = molfrag.output_potential_file(maxl=-1, pol=0, hyper=0, angstrom=True)
