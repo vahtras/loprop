@@ -183,3 +183,64 @@ class MolFragDalton(MolFrag):
 
         self._D2k = _D2k
         return self._D2k
+
+    @property
+    def Bab(self):
+        """Localized hyperpolariziabilities"""
+        if self._Bab is not None:
+            return self._Bab
+
+        D2k = self.D2k
+        Rab = self.Rab
+        d2Qa = self.d2Qa
+        x = self.x
+
+        labs = ("XDIPLEN ", "YDIPLEN ", "ZDIPLEN ")
+        qlabs = [labs[i] + labs[j] for i in range(3) for j in range(i, 3)]
+        Bab = np.zeros((self.nfreqs, 3, 6, self.noa, self.noa))
+
+        # correction term for shifting origin from O to Rab
+        for i, li in enumerate(labs):
+            for jk, ljk in enumerate(qlabs):
+                for a in range(self.noa):
+                    for b in range(self.noa):
+                        ab = self.extract_indices(a, b)
+                        for iw, w in enumerate(self.freqs):
+                            Bab[iw, i, jk, a, b] = (
+                                -np.einsum('ij,ij', x[i][ab], D2k[(ljk, w, w)][ab])
+                            )
+                    for iw in self.rfreqs:
+                        Bab[iw, i, jk, a, a] -= d2Qa[iw, a, jk] * Rab[a, a, i]
+
+        self._Bab = Bab
+        return self._Bab
+
+    @property
+    def dBab(self):
+        """Charge transfer contribution to bond hyperpolarizability"""
+        if self._dBab is not None:
+            return self._dBab
+
+        d2Qab = self.d2Qab
+        dRab = self.dRab
+        dBab = np.zeros((self.nfreqs, 3, 6, self.noa, self.noa))
+        for a in range(self.noa):
+            for b in range(self.noa):
+                for i in range(3):
+                    for j in range(6):
+                        dBab[:, i, j, a, b] = 2 * dRab[a, b, i] * d2Qab[:, a, b, j]
+        self._dBab = dBab
+        return self._dBab
+
+    @property
+    def Bm(self):
+        "Molecular hyperpolarizability"
+
+        if self._Bm is not None:
+            return self._Bm
+
+        Bab = self.Bab
+        dBab = self.dBab
+        self._Bm = (Bab + 0.5 * dBab).sum(axis=4).sum(axis=3)
+
+        return self._Bm
