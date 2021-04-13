@@ -1137,13 +1137,14 @@ class MolFrag(abc.ABC):
         noa = self.noa
         dAab = np.zeros((self.nfreqs, 3, 3, noa, noa))
         for a in range(noa):
-            for b in range(noa):
+            for b in range(a):
                 for i in range(3):
                     for j in range(3):
                         dAab[:, i, j, a, b] = (
                             dRab[a, b, i] * dQab[:, a, b, j]
                             + dRab[a, b, j] * dQab[:, a, b, i]
                         )
+                dAab[..., b, a] = dAab[..., a, b]
         self._dAab = dAab
         return self._dAab
 
