@@ -24,7 +24,7 @@ Time used in Loprop              :      0.45 (cpu)       0.11 (wall)
 class TestBondH2O:
     """H2O tests bonded versus non-bonden results"""
 
-    def setup(self):
+    def setup_method(self):
         # Read in string that is for no bonds output
         lines = [line for line in STR_BOND.split("\n") if len(line.split()) > 10]
         a0 = 1.0
@@ -84,7 +84,7 @@ class TestBondH2O:
 class TestBondH2S:
     """H2O tests bonded versus non-bonden results"""
 
-    def setup(self):
+    def setup_method(self):
         # Read in string that is for no bonds output
         lines = [line for line in STR_BOND.split("\n") if len(line.split()) > 10]
         a0 = 1.0
